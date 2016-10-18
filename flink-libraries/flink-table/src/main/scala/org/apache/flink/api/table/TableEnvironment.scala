@@ -18,7 +18,7 @@
 
 package org.apache.flink.api.table
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{ParameterizedType, Type, Modifier}
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.calcite.config.Lex
@@ -33,17 +33,19 @@ import org.apache.calcite.sql.util.ChainedSqlOperatorTable
 import org.apache.calcite.tools.{FrameworkConfig, Frameworks, RuleSet, RuleSets}
 import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.java.table.{BatchTableEnvironment => JavaBatchTableEnv, StreamTableEnvironment => JavaStreamTableEnv}
-import org.apache.flink.api.java.typeutils.{PojoTypeInfo, TupleTypeInfo}
+import org.apache.flink.api.java.typeutils.{TypeExtractor, PojoTypeInfo, TupleTypeInfo}
 import org.apache.flink.api.java.{ExecutionEnvironment => JavaBatchExecEnv}
 import org.apache.flink.api.scala.table.{BatchTableEnvironment => ScalaBatchTableEnv, StreamTableEnvironment => ScalaStreamTableEnv}
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.flink.api.scala.{ExecutionEnvironment => ScalaBatchExecEnv}
 import org.apache.flink.api.table.expressions.{Alias, Expression, UnresolvedFieldReference}
-import org.apache.flink.api.table.functions.{ScalarFunction, UserDefinedFunction}
+import org.apache.flink.api.table.functions.utils.{TableSqlFunction, UserDefinedFunctionUtils}
+import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction, UserDefinedFunction}
 import org.apache.flink.api.table.plan.cost.DataSetCostFactory
-import org.apache.flink.api.table.plan.schema.RelTable
+import org.apache.flink.api.table.plan.schema.{FlinkTableFunctionImpl, RelTable}
 import org.apache.flink.api.table.sinks.TableSink
 import org.apache.flink.api.table.validate.FunctionCatalog
+import org.apache.flink.sql.parser.impl.FlinkSqlParserImpl
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaStreamExecEnv}
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment => ScalaStreamExecEnv}
 
@@ -155,18 +157,33 @@ abstract class TableEnvironment(val config: TableConfig) {
     * Registers a [[UserDefinedFunction]] under a unique name. Replaces already existing
     * user-defined functions under this name.
     */
-  def registerFunction(name: String, function: UserDefinedFunction): Unit = {
-    function match {
-      case sf: ScalarFunction =>
-        // register in Table API
-        functionCatalog.registerFunction(name, function.getClass)
+  def registerFunction(name: String, function: ScalarFunction): Unit = {
+    // register in Table API
+    functionCatalog.registerFunction(name, function.getClass)
 
-        // register in SQL API
-        functionCatalog.registerSqlFunction(sf.getSqlFunction(name, typeFactory))
+    // register in SQL API
+    functionCatalog.registerSqlFunction(function.getSqlFunction(name, typeFactory))
+  }
 
-      case _ =>
-        throw new TableException("Unsupported user-defined function type.")
+  private[flink] def registerTableFunctionInternal[T: TypeInformation](
+    name: String, tf: TableFunction[T]): Unit = {
+
+    val typeInfo: TypeInformation[_] = if (tf.getResultType != null) {
+      tf.getResultType
+    } else {
+      implicitly[TypeInformation[T]]
     }
+
+    val (fieldNames, fieldIndexes) = UserDefinedFunctionUtils.getFieldInfo(typeInfo)
+
+    val sqlFunctions = tf.getEvalMethods.map(method => {
+      val function = new FlinkTableFunctionImpl(typeInfo, fieldIndexes, fieldNames, method)
+      TableSqlFunction(name, tf, typeInfo, typeFactory, function)
+    })
+    // register in Table API
+    functionCatalog.registerFunction(name, tf.getClass)
+    // register in SQL API
+    functionCatalog.registerSqlFunctions(sqlFunctions)
   }
 
   /**

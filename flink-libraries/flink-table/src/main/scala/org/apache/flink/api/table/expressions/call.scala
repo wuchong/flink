@@ -17,9 +17,13 @@
  */
 package org.apache.flink.api.table.expressions
 
+import java.lang.reflect.{Type, ParameterizedType}
+
 import org.apache.calcite.rex.RexNode
 import org.apache.calcite.tools.RelBuilder
-import org.apache.flink.api.table.functions.ScalarFunction
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction}
 import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils.{getResultType, getSignature, signatureToString, signaturesToString}
 import org.apache.flink.api.table.validate.{ValidationResult, ValidationFailure, ValidationSuccess}
 import org.apache.flink.api.table.{FlinkTypeFactory, UnresolvedException}
@@ -85,3 +89,38 @@ case class ScalarFunctionCall(
   }
 
 }
+
+
+/**
+  * Expression for calling a user-defined table functions. This will be transformed to logical node
+  * ([[org.apache.flink.api.table.plan.logical.TableFunctionNode]])
+  *
+  * @param tableFunction table function to be called (might be overloaded)
+  * @param parameters actual parameters that determine target evaluation method
+  */
+case class TableFunctionCall[T](
+  tableFunction: TableFunction[T],
+  parameters: Seq[Expression])
+  extends Expression {
+
+  override private[flink] def children: Seq[Expression] = parameters
+
+  override def toString = s"$tableFunction(${parameters.mkString(", ")})"
+
+  // will not be called
+  override private[flink] def resultType = ???
+
+  def toLogicalNode: LogicalNode = {
+    val clazz: Type = tableFunction.getClass.getGenericSuperclass
+    val generic = clazz match {
+      case cls: ParameterizedType => cls.getActualTypeArguments.toSeq.head
+      case _ => throw new TableException(
+        "New TableFunction classes need to inherit from TableFunction class," +
+          " and statement the generic type.")
+    }
+    implicit val typeInfo: TypeInformation[T] = TypeExtractor.createTypeInfo(generic)
+      .asInstanceOf[TypeInformation[T]]
+    TableFunctionNode(tableFunction, parameters)
+  }
+}
+

@@ -23,7 +23,7 @@ import org.apache.calcite.sql.util.{ChainedSqlOperatorTable, ListSqlOperatorTabl
 import org.apache.calcite.sql.{SqlFunction, SqlOperator, SqlOperatorTable}
 import org.apache.flink.api.table.ValidationException
 import org.apache.flink.api.table.expressions._
-import org.apache.flink.api.table.functions.ScalarFunction
+import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction}
 import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils
 
 import scala.collection.JavaConversions._
@@ -45,6 +45,14 @@ class FunctionCatalog {
   def registerSqlFunction(sqlFunction: SqlFunction): Unit = {
     sqlFunctions --= sqlFunctions.filter(_.getName == sqlFunction.getName)
     sqlFunctions += sqlFunction
+  }
+
+  /** Register multiple sql functions at one time. The functions has the same name. **/
+  def registerSqlFunctions(functions: Seq[SqlFunction]): Unit = {
+    if (functions.nonEmpty) {
+      sqlFunctions --= sqlFunctions.filter(_.getName == functions.head.getName)
+      sqlFunctions ++= functions
+    }
   }
 
   def getSqlOperatorTable: SqlOperatorTable =
@@ -72,6 +80,13 @@ class FunctionCatalog {
       case sf if classOf[ScalarFunction].isAssignableFrom(sf) =>
         Try(UserDefinedFunctionUtils.instantiate(sf.asInstanceOf[Class[ScalarFunction]])) match {
           case Success(scalarFunction) => ScalarFunctionCall(scalarFunction, children)
+          case Failure(e) => throw ValidationException(e.getMessage)
+        }
+
+      // user-defined table function call
+      case tf if classOf[TableFunction[_]].isAssignableFrom(tf) =>
+        Try(UserDefinedFunctionUtils.instantiate(tf.asInstanceOf[Class[TableFunction[_]]])) match {
+          case Success(tableFunction) => TableFunctionCall(tableFunction, children)
           case Failure(e) => throw ValidationException(e.getMessage)
         }
 

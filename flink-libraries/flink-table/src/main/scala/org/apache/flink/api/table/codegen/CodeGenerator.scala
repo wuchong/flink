@@ -38,7 +38,7 @@ import org.apache.flink.api.table.codegen.calls.ScalarOperators._
 import org.apache.flink.api.table.functions.UserDefinedFunction
 import org.apache.flink.api.table.typeutils.{RowTypeInfo, TypeConverter}
 import org.apache.flink.api.table.typeutils.TypeCheckUtils._
-import org.apache.flink.api.table.{FlinkTypeFactory, TableConfig}
+import org.apache.flink.api.table.{TableException, FlinkTypeFactory, TableConfig}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -346,6 +346,21 @@ class CodeGenerator(
   }
 
   /**
+    * Generates an expression from the left input and the right table function.
+    */
+  def generateCorrelateAccessExprs: (Seq[GeneratedExpression], Seq[GeneratedExpression]) = {
+    val input1AccessExprs = for (i <- 0 until input1.getArity)
+      yield generateInputAccess(input1, input1Term, i)
+
+    val input2AccessExprs = input2 match {
+      case Some(ti) => for (i <- 0 until ti.getArity)
+        yield generateFieldAccess(ti, input2Term, i)
+      case None => throw new TableException("type information of input2 must not be null")
+    }
+    (input1AccessExprs, input2AccessExprs)
+  }
+
+  /**
     * Generates an expression from a sequence of RexNode. If objects or variables can be reused,
     * they will be added to reusable code sections internally. The evaluation result
     * may be stored in the global result variable (see [[outRecordTerm]]).
@@ -609,6 +624,8 @@ class CodeGenerator(
   }
 
   override def visitFieldAccess(rexFieldAccess: RexFieldAccess): GeneratedExpression = {
+    // val index = rexFieldAccess.getField.getIndex
+    // generateInputAccess(input1, input1Term, index)
     val refExpr = rexFieldAccess.getReferenceExpr.accept(this)
     val index = rexFieldAccess.getField.getIndex
     val fieldAccessExpr = generateFieldAccess(refExpr.resultType, refExpr.resultTerm, index)
