@@ -46,7 +46,7 @@ class UserDefinedTableFunctionITCase(
     tableEnv.registerTable("MyTable", in)
     tableEnv.registerFunction("split", TableFunc1)
 
-    val sqlQuery = "SELECT MyTable.c, t.s FROM MyTable CROSS APPLY split(c) AS t(s)"
+    val sqlQuery = "SELECT MyTable.c, t.s FROM MyTable, LATERAL TABLE(split(c)) AS t(s)"
 
     val result = tableEnv.sql(sqlQuery).toDataSet[Row]
     val results = result.collect()
@@ -55,7 +55,7 @@ class UserDefinedTableFunctionITCase(
     TestBaseUtils.compareResultAsText(results.asJava, expected)
 
     // with overloading
-    val sqlQuery2 = "SELECT MyTable.c, t.s FROM MyTable CROSS APPLY split(c, '$') AS t(s)"
+    val sqlQuery2 = "SELECT MyTable.c, t.s FROM MyTable, LATERAL TABLE(split(c, '$')) AS t(s)"
     val result2 = tableEnv.sql(sqlQuery2).toDataSet[Row]
     val results2 = result2.collect()
     val expected2: String = "Jack#22,$Jack\n" + "Jack#22,$22\n" + "John#19,$John\n" +
@@ -71,7 +71,7 @@ class UserDefinedTableFunctionITCase(
     tableEnv.registerTable("MyTable", in)
     tableEnv.registerFunction("split", TableFunc2)
 
-    val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable CROSS APPLY split(c) AS t(a,b)"
+    val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable, LATERAL TABLE(split(c)) AS t(a,b)"
 
     val result = tableEnv.sql(sqlQuery).toDataSet[Row]
     val results = result.collect()
@@ -88,7 +88,8 @@ class UserDefinedTableFunctionITCase(
     tableEnv.registerTable("MyTable", in)
     tableEnv.registerFunction("split", TableFunc2)
 
-    val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable OUTER APPLY split(c) AS t(a,b)"
+    val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable LEFT JOIN LATERAL TABLE(split(c)) " +
+      "AS t(a,b) ON TRUE"
 
     val result = tableEnv.sql(sqlQuery).toDataSet[Row]
     val results = result.collect()
@@ -106,7 +107,7 @@ class UserDefinedTableFunctionITCase(
     tableEnv.registerFunction("split", TableFunc0)
 
     val sqlQuery = "SELECT MyTable.c, t.name, t.age " +
-      "FROM MyTable CROSS APPLY split(c) AS t(name,age) " +
+      "FROM MyTable, LATERAL TABLE(split(c)) AS t(name,age) " +
       "WHERE t.age > 20"
 
     val result = tableEnv.sql(sqlQuery).toDataSet[Row]
@@ -116,7 +117,7 @@ class UserDefinedTableFunctionITCase(
   }
 
   @Test
-  def testUDTFWithScalarTableAPI(): Unit = {
+  def testUDTFWithTableAPI(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
@@ -132,7 +133,7 @@ class UserDefinedTableFunctionITCase(
   }
 
   @Test
-  def testUDTFWithScalarTableAPIAndOuterApply(): Unit = {
+  def testUDTFWithTableAPIAndOuterApply(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)

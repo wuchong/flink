@@ -56,7 +56,7 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 
 		tableEnv.registerFunction("stack", new TableFunc0());
 
-		Table result = table.crossApply("stack(a,c)", "f")
+		Table result = table.crossApply("stack(a,c) as (f)")
 			.select("b,f");
 
 		// with overloading
@@ -65,7 +65,7 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 		String expected = "1,1\n" + "1,0\n" + "2,2\n" + "2,1\n" + "3,2\n" + "3,2\n";
 		compareResultAsText(results, expected);
 
-		Table result2 = table.crossApply("stack(a,c,e)", "f")
+		Table result2 = table.crossApply("stack(a,c,e) as (f)")
 			.select("b,f");
 
 		DataSet<Row> ds2 = tableEnv.toDataSet(result2, Row.class);
@@ -87,7 +87,7 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 
 		tableEnv.registerFunction("func1", new TableFunc1());
 
-		Table result = table.crossApply("func1(d)", "s,l")
+		Table result = table.crossApply("func1(d) as (s,l)")
 			.select("d,s,l");
 
 		DataSet<Row> ds = tableEnv.toDataSet(result, Row.class);
@@ -97,7 +97,7 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 		compareResultAsText(results, expected);
 
 
-		Table result2 = table.outerApply("func1(d)", "s,l")
+		Table result2 = table.outerApply("func1(d) as (s,l)")
 			.select("d,s,l");
 
 		DataSet<Row> ds2 = tableEnv.toDataSet(result2, Row.class);
@@ -105,6 +105,28 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 		String expected2 = "Hallo,null,null\n" + "Hallo Welt,Welt,4\n" + "Hallo Welt wie,Welt,4\n" +
 		                  "Hallo Welt wie,wie,3\n";
 		compareResultAsText(results2, expected2);
+	}
+
+	@Test
+	public void testUDTFWithScalarFunction() throws Exception {
+		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+		BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
+
+		DataSet<Tuple5<Integer, Long, Integer, String, Long>> ds1 =
+			CollectionDataSets.getSmall5TupleDataSet(env);
+
+		Table table = tableEnv.fromDataSet(ds1, "a, b, c, d, e");
+
+		tableEnv.registerFunction("func0", new TableFunc0());
+
+		Table result = table.crossApply("func0(c, charLength(d)) as (l)")
+			.select("d,l");
+
+		DataSet<Row> ds = tableEnv.toDataSet(result, Row.class);
+		List<Row> results = ds.collect();
+		String expected = "Hallo,0\n" + "Hallo,5\n" + "Hallo Welt,1\n" + "Hallo Welt,10\n" +
+		                  "Hallo Welt wie,2\n" + "Hallo Welt wie,14\n";
+		compareResultAsText(results, expected);
 	}
 
 

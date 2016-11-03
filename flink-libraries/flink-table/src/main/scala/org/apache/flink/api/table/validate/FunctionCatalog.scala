@@ -18,13 +18,18 @@
 
 package org.apache.flink.api.table.validate
 
+import java.lang.reflect.{ParameterizedType, Type}
+
 import org.apache.calcite.sql.fun.SqlStdOperatorTable
 import org.apache.calcite.sql.util.{ChainedSqlOperatorTable, ListSqlOperatorTable, ReflectiveSqlOperatorTable}
 import org.apache.calcite.sql.{SqlFunction, SqlOperator, SqlOperatorTable}
-import org.apache.flink.api.table.ValidationException
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.api.table.{TableException, ValidationException}
 import org.apache.flink.api.table.expressions._
-import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction}
+import org.apache.flink.api.table.functions.{ScalarFunction, TableFunction}
 import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils
+import org.apache.flink.api.table.plan.logical.TableFunctionCall
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -62,6 +67,35 @@ class FunctionCatalog {
     )
 
   /**
+    * Lookup table function and create an TableFunctionCall if we find a match.
+    */
+  def lookupTableFunction[T](name: String, children: Seq[Expression]): TableFunctionCall[T] = {
+    val funcClass = functionBuilders
+      .getOrElse(name.toLowerCase, throw ValidationException(s"Undefined function: $name"))
+    funcClass match {
+      // user-defined table function call
+      case tf if classOf[TableFunction[T]].isAssignableFrom(tf) =>
+        Try(UserDefinedFunctionUtils.instantiate(tf.asInstanceOf[Class[TableFunction[T]]])) match {
+          case Success(tableFunction) => {
+            val clazz: Type = tableFunction.getClass.getGenericSuperclass
+            val generic = clazz match {
+              case cls: ParameterizedType => cls.getActualTypeArguments.toSeq.head
+              case _ => throw new TableException(
+                "New TableFunction classes need to inherit from TableFunction class," +
+                  " and statement the generic type.")
+            }
+            implicit val typeInfo: TypeInformation[T] = TypeExtractor.createTypeInfo(generic)
+              .asInstanceOf[TypeInformation[T]]
+            TableFunctionCall(tableFunction, children, None)
+          }
+          case Failure(e) => throw ValidationException(e.getMessage)
+        }
+      case _ =>
+        throw ValidationException("Unsupported table function.")
+    }
+  }
+
+  /**
     * Lookup and create an expression if we find a match.
     */
   def lookupFunction(name: String, children: Seq[Expression]): Expression = {
@@ -80,13 +114,6 @@ class FunctionCatalog {
       case sf if classOf[ScalarFunction].isAssignableFrom(sf) =>
         Try(UserDefinedFunctionUtils.instantiate(sf.asInstanceOf[Class[ScalarFunction]])) match {
           case Success(scalarFunction) => ScalarFunctionCall(scalarFunction, children)
-          case Failure(e) => throw ValidationException(e.getMessage)
-        }
-
-      // user-defined table function call
-      case tf if classOf[TableFunction[_]].isAssignableFrom(tf) =>
-        Try(UserDefinedFunctionUtils.instantiate(tf.asInstanceOf[Class[TableFunction[_]]])) match {
-          case Success(tableFunction) => TableFunctionCall(tableFunction, children)
           case Failure(e) => throw ValidationException(e.getMessage)
         }
 

@@ -39,17 +39,17 @@ import org.apache.flink.api.table.typeutils.TypeConverter._
 class DataSetCorrelate(
     cluster: RelOptCluster,
     traitSet: RelTraitSet,
-    input: RelNode,
+    inputNode: RelNode,
     scan: LogicalTableFunctionScan,
     condition: RexNode,
-    rowType: RelDataType,
+    relRowType: RelDataType,
     joinRowType: RelDataType,
     joinType: SemiJoinType,
     ruleDescription: String)
-  extends SingleRel(cluster, traitSet, input)
+  extends SingleRel(cluster, traitSet, inputNode)
   with FlinkCorrelate
   with DataSetRel {
-  override def deriveRowType() = rowType
+  override def deriveRowType() = relRowType
 
 
   override def computeSelfCost(planner: RelOptPlanner, metadata: RelMetadataQuery): RelOptCost = {
@@ -64,7 +64,7 @@ class DataSetCorrelate(
       inputs.get(0),
       scan,
       condition,
-      rowType,
+      relRowType,
       joinRowType,
       joinType,
       ruleDescription)
@@ -81,7 +81,7 @@ class DataSetCorrelate(
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     super.explainTerms(pw)
       .item("lateral", correlateToString(rexCall, sqlFunction))
-      .item("select", selectToString(rowType))
+      .item("select", selectToString(relRowType))
   }
 
 
@@ -95,8 +95,8 @@ class DataSetCorrelate(
       config.getNullCheck,
       config.getEfficientTypeUsage)
 
-    val inputDS = input.asInstanceOf[DataSetRel]
-      .translateToPlan(tableEnv, Some(inputRowType(input)))
+    val inputDS = inputNode.asInstanceOf[DataSetRel]
+      .translateToPlan(tableEnv, Some(inputRowType(inputNode)))
 
     val funcRel = scan.asInstanceOf[LogicalTableFunctionScan]
     val rexCall = funcRel.getCall.asInstanceOf[RexCall]
@@ -127,7 +127,7 @@ class DataSetCorrelate(
 
     val mapFunc = correlateMapFunction(genFunction)
 
-    inputDS.flatMap(mapFunc).name(correlateOpName(rexCall, sqlFunction, rowType))
+    inputDS.flatMap(mapFunc).name(correlateOpName(rexCall, sqlFunction, relRowType))
   }
 
 }

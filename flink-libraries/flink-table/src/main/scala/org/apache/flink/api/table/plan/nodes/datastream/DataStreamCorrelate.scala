@@ -39,17 +39,17 @@ import org.apache.flink.streaming.api.datastream.DataStream
 class DataStreamCorrelate(
     cluster: RelOptCluster,
     traitSet: RelTraitSet,
-    input: RelNode,
+    inputNode: RelNode,
     scan: LogicalTableFunctionScan,
     condition: RexNode,
-    rowType: RelDataType,
+    relRowType: RelDataType,
     joinRowType: RelDataType,
     joinType: SemiJoinType,
     ruleDescription: String)
-  extends SingleRel(cluster, traitSet, input)
+  extends SingleRel(cluster, traitSet, inputNode)
   with FlinkCorrelate
   with DataStreamRel {
-  override def deriveRowType() = rowType
+  override def deriveRowType() = relRowType
 
 
   override def computeSelfCost(planner: RelOptPlanner, metadata: RelMetadataQuery): RelOptCost = {
@@ -64,7 +64,7 @@ class DataStreamCorrelate(
       inputs.get(0),
       scan,
       condition,
-      rowType,
+      relRowType,
       joinRowType,
       joinType,
       ruleDescription)
@@ -83,7 +83,7 @@ class DataStreamCorrelate(
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     super.explainTerms(pw)
       .item("lateral", correlateToString(rexCall, sqlFunction))
-      .item("select", selectToString(rowType))
+      .item("select", selectToString(relRowType))
   }
 
 
@@ -97,8 +97,8 @@ class DataStreamCorrelate(
       config.getNullCheck,
       config.getEfficientTypeUsage)
 
-    val inputDS = input.asInstanceOf[DataStreamRel]
-      .translateToPlan(tableEnv, Some(inputRowType(input)))
+    val inputDS = inputNode.asInstanceOf[DataStreamRel]
+      .translateToPlan(tableEnv, Some(inputRowType(inputNode)))
 
     val funcRel = scan.asInstanceOf[LogicalTableFunctionScan]
     val rexCall = funcRel.getCall.asInstanceOf[RexCall]
@@ -129,7 +129,7 @@ class DataStreamCorrelate(
 
     val mapFunc = correlateMapFunction(genFunction)
 
-    inputDS.flatMap(mapFunc).name(correlateOpName(rexCall, sqlFunction, rowType))
+    inputDS.flatMap(mapFunc).name(correlateOpName(rexCall, sqlFunction, relRowType))
   }
 
 }

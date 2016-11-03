@@ -445,7 +445,7 @@ case class Join(
 
   override def validate(tableEnv: TableEnvironment): LogicalNode = {
     if (tableEnv.isInstanceOf[StreamTableEnvironment]
-      && !right.isInstanceOf[TableFunctionNode[_]]) {
+      && !right.isInstanceOf[TableFunctionCall[_]]) {
       failValidation(s"Join on stream tables is currently not supported.")
     }
 
@@ -625,102 +625,3 @@ case class WindowAggregate(
   }
 }
 
-
-/**
-  * Logical node for user-defined table call
-  */
-case class TableFunctionNode[T: TypeInformation](
-  udtf: TableFunction[T],
-  parameters: Seq[Expression]) extends UnaryNode {
-
-  private var table: LogicalNode = null
-  override def child: LogicalNode = table
-
-  def setChild(child: LogicalNode): this.type = {
-    table = child
-    this
-  }
-
-  private val resultType: TypeInformation[T] =
-    if (udtf.getResultType == null) {
-      implicitly[TypeInformation[T]]
-    } else {
-      udtf.getResultType
-    }
-
-  private var fieldNames: Array[String] = getFieldAttribute[T](resultType)._1
-  private val fieldTypes: Array[TypeInformation[_]] = getFieldAttribute[T](resultType)._2
-  private var alias: Seq[Expression] = null
-
-  def as(aliasList: Expression*): this.type = {
-    if (aliasList == null) {
-      return this
-    }
-    if (aliasList.length != fieldNames.length) {
-      failValidation("Aliasing not match number of fields")
-    } else if (!aliasList.forall(_.isInstanceOf[UnresolvedFieldReference])) {
-      failValidation("Alias only accept name expressions as arguments")
-    } else {
-      fieldNames = aliasList.map(_.asInstanceOf[UnresolvedFieldReference].name).toArray
-      alias = aliasList.toSeq
-    }
-    this
-  }
-
-  override def output: Seq[Attribute] = fieldNames.zip(fieldTypes).map {
-    case (n, t) =>  ResolvedFieldReference(n, t)
-  }
-
-  override def makeCopy(newArgs: Array[AnyRef]): this.type = {
-    if (newArgs.length < 1) {
-      throw new TableException("Invalid constructor params")
-    }
-    val udtfParam: TableFunction[T] = newArgs.head.asInstanceOf[TableFunction[T]]
-    val expressionParams = newArgs.last.asInstanceOf[Seq[Expression]]
-    copy(udtfParam, expressionParams).asInstanceOf[this.type].as(alias:_*).setChild(child)
-  }
-
-  private var evalMethod: Method = null
-  override def validate(tableEnv: TableEnvironment): LogicalNode = {
-    val node = super.validate(tableEnv).asInstanceOf[TableFunctionNode[_]]
-    val signature = node.parameters.map(_.resultType)
-    // look for a signature that matches the input types
-    val foundMethod = getEvalMethod(udtf, signature)
-    if (foundMethod.isEmpty) {
-      ValidationFailure(s"Given parameters do not match any signature. \n" +
-                          s"Actual: ${signatureToString(signature)} \n" +
-                          s"Expected: ${signaturesToString(udtf)}")
-    } else {
-      node.evalMethod = foundMethod.get
-    }
-    node
-  }
-
-  override protected[logical] def construct(relBuilder: RelBuilder): RelBuilder = {
-    val fieldIndexes = getFieldInfo(resultType)._2
-    val function = new FlinkTableFunctionImpl(resultType, fieldIndexes, fieldNames, evalMethod)
-    val typeFactory = relBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
-    val sqlFunction = TableSqlFunction(udtf.toString, udtf, resultType, typeFactory, function)
-
-    val scan = LogicalTableFunctionScan.create(
-      relBuilder.peek().getCluster,
-      List(),
-      relBuilder.call(sqlFunction, parameters.map(_.toRexNode(relBuilder))),
-      function.getElementType(null),
-      function.getRowType(relBuilder.getTypeFactory, null),
-      null)
-    relBuilder.push(scan)
-  }
-}
-
-case class TableFunctionNodeBuilder[T: TypeInformation](udtf: TableFunction[T]) {
-  /**
-    * Creates a call to a [[TableFunction]] in Scala Table API.
-    *
-    * @param params actual parameters of function
-    * @return [[LogicalNode]] in form of a [[TableFunctionNode]]
-    */
-  def apply(params: Expression*): TableFunctionNode[T] = {
-    TableFunctionNode(udtf, params.toSeq)
-  }
-}

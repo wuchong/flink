@@ -43,7 +43,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
 
     tEnv.registerFunction("split", TableFunc0)
 
-    val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable CROSS APPLY split(c) AS t(n,a)"
+    val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable, LATERAL TABLE(split(c)) AS t(n,a)"
 
     val result = tEnv.sql(sqlQuery).toDataStream[Row]
     result.addSink(new StreamITCase.StringSink)
@@ -65,7 +65,8 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
 
     tEnv.registerFunction("split", TableFunc0)
 
-    val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable OUTER APPLY split(c) AS t(n,a)"
+    val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable " +
+      "LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON t.a=MyTable.a"
 
     val result = tEnv.sql(sqlQuery).toDataStream[Row]
     result.addSink(new StreamITCase.StringSink)
@@ -88,7 +89,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
     tEnv.registerFunction("split", TableFunc0)
 
     val sqlQuery = "SELECT MyTable.c, t.n, t.a " +
-      "FROM MyTable OUTER APPLY split(c) AS t(n,a) " +
+      "FROM MyTable LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON TRUE " +
       "WHERE t.a < 30"
 
     val result = tEnv.sql(sqlQuery).toDataStream[Row]

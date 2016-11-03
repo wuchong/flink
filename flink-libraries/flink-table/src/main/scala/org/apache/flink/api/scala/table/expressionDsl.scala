@@ -25,7 +25,7 @@ import org.apache.flink.api.table.expressions.ExpressionUtils.{toMilliInterval, 
 import org.apache.flink.api.table.expressions.TimeIntervalUnit.TimeIntervalUnit
 import org.apache.flink.api.table.expressions._
 import org.apache.flink.api.table.functions.TableFunction
-import org.apache.flink.api.table.plan.logical.TableFunctionNodeBuilder
+import org.apache.flink.api.table.plan.logical.TableFunctionCallBuilder
 
 import scala.language.implicitConversions
 
@@ -542,7 +542,7 @@ trait ImplicitExpressionConversions {
   implicit def sqlTime2Literal(sqlTime: Time): Expression = Literal(sqlTime)
   implicit def sqlTimestamp2Literal(sqlTimestamp: Timestamp): Expression = Literal(sqlTimestamp)
   implicit def UDTF2LogicalNode[T: TypeInformation](udtf: TableFunction[T]):
-    TableFunctionNodeBuilder[T] = TableFunctionNodeBuilder(udtf)
+    TableFunctionCallBuilder[T] = TableFunctionCallBuilder(udtf)
 }
 
 // ------------------------------------------------------------------------------------------------
