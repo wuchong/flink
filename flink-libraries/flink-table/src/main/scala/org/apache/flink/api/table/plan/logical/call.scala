@@ -35,7 +35,8 @@ import scala.collection.JavaConversions._
 /**
   * General expression for unresolved user-defined table function calls.
   */
-case class UnresolvedTableFunctionCall(functionName: String, args: Seq[Expression]) extends LogicalNode {
+case class UnresolvedTableFunctionCall(functionName: String, args: Seq[Expression])
+  extends LogicalNode {
 
   override def output: Seq[Attribute] =
     throw UnresolvedException("Invalid call to output on UnresolvedTableFunctionCall")

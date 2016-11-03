@@ -26,7 +26,7 @@ import org.apache.flink.api.table.ValidationException
   */
 trait EvaluableFunction {
 
-  private val evalMethods = checkAndExtractEvalMethods()
+  private lazy val evalMethods = checkAndExtractEvalMethods()
   private lazy val signatures = evalMethods.map(_.getParameterTypes)
 
   /**

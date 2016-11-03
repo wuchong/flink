@@ -153,7 +153,7 @@ abstract class TableEnvironment(val config: TableConfig) {
   protected def getBuiltInRuleSet: RuleSet
 
   /**
-    * Registers a [[UserDefinedFunction]] under a unique name. Replaces already existing
+    * Registers a [[ScalarFunction]] under a unique name. Replaces already existing
     * user-defined functions under this name.
     */
   def registerFunction(name: String, function: ScalarFunction): Unit = {
@@ -164,6 +164,10 @@ abstract class TableEnvironment(val config: TableConfig) {
     functionCatalog.registerSqlFunction(function.getSqlFunction(name, typeFactory))
   }
 
+  /**
+    * Registers a [[TableFunction]] under a unique name. Replaces already existing
+    * user-defined functions under this name.
+    */
   private[flink] def registerTableFunctionInternal[T: TypeInformation](
     name: String, tf: TableFunction[T]): Unit = {
 
