@@ -75,7 +75,7 @@ abstract class TableFunction[T] extends UserDefinedFunction with EvaluableFuncti
       name: String,
       typeFactory: FlinkTypeFactory)
     : SqlFunction = {
-    null
+    throw new UnsupportedOperationException("this method should not be called")
   }
 
   // ----------------------------------------------------------------------------------------------

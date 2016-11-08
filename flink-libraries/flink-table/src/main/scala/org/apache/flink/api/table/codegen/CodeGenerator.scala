@@ -50,16 +50,19 @@ import scala.collection.mutable
   * @param nullableInput input(s) can be null.
   * @param input1 type information about the first input of the Function
   * @param input2 type information about the second input if the Function is binary
-  * @param inputPojoFieldMapping additional mapping information if input1 is a POJO (POJO types
-  *                              have no deterministic field order). We assume that input2 is
-  *                              converted before and thus is never a POJO.
+  * @param input1PojoFieldMapping additional mapping information if input1 is a POJO (POJO types
+  *                              have no deterministic field order).
+  * @param input2PojoFieldMapping additional mapping information if input2 is a POJO (POJO types
+  *                              have no deterministic field order).
+  *
   */
 class CodeGenerator(
    config: TableConfig,
    nullableInput: Boolean,
    input1: TypeInformation[Any],
    input2: Option[TypeInformation[Any]] = None,
-   inputPojoFieldMapping: Option[Array[Int]] = None)
+   input1PojoFieldMapping: Option[Array[Int]] = None,
+   input2PojoFieldMapping: Option[Array[Int]] = None)
   extends RexVisitor[GeneratedExpression] {
 
   // check if nullCheck is enabled when inputs can be null
@@ -67,18 +70,19 @@ class CodeGenerator(
     throw new CodeGenException("Null check must be enabled if entire rows can be null.")
   }
 
-  // check for POJO input mapping
+  // check for POJO input1 mapping
   input1 match {
     case pt: PojoTypeInfo[_] =>
-      inputPojoFieldMapping.getOrElse(
-        throw new CodeGenException("No input mapping is specified for input of type POJO."))
+      input1PojoFieldMapping.getOrElse(
+        throw new CodeGenException("No input mapping is specified for input1 of type POJO."))
     case _ => // ok
   }
 
-  // check that input2 is never a POJO
+  // check for POJO input2 mapping
   input2 match {
     case Some(pt: PojoTypeInfo[_]) =>
-      throw new CodeGenException("Second input must not be a POJO type.")
+      input2PojoFieldMapping.getOrElse(
+        throw new CodeGenException("No input mapping is specified for input2 of type POJO."))
     case _ => // ok
   }
 
@@ -334,11 +338,11 @@ class CodeGenerator(
       resultFieldNames: Seq[String])
     : GeneratedExpression = {
     val input1AccessExprs = for (i <- 0 until input1.getArity)
-      yield generateInputAccess(input1, input1Term, i)
+      yield generateInputAccess(input1, input1Term, i, input1PojoFieldMapping)
 
     val input2AccessExprs = input2 match {
       case Some(ti) => for (i <- 0 until ti.getArity)
-        yield generateInputAccess(ti, input2Term, i)
+        yield generateInputAccess(ti, input2Term, i, input2PojoFieldMapping)
       case None => Seq() // add nothing
     }
 
@@ -350,11 +354,11 @@ class CodeGenerator(
     */
   def generateCorrelateAccessExprs: (Seq[GeneratedExpression], Seq[GeneratedExpression]) = {
     val input1AccessExprs = for (i <- 0 until input1.getArity)
-      yield generateInputAccess(input1, input1Term, i)
+      yield generateInputAccess(input1, input1Term, i, input1PojoFieldMapping)
 
     val input2AccessExprs = input2 match {
       case Some(ti) => for (i <- 0 until ti.getArity)
-        yield generateFieldAccess(ti, input2Term, i)
+        yield generateFieldAccess(ti, input2Term, i, input2PojoFieldMapping)
       case None => throw new TableException("type information of input2 must not be null")
     }
     (input1AccessExprs, input2AccessExprs)
@@ -609,9 +613,11 @@ class CodeGenerator(
   override def visitInputRef(inputRef: RexInputRef): GeneratedExpression = {
     // if inputRef index is within size of input1 we work with input1, input2 otherwise
     val input = if (inputRef.getIndex < input1.getArity) {
-      (input1, input1Term)
+      (input1, input1Term, input1PojoFieldMapping)
     } else {
-      (input2.getOrElse(throw new CodeGenException("Invalid input access.")), input2Term)
+      (input2.getOrElse(throw new CodeGenException("Invalid input access.")),
+        input2Term,
+        input2PojoFieldMapping)
     }
 
     val index = if (input._2 == input1Term) {
@@ -620,12 +626,12 @@ class CodeGenerator(
       inputRef.getIndex - input1.getArity
     }
 
-    generateInputAccess(input._1, input._2, index)
+    generateInputAccess(input._1, input._2, index, input._3)
   }
 
   override def visitFieldAccess(rexFieldAccess: RexFieldAccess): GeneratedExpression = {
     // val index = rexFieldAccess.getField.getIndex
-    // generateInputAccess(input1, input1Term, index)
+    // generateInputAccess(input1, input1Term, index, input1PojoFieldMapping)
     val refExpr = rexFieldAccess.getReferenceExpr.accept(this)
     val index = rexFieldAccess.getField.getIndex
     val fieldAccessExpr = generateFieldAccess(refExpr.resultType, refExpr.resultTerm, index)
@@ -994,7 +1000,8 @@ class CodeGenerator(
   private def generateInputAccess(
       inputType: TypeInformation[Any],
       inputTerm: String,
-      index: Int)
+      index: Int,
+      pojoFieldMapping: Option[Array[Int]])
     : GeneratedExpression = {
     // if input has been used before, we can reuse the code that
     // has already been generated
@@ -1006,10 +1013,10 @@ class CodeGenerator(
       // generate input access and unboxing if necessary
       case None =>
         val expr = if (nullableInput) {
-          generateNullableInputFieldAccess(inputType, inputTerm, index)
+          generateNullableInputFieldAccess(inputType, inputTerm, index, pojoFieldMapping)
         }
         else {
-          generateFieldAccess(inputType, inputTerm, index)
+          generateFieldAccess(inputType, inputTerm, index, pojoFieldMapping)
         }
 
         reusableInputUnboxingExprs((inputTerm, index)) = expr
@@ -1022,7 +1029,8 @@ class CodeGenerator(
   private def generateNullableInputFieldAccess(
       inputType: TypeInformation[Any],
       inputTerm: String,
-      index: Int)
+      index: Int,
+      pojoFieldMapping: Option[Array[Int]])
     : GeneratedExpression = {
     val resultTerm = newName("result")
     val nullTerm = newName("isNull")
@@ -1030,7 +1038,7 @@ class CodeGenerator(
     val fieldType = inputType match {
       case ct: CompositeType[_] =>
         val fieldIndex = if (ct.isInstanceOf[PojoTypeInfo[_]]) {
-          inputPojoFieldMapping.get(index)
+          pojoFieldMapping.get(index)
         }
         else {
           index
@@ -1041,7 +1049,7 @@ class CodeGenerator(
     }
     val resultTypeTerm = primitiveTypeTermForTypeInfo(fieldType)
     val defaultValue = primitiveDefaultValue(fieldType)
-    val fieldAccessExpr = generateFieldAccess(inputType, inputTerm, index)
+    val fieldAccessExpr = generateFieldAccess(inputType, inputTerm, index, pojoFieldMapping)
 
     val inputCheckCode =
       s"""
@@ -1064,12 +1072,13 @@ class CodeGenerator(
   private def generateFieldAccess(
       inputType: TypeInformation[_],
       inputTerm: String,
-      index: Int)
+      index: Int,
+      pojoFieldMapping: Option[Array[Int]])
     : GeneratedExpression = {
     inputType match {
       case ct: CompositeType[_] =>
         val fieldIndex = if (ct.isInstanceOf[PojoTypeInfo[_]] && inputPojoFieldMapping.nonEmpty) {
-          inputPojoFieldMapping.get(index)
+          pojoFieldMapping.get(index)
         }
         else {
           index

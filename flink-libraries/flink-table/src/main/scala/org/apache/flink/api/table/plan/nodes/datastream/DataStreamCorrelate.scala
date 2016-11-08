@@ -103,13 +103,16 @@ class DataStreamCorrelate(
     val funcRel = scan.asInstanceOf[LogicalTableFunctionScan]
     val rexCall = funcRel.getCall.asInstanceOf[RexCall]
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
+    val pojoFieldMapping = sqlFunction.getPojoFieldMapping
     val udtfTypeInfo = sqlFunction.getRowTypeInfo.asInstanceOf[TypeInformation[Any]]
 
     val generator = new CodeGenerator(
       config,
       false,
       inputDS.getType,
-      Some(udtfTypeInfo))
+      Some(udtfTypeInfo),
+      None,
+      Some(pojoFieldMapping))
 
     val body = functionBody(
       generator,

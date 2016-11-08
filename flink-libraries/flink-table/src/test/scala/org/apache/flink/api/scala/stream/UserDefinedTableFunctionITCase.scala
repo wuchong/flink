@@ -66,7 +66,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
     tEnv.registerFunction("split", TableFunc0)
 
     val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable " +
-      "LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON t.a=MyTable.a"
+      "LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON TRUE"
 
     val result = tEnv.sql(sqlQuery).toDataStream[Row]
     result.addSink(new StreamITCase.StringSink)

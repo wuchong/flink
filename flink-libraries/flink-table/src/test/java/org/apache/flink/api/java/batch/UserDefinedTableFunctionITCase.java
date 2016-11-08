@@ -129,6 +129,30 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 		compareResultAsText(results, expected);
 	}
 
+	@Test
+	public void testUDTFWithPOJO() throws Exception {
+		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+		BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
+
+		DataSet<Tuple5<Integer, Long, Integer, String, Long>> ds1 =
+			CollectionDataSets.getSmall5TupleDataSet(env);
+
+		Table table = tableEnv.fromDataSet(ds1, "a, b, c, d, e");
+
+		tableEnv.registerFunction("func2", new TableFunc2());
+
+		// do not apply alias after table function, because POJO field order is not determined
+		Table result = table.crossApply("func2(d)")
+			.select("d,word,length");
+
+		DataSet<Row> ds = tableEnv.toDataSet(result, Row.class);
+		List<Row> results = ds.collect();
+		String expected = "Hallo,Hallo,5\n" + "Hallo Welt,Hallo,5\n" + "Hallo Welt,Welt,4\n" +
+		                  "Hallo Welt wie,Hallo,5\n" + "Hallo Welt wie,Welt,4\n" +
+		                  "Hallo Welt wie,wie,3\n";
+		compareResultAsText(results, expected);
+	}
+
 
 	public static class TableFunc0 extends TableFunction<Integer> {
 		public void eval(int a, int b) {
@@ -150,6 +174,27 @@ public class UserDefinedTableFunctionITCase extends TableProgramsTestBase {
 					collect(new Tuple2<>(s, s.length()));
 				}
 			}
+		}
+	}
+
+	public static class TableFunc2 extends TableFunction<WordLength> {
+		public void eval(String str) {
+			for (String s : str.split(" ")) {
+				collect(new WordLength(s, s.length()));
+			}
+		}
+	}
+
+	public static class WordLength {
+		public String word;
+		public int length;
+
+		public WordLength() {
+		}
+
+		public WordLength(String word, int length) {
+			this.word = word;
+			this.length = length;
 		}
 	}
 
