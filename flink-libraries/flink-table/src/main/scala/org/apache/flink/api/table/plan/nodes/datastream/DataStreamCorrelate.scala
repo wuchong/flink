@@ -17,10 +17,9 @@
  */
 package org.apache.flink.api.table.plan.nodes.datastream
 
-import org.apache.calcite.plan.{RelOptCluster, RelOptCost, RelOptPlanner, RelTraitSet}
+import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.logical.LogicalTableFunctionScan
-import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex.{RexCall, RexNode}
 import org.apache.calcite.sql.SemiJoinType
@@ -41,7 +40,7 @@ class DataStreamCorrelate(
     traitSet: RelTraitSet,
     inputNode: RelNode,
     scan: LogicalTableFunctionScan,
-    condition: RexNode,
+    condition: Option[RexNode],
     relRowType: RelDataType,
     joinRowType: RelDataType,
     joinType: SemiJoinType,
@@ -50,12 +49,6 @@ class DataStreamCorrelate(
   with FlinkCorrelate
   with DataStreamRel {
   override def deriveRowType() = relRowType
-
-
-  override def computeSelfCost(planner: RelOptPlanner, metadata: RelMetadataQuery): RelOptCost = {
-    val rowCnt = metadata.getRowCount(getInput) + 10
-    planner.getCostFactory.makeCost(rowCnt, rowCnt, 0)
-  }
 
   override def copy(traitSet: RelTraitSet, inputs: java.util.List[RelNode]): RelNode = {
     new DataStreamCorrelate(
@@ -71,24 +64,26 @@ class DataStreamCorrelate(
   }
 
   override def toString: String = {
-    val funcRel = unwrap(scan)
-    val rexCall = funcRel.getCall.asInstanceOf[RexCall]
+    val rexCall = scan.getCall.asInstanceOf[RexCall]
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     correlateToString(rexCall, sqlFunction)
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {
-    val funcRel = unwrap(scan)
-    val rexCall = funcRel.getCall.asInstanceOf[RexCall]
+    val rexCall = scan.getCall.asInstanceOf[RexCall]
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     super.explainTerms(pw)
-      .item("lateral", correlateToString(rexCall, sqlFunction))
-      .item("select", selectToString(relRowType))
+      .item("invocation", scan.getCall)
+      .item("function", sqlFunction.getTableFunction.getClass.getCanonicalName)
+      .item("rowType", relRowType)
+      .item("joinType", joinType)
+      .itemIf("condition", condition.orNull, condition.isDefined)
   }
 
-
-  override def translateToPlan(tableEnv: StreamTableEnvironment,
-                               expectedType: Option[TypeInformation[Any]]): DataStream[Any] = {
+  override def translateToPlan(
+      tableEnv: StreamTableEnvironment,
+      expectedType: Option[TypeInformation[Any]])
+    : DataStream[Any] = {
 
     val config = tableEnv.getConfig
     val returnType = determineReturnType(
@@ -97,8 +92,8 @@ class DataStreamCorrelate(
       config.getNullCheck,
       config.getEfficientTypeUsage)
 
-    val inputDS = inputNode.asInstanceOf[DataStreamRel]
-      .translateToPlan(tableEnv, Some(inputRowType(inputNode)))
+    // do not need to specify input type
+    val inputDS = inputNode.asInstanceOf[DataStreamRel].translateToPlan(tableEnv)
 
     val funcRel = scan.asInstanceOf[LogicalTableFunctionScan]
     val rexCall = funcRel.getCall.asInstanceOf[RexCall]

@@ -48,7 +48,7 @@ import org.apache.flink.api.table.{FlinkTypeFactory, ValidationException}
   * recommended to declare parameters and result types as primitive types instead of their boxed
   * classes. DATE/TIME is equal to int, TIMESTAMP is equal to long.
   */
-abstract class ScalarFunction extends UserDefinedFunction with EvaluableFunction {
+abstract class ScalarFunction extends UserDefinedFunction {
 
   /**
     * Creates a call to a [[ScalarFunction]] in Scala Table API.
@@ -60,13 +60,6 @@ abstract class ScalarFunction extends UserDefinedFunction with EvaluableFunction
     ScalarFunctionCall(this, params)
   }
 
-
-  override private[flink] final def createSqlFunction(
-      name: String,
-      typeFactory: FlinkTypeFactory)
-    : SqlFunction = {
-    new ScalarSqlFunction(name, this, typeFactory)
-  }
 
   // ----------------------------------------------------------------------------------------------
 
@@ -101,7 +94,8 @@ abstract class ScalarFunction extends UserDefinedFunction with EvaluableFunction
         TypeExtractor.getForClass(c)
       } catch {
         case ite: InvalidTypesException =>
-          throw new ValidationException(s"Parameter types of scalar function '$this' cannot be " +
+          throw new ValidationException(
+            s"Parameter types of scalar function '${this.getClass.getCanonicalName}' cannot be " +
             s"automatically determined. Please provide type information manually.")
       }
     }

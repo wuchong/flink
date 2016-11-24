@@ -26,7 +26,7 @@ import org.apache.calcite.rex.RexNode
 import org.apache.flink.api.table.plan.nodes.datastream.{DataStreamCorrelate, DataStreamConvention}
 
 /**
-  * parser cross/outer apply
+  * Rule to convert a LogicalCorrelate into a DataStreamCorrelate.
   */
 class DataStreamCorrelateRule
   extends ConverterRule(
@@ -57,14 +57,14 @@ class DataStreamCorrelateRule
     val convInput: RelNode = RelOptRule.convert(join.getInput(0), DataStreamConvention.INSTANCE)
     val right: RelNode = join.getInput(1)
 
-    def convertToCorrelate(relNode: RelNode, condition: RexNode): DataStreamCorrelate = {
+    def convertToCorrelate(relNode: RelNode, condition: Option[RexNode]): DataStreamCorrelate = {
       relNode match {
         case rel: RelSubset =>
           convertToCorrelate(rel.getRelList.get(0), condition)
 
         case filter: LogicalFilter =>
           convertToCorrelate(filter.getInput.asInstanceOf[RelSubset].getOriginal,
-                             filter.getCondition)
+                             Some(filter.getCondition))
 
         case scan: LogicalTableFunctionScan =>
           new DataStreamCorrelate(
@@ -79,7 +79,7 @@ class DataStreamCorrelateRule
             description)
       }
     }
-    convertToCorrelate(right, null)
+    convertToCorrelate(right, None)
   }
 
 }

@@ -33,12 +33,12 @@ import org.apache.flink.api.java.typeutils.{GenericTypeInfo, PojoTypeInfo, Tuple
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.flink.api.table.codegen.CodeGenUtils._
 import org.apache.flink.api.table.codegen.Indenter.toISC
-import org.apache.flink.api.table.codegen.calls.ScalarFunctions
+import org.apache.flink.api.table.codegen.calls.SqlFunctions
 import org.apache.flink.api.table.codegen.calls.ScalarOperators._
 import org.apache.flink.api.table.functions.UserDefinedFunction
 import org.apache.flink.api.table.typeutils.{RowTypeInfo, TypeConverter}
 import org.apache.flink.api.table.typeutils.TypeCheckUtils._
-import org.apache.flink.api.table.{TableException, FlinkTypeFactory, TableConfig}
+import org.apache.flink.api.table.{FlinkTypeFactory, TableConfig}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -359,7 +359,7 @@ class CodeGenerator(
     val input2AccessExprs = input2 match {
       case Some(ti) => for (i <- 0 until ti.getArity)
         yield generateFieldAccess(ti, input2Term, i, input2PojoFieldMapping)
-      case None => throw new TableException("type information of input2 must not be null")
+      case None => throw new CodeGenException("type information of input2 must not be null")
     }
     (input1AccessExprs, input2AccessExprs)
   }
@@ -971,7 +971,7 @@ class CodeGenerator(
 
       // advanced scalar functions
       case sqlOperator: SqlOperator =>
-        val callGen = ScalarFunctions.getCallGenerator(
+        val callGen = SqlFunctions.getCallGenerator(
           sqlOperator,
           operands.map(_.resultType),
           resultType)

@@ -150,8 +150,7 @@ class StreamTableEnvironment(
     * @param name The name under which the function is registered.
     * @param tf The TableFunction to register
     */
-  def registerFunction[T: TypeInformation](name: String, tf: TableFunction[T]): Unit ={
+  def registerFunction[T: TypeInformation](name: String, tf: TableFunction[T]): Unit = {
     registerTableFunctionInternal(name, tf)
   }
-
 }

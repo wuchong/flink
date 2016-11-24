@@ -20,7 +20,7 @@ package org.apache.flink.api.table.expressions
 import org.apache.calcite.rex.RexNode
 import org.apache.calcite.tools.RelBuilder
 import org.apache.flink.api.table.functions.ScalarFunction
-import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils.{getResultType, getSignature, signatureToString, signaturesToString}
+import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils.{getResultType, getSignature, signatureToString, signaturesToString, createScalarSqlFunction}
 import org.apache.flink.api.table.validate.{ValidationResult, ValidationFailure, ValidationSuccess}
 import org.apache.flink.api.table.{FlinkTypeFactory, UnresolvedException}
 
@@ -63,7 +63,7 @@ case class ScalarFunctionCall(
   override private[flink] def toRexNode(implicit relBuilder: RelBuilder): RexNode = {
     val typeFactory = relBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
     relBuilder.call(
-      scalarFunction.getSqlFunction(scalarFunction.toString, typeFactory),
+      createScalarSqlFunction(scalarFunction.toString, scalarFunction, typeFactory),
       parameters.map(_.toRexNode): _*)
   }
 

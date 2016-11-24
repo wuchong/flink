@@ -401,7 +401,8 @@ class Table(
     }
     new Table(
       tableEnv,
-      Join(this.logicalPlan, right.logicalPlan, joinType, joinPredicate).validate(tableEnv))
+      Join(this.logicalPlan, right.logicalPlan, joinType, joinPredicate, correlated = false)
+        .validate(tableEnv))
   }
 
   /**
@@ -610,7 +611,7 @@ class Table(
   }
 
   /**
-    * The Cross Apply returns rows form the outer table (table on the left of the Apply operator)
+    * The Cross Apply returns rows from the outer table (table on the left of the Apply operator)
     * that produces matching values from the table-valued function (which is on the right side of
     * the operator).
     *
@@ -626,15 +627,15 @@ class Table(
     *   }
     *
     *   val split = new MySplitUDTF()
-    *   table.crossApply(split('c).as('s)).select('a,'b,'c,'s)
+    *   table.crossApply(split('c) as ('s)).select('a,'b,'c,'s)
     * }}}
     */
-  def crossApply(udtf: TableFunctionCall[_]): Table = {
+  def crossApply(udtf: TableFunctionCall): Table = {
     applyInternal(udtf, JoinType.INNER)
   }
 
   /**
-    * The Cross Apply returns rows form the outer table (table on the left of the Apply operator)
+    * The Cross Apply returns rows from the outer table (table on the left of the Apply operator)
     * that produces matching values from the table-valued function (which is on the right side of
     * the operator).
     *
@@ -650,7 +651,7 @@ class Table(
     *   }
     *
     *   val split = new MySplitUDTF()
-    *   table.crossApply("split('c') as (s)").select("a, b, c, s")
+    *   table.crossApply("split(c) as (s)").select("a, b, c, s")
     * }}}
     */
   def crossApply(udtf: String): Table = {
@@ -658,7 +659,7 @@ class Table(
   }
 
   /**
-    * The Cross Apply returns rows form the outer table (table on the left of the Apply operator)
+    * The Cross Apply returns rows from the outer table (table on the left of the Apply operator)
     * that produces matching values from the table-valued function (which is on the right side of
     * the operator).
     *
@@ -674,10 +675,10 @@ class Table(
     *   }
     *
     *   val split = new MySplitUDTF()
-    *   table.outerApply(split('c).as('s)).select('a,'b,'c,'s)
+    *   table.outerApply(split('c) as ('s)).select('a,'b,'c,'s)
     * }}}
     */
-  def outerApply(udtf: TableFunctionCall[_]): Table = {
+  def outerApply(udtf: TableFunctionCall): Table = {
     applyInternal(udtf, JoinType.LEFT_OUTER)
   }
 
@@ -692,7 +693,7 @@ class Table(
     *
     * {{{
     *   val split = new MySplitUDTF()
-    *   table.crossApply("split('c') as (s)").select("a, b, c, s")
+    *   table.outerApply("split(c) as (s)").select("a, b, c, s")
     * }}}
     */
   def outerApply(udtf: String): Table = {
@@ -721,16 +722,11 @@ class Table(
     }
   }
 
-  private def applyInternal(node: LogicalNode, joinType: JoinType): Table = {
-    node match {
-      case udtf: TableFunctionCall[_] =>
-        udtf.setChild(this.logicalPlan)
-        new Table(
-          tableEnv,
-          Join(this.logicalPlan, udtf.validate(tableEnv), joinType, None,
-               Some(relBuilder.getCluster.createCorrel())).validate(tableEnv))
-      case _ => throw new TableException("Cross/Outer Apply only accept TableFunction")
-    }
+  private def applyInternal(node: TableFunctionCall, joinType: JoinType): Table = {
+    val logicalCall = node.toLogicalTableFunctionCall(this.logicalPlan).validate(tableEnv)
+    new Table(
+      tableEnv,
+      Join(this.logicalPlan, logicalCall, joinType, None, correlated = true).validate(tableEnv))
   }
 
   /**

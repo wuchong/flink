@@ -18,18 +18,16 @@
 
 package org.apache.flink.api.table.functions
 
-import org.apache.calcite.sql.SqlFunction
-import org.apache.flink.annotation.Internal
+import java.util
+
 import org.apache.flink.api.common.functions.InvalidTypesException
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
-import org.apache.flink.api.table.{ValidationException, FlinkTypeFactory}
-
-import scala.collection.mutable.ListBuffer
+import org.apache.flink.api.table.ValidationException
 
 /**
   * Base class for a user-defined table function (UDTF). A user-defined table functions works on
-  * one row as input and returns multiple rows as output.
+  * zero, one, or multiple scalar values as input and returns multiple rows as output.
   *
   * The behavior of a [[TableFunction]] can be defined by implementing a custom evaluation
   * method. An evaluation method must be declared publicly and named "eval". Evaluation methods
@@ -47,36 +45,65 @@ import scala.collection.mutable.ListBuffer
   * recommended to declare parameters and result types as primitive types instead of their boxed
   * classes. DATE/TIME is equal to int, TIMESTAMP is equal to long.
   *
+  * Example:
+  *
+  * {{{
+  *
+  *   public class Split extends TableFunction<String> {
+  *
+  *     // implement an "eval" method with several parameters you want
+  *     public void eval(String str) {
+  *       for (String s : str.split(" ")) {
+  *         collect(s);   // use collect(...) to emit an output row
+  *       }
+  *     }
+  *
+  *     // can overloading eval method here ...
+  *   }
+  *
+  *   val tEnv: TableEnvironment = ...
+  *   val table: Table = ...    // schema: [a: String]
+  *
+  *   // for Scala users
+  *   val split = new Split()
+  *   table.crossApply(split('c) as ('s)).select('a, 's)
+  *
+  *   // for Java users
+  *   tEnv.registerFunction("split", new Split())   // register table function first
+  *   table.crossApply("split(a) as (s)").select("a, s")
+  *
+  *   // for SQL users
+  *   tEnv.registerFunction("split", new Split())   // register table function first
+  *   tEnv.sql("SELECT a, s FROM MyTable, LATERAL TABLE(split(a)) as T(s)")
+  *
+  * }}}
+  *
   * @tparam T The type of the output row
   */
-abstract class TableFunction[T] extends UserDefinedFunction with EvaluableFunction {
+abstract class TableFunction[T] extends UserDefinedFunction {
 
-  private val rows: ListBuffer[T] = new ListBuffer
+  private val rows: util.ArrayList[T] = new util.ArrayList[T]()
 
   /**
-    * Emit an output row
+    * Emit an output row.
     *
     * @param row the output row
     */
   protected def collect(row: T): Unit = {
     // cache rows for now, maybe immediately process them further
-    rows += row
+    rows.add(row)
   }
 
 
-  @Internal
-  def getRowsIterator = rows.toIterator
+  /**
+    * Internal use. Get an iterator of the buffered rows.
+    */
+  def getRowsIterator = rows.iterator()
 
-  @Internal
+  /**
+    * Internal use. Clear buffered rows.
+    */
   def clear() = rows.clear()
-
-  // this method will not be called, because we need to register multiple sql function at one time
-  override private[flink] final def createSqlFunction(
-      name: String,
-      typeFactory: FlinkTypeFactory)
-    : SqlFunction = {
-    throw new UnsupportedOperationException("this method should not be called")
-  }
 
   // ----------------------------------------------------------------------------------------------
 
@@ -92,28 +119,4 @@ abstract class TableFunction[T] extends UserDefinedFunction with EvaluableFuncti
     */
   def getResultType: TypeInformation[T] = null
 
-  /**
-    * Returns [[TypeInformation]] about the operands of the evaluation method with a given
-    * signature.
-    *
-    * In order to perform operand type inference in SQL (especially when NULL is used) it might be
-    * necessary to determine the parameter [[TypeInformation]] of an evaluation method.
-    * By default Flink's type extraction facilities are used for this but might be wrong for
-    * more complex, custom, or composite types.
-    *
-    * @param signature signature of the method the operand types need to be determined
-    * @return [[TypeInformation]] of  operand types
-    */
-  def getParameterTypes(signature: Array[Class[_]]): Array[TypeInformation[_]] = {
-    signature.map { c =>
-      try {
-        TypeExtractor.getForClass(c)
-      } catch {
-        case ite: InvalidTypesException =>
-          throw new ValidationException(
-            s"Parameter types of scalar function '$this' cannot be " +
-              s"automatically determined. Please provide type information manually.")
-      }
-    }
-  }
 }

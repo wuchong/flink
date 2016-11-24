@@ -21,7 +21,7 @@ import org.apache.flink.api.scala.batch.utils.TableProgramsTestBase
 import org.apache.flink.api.scala.batch.utils.TableProgramsTestBase.TableConfigMode
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.table._
-import org.apache.flink.api.table.expressions.utils.{TableFunc0, TableFunc2, TableFunc1}
+import org.apache.flink.api.table.expressions.utils._
 import org.apache.flink.api.table.{Row, Table, TableEnvironment}
 import org.apache.flink.test.util.MultipleProgramsTestBase.TestExecutionMode
 import org.apache.flink.test.util.TestBaseUtils
@@ -39,12 +39,12 @@ class UserDefinedTableFunctionITCase(
   extends TableProgramsTestBase(mode, configMode) {
 
   @Test
-  def testUDTF(): Unit = {
+  def testSQLCrossApply(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
     tableEnv.registerTable("MyTable", in)
-    tableEnv.registerFunction("split", TableFunc1)
+    tableEnv.registerFunction("split", new TableFunc1)
 
     val sqlQuery = "SELECT MyTable.c, t.s FROM MyTable, LATERAL TABLE(split(c)) AS t(s)"
 
@@ -53,40 +53,15 @@ class UserDefinedTableFunctionITCase(
     val expected: String = "Jack#22,Jack\n" + "Jack#22,22\n" + "John#19,John\n" + "John#19,19\n" +
       "Anna#44,Anna\n" + "Anna#44,44\n"
     TestBaseUtils.compareResultAsText(results.asJava, expected)
-
-    // with overloading
-    val sqlQuery2 = "SELECT MyTable.c, t.s FROM MyTable, LATERAL TABLE(split(c, '$')) AS t(s)"
-    val result2 = tableEnv.sql(sqlQuery2).toDataSet[Row]
-    val results2 = result2.collect()
-    val expected2: String = "Jack#22,$Jack\n" + "Jack#22,$22\n" + "John#19,$John\n" +
-      "John#19,$19\n" + "Anna#44,$Anna\n" + "Anna#44,$44\n"
-    TestBaseUtils.compareResultAsText(results2.asJava, expected2)
   }
 
   @Test
-  def testUDTFCustomReturnType(): Unit = {
+  def testSQLOuterApply(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
     tableEnv.registerTable("MyTable", in)
-    tableEnv.registerFunction("split", TableFunc2)
-
-    val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable, LATERAL TABLE(split(c)) AS t(a,b)"
-
-    val result = tableEnv.sql(sqlQuery).toDataSet[Row]
-    val results = result.collect()
-    val expected: String = "Jack#22,Jack,4\n" + "Jack#22,22,2\n" + "John#19,John,4\n" +
-      "John#19,19,2\n" + "Anna#44,Anna,4\n" + "Anna#44,44,2\n"
-    TestBaseUtils.compareResultAsText(results.asJava, expected)
-  }
-
-  @Test
-  def testUDTFWithOuterApply(): Unit = {
-    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
-    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
-    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
-    tableEnv.registerTable("MyTable", in)
-    tableEnv.registerFunction("split", TableFunc2)
+    tableEnv.registerFunction("split", new TableFunc2)
 
     val sqlQuery = "SELECT MyTable.c, t.a, t.b  FROM MyTable LEFT JOIN LATERAL TABLE(split(c)) " +
       "AS t(a,b) ON TRUE"
@@ -99,54 +74,132 @@ class UserDefinedTableFunctionITCase(
   }
 
   @Test
-  def testUDTFWithFilter(): Unit = {
+  def testTableAPICrossApply(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
-    tableEnv.registerTable("MyTable", in)
-    tableEnv.registerFunction("split", TableFunc0)
 
-    val sqlQuery = "SELECT MyTable.c, t.name, t.age " +
-      "FROM MyTable, LATERAL TABLE(split(c)) AS t(name,age) " +
-      "WHERE t.age > 20"
-
-    val result = tableEnv.sql(sqlQuery).toDataSet[Row]
+    val func1 = new TableFunc1
+    val result = in.crossApply(func1('c) as ('s)).select('c, 's).toDataSet[Row]
     val results = result.collect()
-    val expected: String = "Jack#22,Jack,22\n" + "Anna#44,Anna,44\n"
+    val expected: String = "Jack#22,Jack\n" + "Jack#22,22\n" + "John#19,John\n" + "John#19,19\n" +
+      "Anna#44,Anna\n" + "Anna#44,44\n"
     TestBaseUtils.compareResultAsText(results.asJava, expected)
+
+    // with overloading
+    val result2 = in.crossApply(func1('c, "$") as ('s)).select('c, 's).toDataSet[Row]
+    val results2 = result2.collect()
+    val expected2: String = "Jack#22,$Jack\n" + "Jack#22,$22\n" + "John#19,$John\n" +
+      "John#19,$19\n" + "Anna#44,$Anna\n" + "Anna#44,$44\n"
+    TestBaseUtils.compareResultAsText(results2.asJava, expected2)
   }
 
+
   @Test
-  def testUDTFWithTableAPI(): Unit = {
+  def testTableAPIOuterApply(): Unit = {
     val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
     val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
-
-    val table = in.crossApply(TableFunc0('c) as ('name, 'age))
-      .select('c, 'name, 'age)
-      .where('age > 20)
-
-    val result = table.toDataSet[Row]
-    val results = result.collect()
-    val expected: String = "Jack#22,Jack,22\n" + "Anna#44,Anna,44\n"
-    TestBaseUtils.compareResultAsText(results.asJava, expected)
-  }
-
-  @Test
-  def testUDTFWithTableAPIAndOuterApply(): Unit = {
-    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
-    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
-    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
-
-    val table = in.outerApply(TableFunc2('c) as ('name, 'age))
-      .select('c, 'name, 'age)
-
-    val result = table.toDataSet[Row]
+    val func2 = new TableFunc2
+    val result = in.outerApply(func2('c) as ('s, 'l)).select('c, 's, 'l).toDataSet[Row]
     val results = result.collect()
     val expected: String = "Jack#22,Jack,4\n" + "Jack#22,22,2\n" + "John#19,John,4\n" +
       "John#19,19,2\n" + "Anna#44,Anna,4\n" + "Anna#44,44,2\n" + "nosharp,null,null"
     TestBaseUtils.compareResultAsText(results.asJava, expected)
   }
+
+
+  @Test
+  def testCustomReturnType(): Unit = {
+    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
+    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
+    val func2 = new TableFunc2
+
+    val result = in
+      .crossApply(func2('c) as ('name, 'len))
+      .select('c, 'name, 'len)
+      .toDataSet[Row]
+
+    val results = result.collect()
+    val expected: String = "Jack#22,Jack,4\n" + "Jack#22,22,2\n" + "John#19,John,4\n" +
+      "John#19,19,2\n" + "Anna#44,Anna,4\n" + "Anna#44,44,2\n"
+    TestBaseUtils.compareResultAsText(results.asJava, expected)
+  }
+
+  @Test
+  def testHierarchyType(): Unit = {
+    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
+    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
+
+    val hierarchy = new HierarchyTableFunction
+    val result = in
+      .crossApply(hierarchy('c) as ('name, 'adult, 'len))
+      .select('c, 'name, 'adult, 'len)
+      .toDataSet[Row]
+
+    val results = result.collect()
+    val expected: String = "Jack#22,Jack,true,22\n" + "John#19,John,false,19\n" +
+      "Anna#44,Anna,true,44\n"
+    TestBaseUtils.compareResultAsText(results.asJava, expected)
+  }
+
+  @Test
+  def testPojoType(): Unit = {
+    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
+    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
+
+    val pojo = new PojoTableFunc()
+    val result = in
+      .crossApply(pojo('c))
+      .select('c, 'name, 'age)
+      .toDataSet[Row]
+
+    val results = result.collect()
+    val expected: String = "Jack#22,Jack,22\n" + "John#19,John,19\n" + "Anna#44,Anna,44\n"
+    TestBaseUtils.compareResultAsText(results.asJava, expected)
+  }
+
+
+  @Test
+  def testTableAPIWithFilter(): Unit = {
+    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
+    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
+    val func0 = new TableFunc0
+
+    val result = in
+      .crossApply(func0('c) as ('name, 'age))
+      .select('c, 'name, 'age)
+      .filter('age > 20)
+      .toDataSet[Row]
+
+    val results = result.collect()
+    val expected: String = "Jack#22,Jack,22\n" + "Anna#44,Anna,44\n"
+    TestBaseUtils.compareResultAsText(results.asJava, expected)
+  }
+
+
+  @Test
+  def testUDTFWithScalarFunction(): Unit = {
+    val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv: BatchTableEnvironment = TableEnvironment.getTableEnvironment(env)
+    val in: Table = getSmall3TupleDataSet(env).toTable(tableEnv).as('a, 'b, 'c)
+    val func1 = new TableFunc1
+
+    val result = in
+      .crossApply(func1('c.substring(2)) as 's)
+      .select('c, 's)
+      .toDataSet[Row]
+
+    val results = result.collect()
+    val expected: String = "Jack#22,ack\n" + "Jack#22,22\n" + "John#19,ohn\n" + "John#19,19\n" +
+      "Anna#44,nna\n" + "Anna#44,44\n"
+    TestBaseUtils.compareResultAsText(results.asJava, expected)
+  }
+
 
   private def getSmall3TupleDataSet(env: ExecutionEnvironment): DataSet[(Int, Long, String)] = {
     val data = new mutable.MutableList[(Int, Long, String)]

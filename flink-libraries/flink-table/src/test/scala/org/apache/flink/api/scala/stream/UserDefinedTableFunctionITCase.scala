@@ -20,7 +20,7 @@ package org.apache.flink.api.scala.stream
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.stream.utils.StreamITCase
 import org.apache.flink.api.scala.table._
-import org.apache.flink.api.table.expressions.utils.TableFunc0
+import org.apache.flink.api.table.expressions.utils.{TableFunc0, TableFunc1}
 import org.apache.flink.api.table.{Row, TableEnvironment}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.util.StreamingMultipleProgramsTestBase
@@ -32,7 +32,7 @@ import scala.collection.mutable
 class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
 
   @Test
-  def testUDTF(): Unit = {
+  def testSQLCrossApply(): Unit = {
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     val tEnv = TableEnvironment.getTableEnvironment(env)
@@ -41,7 +41,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
     val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
     tEnv.registerTable("MyTable", t)
 
-    tEnv.registerFunction("split", TableFunc0)
+    tEnv.registerFunction("split", new TableFunc0)
 
     val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable, LATERAL TABLE(split(c)) AS t(n,a)"
 
@@ -55,7 +55,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
   }
 
   @Test
-  def testUDTFWithOuterApply(): Unit = {
+  def testSQLOuterApply(): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     val tEnv = TableEnvironment.getTableEnvironment(env)
     StreamITCase.clear
@@ -63,7 +63,7 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
     val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
     tEnv.registerTable("MyTable", t)
 
-    tEnv.registerFunction("split", TableFunc0)
+    tEnv.registerFunction("split", new TableFunc0)
 
     val sqlQuery = "SELECT MyTable.c, t.n, t.a FROM MyTable " +
       "LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON TRUE"
@@ -72,80 +72,103 @@ class UserDefinedTableFunctionITCase extends StreamingMultipleProgramsTestBase {
     result.addSink(new StreamITCase.StringSink)
     env.execute()
 
-    val expected = mutable.MutableList("nosharp,null,null","Jack#22,Jack,22",
-                                       "John#19,John,19", "Anna#44,Anna,44")
+    val expected = mutable.MutableList(
+      "nosharp,null,null", "Jack#22,Jack,22",
+      "John#19,John,19", "Anna#44,Anna,44")
     assertEquals(expected.sorted, StreamITCase.testResults.sorted)
   }
 
   @Test
-  def testUDTFWithFilter(): Unit = {
+  def testTableAPICrossApply(): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     val tEnv = TableEnvironment.getTableEnvironment(env)
     StreamITCase.clear
 
     val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
-    tEnv.registerTable("MyTable", t)
-
-    tEnv.registerFunction("split", TableFunc0)
-
-    val sqlQuery = "SELECT MyTable.c, t.n, t.a " +
-      "FROM MyTable LEFT JOIN LATERAL TABLE(split(c)) AS t(n,a) ON TRUE " +
-      "WHERE t.a < 30"
-
-    val result = tEnv.sql(sqlQuery).toDataStream[Row]
-    result.addSink(new StreamITCase.StringSink)
-    env.execute()
-
-    val expected = mutable.MutableList("Jack#22,Jack,22", "John#19,John,19")
-    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
-  }
-
-  @Test
-  def testUDTFWithScalaTableAPI(): Unit = {
-    val env = StreamExecutionEnvironment.getExecutionEnvironment
-    val tEnv = TableEnvironment.getTableEnvironment(env)
-    StreamITCase.clear
-
-    val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
+    val func0 = new TableFunc0
 
     val result = t
-      .crossApply(TableFunc0('c) as ('d, 'e))
-      .select('c, 'd, 'e)
-      .filter('e < 30)
-      .toDataStream[Row]
-
-    result.addSink(new StreamITCase.StringSink)
-    env.execute()
-
-    val expected = mutable.MutableList("Jack#22,Jack,22", "John#19,John,19")
-    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
-  }
-
-  @Test
-  def testUDTFWithScalaTableAPIAndOuterApply(): Unit = {
-    val env = StreamExecutionEnvironment.getExecutionEnvironment
-    val tEnv = TableEnvironment.getTableEnvironment(env)
-    StreamITCase.clear
-
-    val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
-
-    val result = t
-      .outerApply(TableFunc0('c) as ('d, 'e))
+      .crossApply(func0('c) as('d, 'e))
       .select('c, 'd, 'e)
       .toDataStream[Row]
 
     result.addSink(new StreamITCase.StringSink)
     env.execute()
 
-    val expected = mutable.MutableList("nosharp,null,null","Jack#22,Jack,22",
-                                       "John#19,John,19", "Anna#44,Anna,44")
+    val expected = mutable.MutableList("Jack#22,Jack,22", "John#19,John,19", "Anna#44,Anna,44")
     assertEquals(expected.sorted, StreamITCase.testResults.sorted)
   }
 
+  @Test
+  def testTableAPIOuterApply(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.clear
 
+    val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
+    val func0 = new TableFunc0
 
-  private def getSmall3TupleDataStream(env: StreamExecutionEnvironment):
-  DataStream[(Int, Long, String)] = {
+    val result = t
+      .outerApply(func0('c) as('d, 'e))
+      .select('c, 'd, 'e)
+      .toDataStream[Row]
+
+    result.addSink(new StreamITCase.StringSink)
+    env.execute()
+
+    val expected = mutable.MutableList(
+      "nosharp,null,null", "Jack#22,Jack,22",
+      "John#19,John,19", "Anna#44,Anna,44")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+  @Test
+  def testTableAPIWithFilter(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.clear
+
+    val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
+    val func0 = new TableFunc0
+
+    val result = t
+      .crossApply(func0('c) as('name, 'age))
+      .select('c, 'name, 'age)
+      .filter('age > 20)
+      .toDataStream[Row]
+
+    result.addSink(new StreamITCase.StringSink)
+    env.execute()
+
+    val expected = mutable.MutableList("Jack#22,Jack,22", "Anna#44,Anna,44")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+  @Test
+  def testTableAPIWithScalarFunction(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.clear
+
+    val t = getSmall3TupleDataStream(env).toTable(tEnv).as('a, 'b, 'c)
+    val func1 = new TableFunc1
+
+    val result = t
+      .crossApply(func1('c.substring(2)) as 's)
+      .select('c, 's)
+      .toDataStream[Row]
+
+    result.addSink(new StreamITCase.StringSink)
+    env.execute()
+
+    val expected = mutable.MutableList("Jack#22,ack", "Jack#22,22", "John#19,ohn",
+                                       "John#19,19", "Anna#44,nna", "Anna#44,44")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+  private def getSmall3TupleDataStream(
+    env: StreamExecutionEnvironment)
+  : DataStream[(Int, Long, String)] = {
 
     val data = new mutable.MutableList[(Int, Long, String)]
     data.+=((1, 1L, "Jack#22"))

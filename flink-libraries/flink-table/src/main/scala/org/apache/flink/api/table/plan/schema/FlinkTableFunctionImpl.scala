@@ -27,11 +27,18 @@ import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.common.typeutils.CompositeType
 import org.apache.flink.api.table.{FlinkTypeFactory, TableException}
 
-class FlinkTableFunctionImpl[T](val typeInfo: TypeInformation[T],
-                                val fieldIndexes: Array[Int],
-                                val fieldNames: Array[String],
-                                val evalMethod: Method)
-  extends ReflectiveFunctionBase(evalMethod) with TableFunction {
+/**
+  * This is heavily inspired by Calcite's [[org.apache.calcite.schema.impl.TableFunctionImpl]].
+  * We need it in order to create a [[org.apache.flink.api.table.functions.utils.TableSqlFunction]].
+  * The main difference is that we override the [[getRowType()]] and [[getElementType()]].
+  */
+class FlinkTableFunctionImpl[T](
+    val typeInfo: TypeInformation[T],
+    val fieldIndexes: Array[Int],
+    val fieldNames: Array[String],
+    val evalMethod: Method)
+  extends ReflectiveFunctionBase(evalMethod)
+  with TableFunction {
 
   if (fieldIndexes.length != fieldNames.length) {
     throw new TableException(

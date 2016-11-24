@@ -17,20 +17,17 @@
  */
 package org.apache.flink.api.table.plan.nodes
 
-import org.apache.calcite.plan.volcano.RelSubset
-import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
-import org.apache.calcite.rel.logical.LogicalTableFunctionScan
-import org.apache.calcite.rex.{RexNode, RexCall}
+import org.apache.calcite.rex.{RexCall, RexNode}
 import org.apache.calcite.sql.SemiJoinType
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.table.codegen.{CodeGenerator, GeneratedExpression, GeneratedFunction}
+import org.apache.flink.api.table.codegen.CodeGenUtils.primitiveDefaultValue
 import org.apache.flink.api.table.functions.utils.TableSqlFunction
 import org.apache.flink.api.table.runtime.FlatMapRunner
-import org.apache.flink.api.table.typeutils.RowTypeInfo
 import org.apache.flink.api.table.typeutils.TypeConverter._
-import org.apache.flink.api.table.{FlinkTypeFactory, TableConfig}
+import org.apache.flink.api.table.{TableConfig, TableException}
 
 import scala.collection.JavaConversions._
 
@@ -39,14 +36,15 @@ import scala.collection.JavaConversions._
   */
 trait FlinkCorrelate {
 
-  private[flink] def functionBody(generator: CodeGenerator,
-                                  udtfTypeInfo: TypeInformation[Any],
-                                  rowType: RelDataType,
-                                  rexCall: RexCall,
-                                  condition: RexNode,
-                                  config: TableConfig,
-                                  joinType: SemiJoinType,
-                                  expectedType: Option[TypeInformation[Any]]): String = {
+  private[flink] def functionBody(
+      generator: CodeGenerator,
+      udtfTypeInfo: TypeInformation[Any],
+      rowType: RelDataType,
+      rexCall: RexCall,
+      condition: Option[RexNode],
+      config: TableConfig,
+      joinType: SemiJoinType,
+      expectedType: Option[TypeInformation[Any]]): String = {
 
     val returnType = determineReturnType(
       rowType,
@@ -58,37 +56,40 @@ trait FlinkCorrelate {
     val crossResultExpr = generator.generateResultExpression(input1AccessExprs ++ input2AccessExprs,
       returnType, rowType.getFieldNames)
 
-    val input2NullExprs = input2AccessExprs.map(
-      x => GeneratedExpression("null", "true", "", x.resultType))
-    val outerResultExpr = generator.generateResultExpression(input1AccessExprs ++ input2NullExprs,
-      returnType, rowType.getFieldNames)
-
     val call = generator.generateExpression(rexCall)
-    var body = call.code +
-               s"""
-                  |scala.collection.Iterator iter = ${call.resultTerm}.getRowsIterator();
-                """.stripMargin
+    var body =
+      s"""
+         |${call.code}
+         |java.util.Iterator iter = ${call.resultTerm}.getRowsIterator();
+       """.stripMargin
+
     if (joinType == SemiJoinType.INNER) {
       // cross apply
       body +=
         s"""
-           |if (iter.isEmpty()) {
+           |if (!iter.hasNext()) {
            |  return;
            |}
         """.stripMargin
-    } else {
+    } else if (joinType == SemiJoinType.LEFT) {
       // outer apply
+      val input2NullExprs = input2AccessExprs.map(
+        x => GeneratedExpression(primitiveDefaultValue(x.resultType), "true", "", x.resultType))
+      val outerResultExpr = generator.generateResultExpression(
+        input1AccessExprs ++ input2NullExprs, returnType, rowType.getFieldNames)
       body +=
         s"""
-           |if (iter.isEmpty()) {
+           |if (!iter.hasNext()) {
            |  ${outerResultExpr.code}
            |  ${generator.collectorTerm}.collect(${outerResultExpr.resultTerm});
            |  return;
            |}
         """.stripMargin
+    } else {
+      throw TableException(s"Unsupported SemiJoinType: $joinType for correlate join.")
     }
 
-    val projection = if (condition == null) {
+    val projection = if (condition.isEmpty) {
       s"""
          |${crossResultExpr.code}
          |${generator.collectorTerm}.collect(${crossResultExpr.resultTerm});
@@ -97,7 +98,7 @@ trait FlinkCorrelate {
       val filterGenerator = new CodeGenerator(config, false, udtfTypeInfo) {
         override def input1Term: String = input2Term
       }
-      val filterCondition = filterGenerator.generateExpression(condition)
+      val filterCondition = filterGenerator.generateExpression(condition.get)
       s"""
          |${filterGenerator.reuseInputUnboxingCode()}
          |${filterCondition.code}
@@ -120,7 +121,8 @@ trait FlinkCorrelate {
   }
 
   private[flink] def correlateMapFunction(
-     genFunction: GeneratedFunction[FlatMapFunction[Any, Any]]): FlatMapRunner[Any, Any] = {
+      genFunction: GeneratedFunction[FlatMapFunction[Any, Any]])
+    : FlatMapRunner[Any, Any] = {
 
     new FlatMapRunner[Any, Any](
       genFunction.name,
@@ -128,27 +130,16 @@ trait FlinkCorrelate {
       genFunction.returnType)
   }
 
-  private[flink] def inputRowType(input: RelNode): TypeInformation[Any] = {
-    val fieldTypes = input.getRowType.getFieldList.map(t =>
-        FlinkTypeFactory.toTypeInfo(t.getType))
-    new RowTypeInfo(fieldTypes).asInstanceOf[TypeInformation[Any]]
-  }
-
-  private[flink] def unwrap(relNode: RelNode): LogicalTableFunctionScan = {
-    relNode match {
-      case rel: LogicalTableFunctionScan => rel
-      case rel: RelSubset => unwrap(rel.getRelList.get(0))
-      case _ => ???
-    }
-  }
-
   private[flink] def selectToString(rowType: RelDataType): String = {
     rowType.getFieldNames.mkString(",")
   }
 
-  private[flink] def correlateOpName(rexCall: RexCall,
-                                   sqlFunction: TableSqlFunction,
-                                   rowType: RelDataType): String = {
+  private[flink] def correlateOpName(
+      rexCall: RexCall,
+      sqlFunction: TableSqlFunction,
+      rowType: RelDataType)
+    : String = {
+
     s"correlate: ${correlateToString(rexCall, sqlFunction)}, select: ${selectToString(rowType)}"
   }
 

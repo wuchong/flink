@@ -33,9 +33,9 @@ import org.apache.flink.api.table.functions.utils.{TableSqlFunction, ScalarSqlFu
 import scala.collection.mutable
 
 /**
-  * Global hub for user-defined and built-in advanced SQL scalar functions.
+  * Global hub for user-defined and built-in advanced SQL functions.
   */
-object ScalarFunctions {
+object SqlFunctions {
 
   private val sqlFunctions: mutable.Map[(SqlOperator, Seq[TypeInformation[_]]), CallGenerator] =
     mutable.Map()

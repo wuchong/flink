@@ -17,13 +17,12 @@
  */
 package org.apache.flink.api.table.plan.logical
 
-import java.lang.reflect.Method
 
 import com.google.common.collect.Sets
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.CorrelationId
-import org.apache.calcite.rel.logical.{LogicalTableFunctionScan, LogicalProject}
+import org.apache.calcite.rel.logical.LogicalProject
 import org.apache.calcite.rex.{RexInputRef, RexNode}
 import org.apache.calcite.tools.RelBuilder
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo._
@@ -31,16 +30,11 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.operators.join.JoinType
 import org.apache.flink.api.table._
 import org.apache.flink.api.table.expressions._
-import org.apache.flink.api.table.functions.TableFunction
-import org.apache.flink.api.table.functions.utils.TableSqlFunction
-import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils._
 
-import org.apache.flink.api.table.plan.schema.FlinkTableFunctionImpl
 import org.apache.flink.api.table.typeutils.TypeConverter
 import org.apache.flink.api.table.validate.{ValidationFailure, ValidationSuccess}
 
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 case class Project(projectList: Seq[NamedExpression], child: LogicalNode) extends UnaryNode {
@@ -372,7 +366,7 @@ case class Join(
     right: LogicalNode,
     joinType: JoinType,
     condition: Option[Expression],
-    corId: Option[CorrelationId] = None) extends BinaryNode {
+    correlated: Boolean) extends BinaryNode {
 
   override def output: Seq[Attribute] = {
     left.output ++ right.output
@@ -422,7 +416,7 @@ case class Join(
         right)
     }
     val resolvedCondition = node.condition.map(_.postOrderTransform(partialFunction))
-    Join(node.left, node.right, node.joinType, resolvedCondition, corId)
+    Join(node.left, node.right, node.joinType, resolvedCondition, correlated)
   }
 
   override protected[logical] def construct(relBuilder: RelBuilder): RelBuilder = {
@@ -430,8 +424,9 @@ case class Join(
     right.construct(relBuilder)
 
     val corSet = Sets.newHashSet[CorrelationId]()
-    if (corId.nonEmpty) {
-      corSet.add(corId.get)
+
+    if (correlated) {
+      corSet.add(relBuilder.peek().getCluster.createCorrel())
     }
 
     relBuilder.join(
@@ -445,7 +440,7 @@ case class Join(
 
   override def validate(tableEnv: TableEnvironment): LogicalNode = {
     if (tableEnv.isInstanceOf[StreamTableEnvironment]
-      && !right.isInstanceOf[TableFunctionCall[_]]) {
+      && !right.isInstanceOf[LogicalTableFunctionCall]) {
       failValidation(s"Join on stream tables is currently not supported.")
     }
 

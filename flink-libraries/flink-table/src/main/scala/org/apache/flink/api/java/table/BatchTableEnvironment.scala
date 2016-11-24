@@ -17,14 +17,12 @@
  */
 package org.apache.flink.api.java.table
 
-import java.lang.reflect.{ParameterizedType, Type}
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.api.java.{DataSet, ExecutionEnvironment}
 import org.apache.flink.api.table.expressions.ExpressionParser
 import org.apache.flink.api.table.functions.TableFunction
-import org.apache.flink.api.table.{TableException, Table, TableConfig}
+import org.apache.flink.api.table.{Table, TableConfig}
 
 /**
   * The [[org.apache.flink.api.table.TableEnvironment]] for a Java batch [[DataSet]]
@@ -173,16 +171,10 @@ class BatchTableEnvironment(
     * @param tf The TableFunction to register
     */
   def registerFunction[T](name: String, tf: TableFunction[T]): Unit ={
-    val clazz: Type = tf.getClass.getGenericSuperclass
-    val generic = clazz match {
-      case cls: ParameterizedType => cls.getActualTypeArguments.toSeq.head
-      case _ => throw new TableException(
-        "New TableFunction classes have to inherit from TableFunction class, " +
-          "and statement the generic type.")
-    }
-    implicit val typeInfo: TypeInformation[T] = TypeExtractor.createTypeInfo(generic)
+    implicit val typeInfo: TypeInformation[T] = TypeExtractor
+      .createTypeInfo(tf, classOf[TableFunction[_]], tf.getClass, 0)
       .asInstanceOf[TypeInformation[T]]
+
     registerTableFunctionInternal[T](name, tf)
   }
-
 }

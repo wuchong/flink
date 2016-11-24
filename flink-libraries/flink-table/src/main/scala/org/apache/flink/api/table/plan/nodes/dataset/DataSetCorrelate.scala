@@ -41,7 +41,7 @@ class DataSetCorrelate(
     traitSet: RelTraitSet,
     inputNode: RelNode,
     scan: LogicalTableFunctionScan,
-    condition: RexNode,
+    condition: Option[RexNode],
     relRowType: RelDataType,
     joinRowType: RelDataType,
     joinType: SemiJoinType,
@@ -53,8 +53,8 @@ class DataSetCorrelate(
 
 
   override def computeSelfCost(planner: RelOptPlanner, metadata: RelMetadataQuery): RelOptCost = {
-    val rowCnt = metadata.getRowCount(getInput) + 10
-    planner.getCostFactory.makeCost(rowCnt, rowCnt, 0)
+    val rowCnt = metadata.getRowCount(getInput) * 1.5
+    planner.getCostFactory.makeCost(rowCnt, rowCnt, rowCnt * 0.5)
   }
 
   override def copy(traitSet: RelTraitSet, inputs: java.util.List[RelNode]): RelNode = {
@@ -80,13 +80,18 @@ class DataSetCorrelate(
     val rexCall = scan.getCall.asInstanceOf[RexCall]
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     super.explainTerms(pw)
-      .item("lateral", correlateToString(rexCall, sqlFunction))
-      .item("select", selectToString(relRowType))
+      .item("invocation", scan.getCall)
+      .item("function", sqlFunction.getTableFunction.getClass.getCanonicalName)
+      .item("rowType", relRowType)
+      .item("joinType", joinType)
+      .itemIf("condition", condition.orNull, condition.isDefined)
   }
 
 
-  override def translateToPlan(tableEnv: BatchTableEnvironment,
-                               expectedType: Option[TypeInformation[Any]]): DataSet[Any] = {
+  override def translateToPlan(
+      tableEnv: BatchTableEnvironment,
+      expectedType: Option[TypeInformation[Any]])
+    : DataSet[Any] = {
 
     val config = tableEnv.getConfig
     val returnType = determineReturnType(
@@ -95,8 +100,8 @@ class DataSetCorrelate(
       config.getNullCheck,
       config.getEfficientTypeUsage)
 
-    val inputDS = inputNode.asInstanceOf[DataSetRel]
-      .translateToPlan(tableEnv, Some(inputRowType(inputNode)))
+    // do not need to specify input type
+    val inputDS = inputNode.asInstanceOf[DataSetRel].translateToPlan(tableEnv)
 
     val funcRel = scan.asInstanceOf[LogicalTableFunctionScan]
     val rexCall = funcRel.getCall.asInstanceOf[RexCall]

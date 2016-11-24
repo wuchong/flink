@@ -18,7 +18,6 @@
 
 package org.apache.flink.api.java.stream.sql;
 
-import org.apache.flink.api.java.batch.UserDefinedTableFunctionITCase;
 import org.apache.flink.api.java.table.StreamTableEnvironment;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple5;
@@ -116,33 +115,6 @@ public class SqlITCase extends StreamingMultipleProgramsTestBase {
 		expected.add("1,1,Hallo");
 		expected.add("2,2,Hallo Welt");
 		expected.add("2,3,Hallo Welt wie");
-
-		StreamITCase.compareWithList(expected);
-	}
-
-	@Test
-	public void testUDTFWithPOJO() throws Exception {
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
-		StreamITCase.clear();
-
-		DataStream<Tuple3<Integer, Long, String>> ds = StreamTestData.getSmall3TupleDataSet(env);
-		tableEnv.registerDataStream("MyTable", ds, "a, b, c");
-		tableEnv.registerFunction("func2", new UserDefinedTableFunctionITCase.TableFunc2());
-
-		// do not apply alias after table function, because POJO field order is not determined
-		String sqlQuery = "SELECT c, word, length FROM MyTable, LATERAL TABLE(func2(c))";
-		Table result = tableEnv.sql(sqlQuery);
-
-		DataStream<Row> resultSet = tableEnv.toDataStream(result, Row.class);
-		resultSet.addSink(new StreamITCase.StringSink());
-		env.execute();
-
-		List<String> expected = new ArrayList<>();
-		expected.add("Hi,Hi,2");
-		expected.add("Hello,Hello,5");
-		expected.add("Hello world,Hello,5");
-		expected.add("Hello world,world,5");
 
 		StreamITCase.compareWithList(expected);
 	}

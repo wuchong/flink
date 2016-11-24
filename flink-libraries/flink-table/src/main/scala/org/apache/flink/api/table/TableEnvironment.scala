@@ -39,10 +39,10 @@ import org.apache.flink.api.scala.table.{BatchTableEnvironment => ScalaBatchTabl
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.flink.api.scala.{ExecutionEnvironment => ScalaBatchExecEnv}
 import org.apache.flink.api.table.expressions.{Alias, Expression, UnresolvedFieldReference}
-import org.apache.flink.api.table.functions.utils.{TableSqlFunction, UserDefinedFunctionUtils}
-import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction, UserDefinedFunction}
+import org.apache.flink.api.table.functions.utils.UserDefinedFunctionUtils.{checkForInstantiation, checkNotSingleton, createTableSqlFunctions, createScalarSqlFunction}
+import org.apache.flink.api.table.functions.{TableFunction, ScalarFunction}
 import org.apache.flink.api.table.plan.cost.DataSetCostFactory
-import org.apache.flink.api.table.plan.schema.{FlinkTableFunctionImpl, RelTable}
+import org.apache.flink.api.table.plan.schema.RelTable
 import org.apache.flink.api.table.sinks.TableSink
 import org.apache.flink.api.table.validate.FunctionCatalog
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaStreamExecEnv}
@@ -157,11 +157,14 @@ abstract class TableEnvironment(val config: TableConfig) {
     * user-defined functions under this name.
     */
   def registerFunction(name: String, function: ScalarFunction): Unit = {
+    // check could be instantiated
+    checkForInstantiation(function)
+
     // register in Table API
     functionCatalog.registerFunction(name, function.getClass)
 
     // register in SQL API
-    functionCatalog.registerSqlFunction(function.getSqlFunction(name, typeFactory))
+    functionCatalog.registerSqlFunction(createScalarSqlFunction(name, function, typeFactory))
   }
 
   /**
@@ -170,6 +173,10 @@ abstract class TableEnvironment(val config: TableConfig) {
     */
   private[flink] def registerTableFunctionInternal[T: TypeInformation](
     name: String, tf: TableFunction[T]): Unit = {
+    // check not Scala object
+    checkNotSingleton(tf)
+    // check could be instantiated
+    checkForInstantiation(tf)
 
     val typeInfo: TypeInformation[_] = if (tf.getResultType != null) {
       tf.getResultType
@@ -177,15 +184,10 @@ abstract class TableEnvironment(val config: TableConfig) {
       implicitly[TypeInformation[T]]
     }
 
-    val (fieldNames, fieldIndexes) = UserDefinedFunctionUtils.getFieldInfo(typeInfo)
-
-    val sqlFunctions = tf.getEvalMethods.map(method => {
-      val function = new FlinkTableFunctionImpl(typeInfo, fieldIndexes, fieldNames, method)
-      TableSqlFunction(name, tf, typeInfo, typeFactory, function)
-    })
     // register in Table API
     functionCatalog.registerFunction(name, tf.getClass)
     // register in SQL API
+    val sqlFunctions = createTableSqlFunctions(name, tf, typeInfo, typeFactory)
     functionCatalog.registerSqlFunctions(sqlFunctions)
   }
 
