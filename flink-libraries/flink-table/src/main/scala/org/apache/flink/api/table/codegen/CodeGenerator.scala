@@ -33,7 +33,7 @@ import org.apache.flink.api.java.typeutils.{GenericTypeInfo, PojoTypeInfo, Tuple
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.flink.api.table.codegen.CodeGenUtils._
 import org.apache.flink.api.table.codegen.Indenter.toISC
-import org.apache.flink.api.table.codegen.calls.SqlFunctions
+import org.apache.flink.api.table.codegen.calls.SqlFunctionUtils
 import org.apache.flink.api.table.codegen.calls.ScalarOperators._
 import org.apache.flink.api.table.typeutils.{RowTypeInfo, TypeConverter}
 import org.apache.flink.api.table.typeutils.TypeCheckUtils._
@@ -633,7 +633,11 @@ class CodeGenerator(
     // generateInputAccess(input1, input1Term, index, input1PojoFieldMapping)
     val refExpr = rexFieldAccess.getReferenceExpr.accept(this)
     val index = rexFieldAccess.getField.getIndex
-    val fieldAccessExpr = generateFieldAccess(refExpr.resultType, refExpr.resultTerm, index)
+    val fieldAccessExpr = generateFieldAccess(
+      refExpr.resultType,
+      refExpr.resultTerm,
+      index,
+      input1PojoFieldMapping)
 
     val resultTerm = newName("result")
     val nullTerm = newName("isNull")
@@ -775,8 +779,9 @@ class CodeGenerator(
     }
   }
 
-  override def visitCorrelVariable(correlVariable: RexCorrelVariable): GeneratedExpression =
-    throw new CodeGenException("Correlating variables are not supported yet.")
+  override def visitCorrelVariable(correlVariable: RexCorrelVariable): GeneratedExpression = {
+    GeneratedExpression(input1Term, "false", "", input1)
+  }
 
   override def visitLocalRef(localRef: RexLocalRef): GeneratedExpression =
     throw new CodeGenException("Local variables are not supported yet.")
@@ -970,7 +975,7 @@ class CodeGenerator(
 
       // advanced scalar functions
       case sqlOperator: SqlOperator =>
-        val callGen = SqlFunctions.getCallGenerator(
+        val callGen = SqlFunctionUtils.getCallGenerator(
           sqlOperator,
           operands.map(_.resultType),
           resultType)
@@ -1076,7 +1081,7 @@ class CodeGenerator(
     : GeneratedExpression = {
     inputType match {
       case ct: CompositeType[_] =>
-        val fieldIndex = if (ct.isInstanceOf[PojoTypeInfo[_]] && inputPojoFieldMapping.nonEmpty) {
+        val fieldIndex = if (ct.isInstanceOf[PojoTypeInfo[_]] && pojoFieldMapping.nonEmpty) {
           pojoFieldMapping.get(index)
         }
         else {

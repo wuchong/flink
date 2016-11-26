@@ -35,7 +35,7 @@ import scala.collection.mutable
 /**
   * Global hub for user-defined and built-in advanced SQL functions.
   */
-object SqlFunctions {
+object SqlFunctionUtils {
 
   private val sqlFunctions: mutable.Map[(SqlOperator, Seq[TypeInformation[_]]), CallGenerator] =
     mutable.Map()

@@ -19,7 +19,6 @@
 package org.apache.flink.api.table.runtime
 
 import org.apache.flink.api.common.InvalidProgramException
-import org.apache.flink.api.common.functions.Function
 import org.codehaus.commons.compiler.CompileException
 import org.codehaus.janino.SimpleCompiler
 
