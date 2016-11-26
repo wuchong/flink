@@ -76,17 +76,17 @@ case class LogicalTableFunctionCall(
   override def validate(tableEnv: TableEnvironment): LogicalNode = {
     val node = super.validate(tableEnv).asInstanceOf[LogicalTableFunctionCall]
     // check not Scala object
-    checkNotSingleton(tableFunction)
+    checkNotSingleton(tableFunction.getClass)
     // check could be instantiated
-    checkForInstantiation(tableFunction)
+    checkForInstantiation(tableFunction.getClass)
     // look for a signature that matches the input types
     val signature = node.parameters.map(_.resultType)
-    val foundMethod = getEvalMethod(tableFunction, signature)
+    val foundMethod = getEvalMethod(tableFunction.getClass, signature)
     if (foundMethod.isEmpty) {
       failValidation(
         s"Given parameters of function '$functionName' do not match any signature. \n" +
           s"Actual: ${signatureToString(signature)} \n" +
-          s"Expected: ${signaturesToString(tableFunction)}")
+          s"Expected: ${signaturesToString(tableFunction.getClass)}")
     } else {
       node.evalMethod = foundMethod.get
     }

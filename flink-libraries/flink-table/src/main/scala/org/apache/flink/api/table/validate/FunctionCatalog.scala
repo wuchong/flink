@@ -56,7 +56,7 @@ class FunctionCatalog {
         sqlFunctions --= sqlFunctions.filter(_.getName == name)
         sqlFunctions ++= functions
       } else {
-        throw ValidationException("")
+        throw ValidationException("The sql functions request to register have different name.")
       }
     }
   }
@@ -76,16 +76,12 @@ class FunctionCatalog {
     funcClass match {
       // user-defined table function call
       case tf if classOf[TableFunction[T]].isAssignableFrom(tf) =>
-        Try(UserDefinedFunctionUtils.instantiate(tf.asInstanceOf[Class[TableFunction[T]]])) match {
-          case Success(tableFunction) =>
-            val tableSqlFunction = sqlFunctions
-              .find(f => f.getName.equalsIgnoreCase(name) && f.isInstanceOf[TableSqlFunction])
-              .getOrElse(throw ValidationException(s"Unregistered table sql function: $name"))
-            val typeInfo = tableSqlFunction.asInstanceOf[TableSqlFunction].getRowTypeInfo
-            TableFunctionCall(name, tableFunction, children, typeInfo)
-
-          case Failure(e) => throw ValidationException(e.getMessage)
-        }
+        val tableSqlFunction = sqlFunctions
+          .find(f => f.getName.equalsIgnoreCase(name) && f.isInstanceOf[TableSqlFunction])
+          .getOrElse(throw ValidationException(s"Unregistered table sql function: $name"))
+          .asInstanceOf[TableSqlFunction]
+        val typeInfo = tableSqlFunction.getRowTypeInfo
+        TableFunctionCall(name, tableSqlFunction.getTableFunction, children, typeInfo)
       case _ =>
         throw ValidationException(s"The registered function under name '$name' " +
                                     s"is not a TableFunction")

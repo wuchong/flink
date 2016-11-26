@@ -80,7 +80,7 @@ import org.apache.flink.api.table.ValidationException
   *
   * @tparam T The type of the output row
   */
-abstract class TableFunction[T] extends UserDefinedFunction {
+abstract class TableFunction[T] {
 
   private val rows: util.ArrayList[T] = new util.ArrayList[T]()
 
@@ -93,7 +93,6 @@ abstract class TableFunction[T] extends UserDefinedFunction {
     // cache rows for now, maybe immediately process them further
     rows.add(row)
   }
-
 
   /**
     * Internal use. Get an iterator of the buffered rows.

@@ -37,10 +37,10 @@ import org.apache.flink.api.table.plan.logical.{LogicalNode, LogicalTableFunctio
   * @param resultType type information of returned table
   */
 case class TableFunctionCall(
-  functionName: String,
-  tableFunction: TableFunction[_],
-  parameters: Seq[Expression],
-  resultType: TypeInformation[_]) {
+    functionName: String,
+    tableFunction: TableFunction[_],
+    parameters: Seq[Expression],
+    resultType: TypeInformation[_]) {
 
   private var aliases: Option[Seq[Expression]] = None
 

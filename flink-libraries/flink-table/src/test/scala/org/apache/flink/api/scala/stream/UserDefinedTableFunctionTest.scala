@@ -17,7 +17,6 @@
  */
 package org.apache.flink.api.scala.stream
 
-import org.apache.calcite.plan.RelOptUtil
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.table._
@@ -29,7 +28,7 @@ import org.apache.flink.api.table._
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaExecutionEnv}
 import org.apache.flink.streaming.api.datastream.{DataStream => JDataStream}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment => ScalaExecutionEnv}
-import org.junit.Assert.{assertEquals, assertTrue, fail}
+import org.junit.Assert.{assertTrue, fail}
 import org.junit.Test
 import org.mockito.Mockito._
 
@@ -137,7 +136,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
     expectExceptionThrown(t.crossApply(ObjectTableFunction('a, 1)), "Scala object")
 
 
-    //=================== check table function is not registered ===============
+    //============ throw exception when table function is not registered =========
     // Java Table API call
     expectExceptionThrown(t.crossApply("nonexist(a)"), "Undefined table function: NONEXIST")
     // SQL API call
@@ -146,7 +145,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
       "No match found for function signature nonexist(<NUMERIC>)")
 
 
-    //============ check the registered function is a scalar function ===========
+    //========= throw exception when the called function is a scalar function ====
     util.addFunction("func0", Func0)
     // Java Table API call
     expectExceptionThrown(t.crossApply("func0(a)"), "is not a TableFunction")
@@ -156,6 +155,17 @@ class UserDefinedTableFunctionTest extends TableTestBase {
       util.tEnv.sql("SELECT * FROM MyTable, LATERAL TABLE(func0(a))"),
       null,
       classOf[AssertionError])
+
+    //========== throw exception when the parameters is not correct ===============
+    // Java Table API call
+    util.addFunction("func2", new TableFunc2)
+    expectExceptionThrown(
+      t.crossApply("func2(c, c)"),
+      "Given parameters of function 'FUNC2' do not match any signature")
+    // SQL API call
+    expectExceptionThrown(
+      util.tEnv.sql("SELECT * FROM MyTable, LATERAL TABLE(func2(c, c))"),
+      "No match found for function signature func2(<CHARACTER>, <CHARACTER>)")
   }
 
   private def expectExceptionThrown(
@@ -177,12 +187,6 @@ class UserDefinedTableFunctionTest extends TableTestBase {
     }
   }
 
-  private def verifyTableEquals(expected: Table, actual: Table): Unit = {
-    assertEquals("Logical Plan do not match",
-                 RelOptUtil.toString(expected.getRelNode),
-                 RelOptUtil.toString(actual.getRelNode))
-  }
-
   @Test
   def testSQLWithCrossApply(): Unit = {
     val util = streamTestUtil()
@@ -198,7 +202,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func1($cor0.c)"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")
@@ -218,7 +222,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func1($cor0.c, '$')"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")
@@ -244,7 +248,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func1($cor0.c)"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "LEFT")
@@ -270,7 +274,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func2($cor0.c)"),
-        term("function", func2.toString),
+        term("function", func2.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, " +
                "VARCHAR(2147483647) f0, INTEGER f1)"),
@@ -297,7 +301,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "hierarchy($cor0.c)"),
-        term("function", function.toString),
+        term("function", function.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c," +
                " VARCHAR(2147483647) f0, BOOLEAN f1, INTEGER f2)"),
@@ -324,7 +328,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "pojo($cor0.c)"),
-        term("function", function.toString),
+        term("function", function.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c," +
                " INTEGER age, VARCHAR(2147483647) name)"),
@@ -352,7 +356,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func2($cor0.c)"),
-        term("function", func2.toString),
+        term("function", func2.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, " +
                "VARCHAR(2147483647) f0, INTEGER f1)"),
@@ -381,7 +385,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataStreamCorrelate",
         streamTableNode(0),
         term("invocation", "func1(SUBSTRING($cor0.c, 2))"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")

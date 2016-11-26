@@ -25,9 +25,7 @@ import org.apache.flink.api.table.expressions.utils.{HierarchyTableFunction, Poj
 import org.apache.flink.api.table.typeutils.RowTypeInfo
 import org.apache.flink.api.table.utils.TableTestBase
 import org.apache.flink.api.table.utils.TableTestUtil._
-import org.apache.flink.api.table.{Row, Table, TableEnvironment, Types}
-import org.apache.calcite.plan.RelOptUtil
-import org.junit.Assert.assertEquals
+import org.apache.flink.api.table.{Row, TableEnvironment, Types}
 import org.junit.Test
 import org.mockito.Mockito._
 
@@ -111,13 +109,6 @@ class UserDefinedTableFunctionTest extends TableTestBase {
     verifyTableEquals(scalaTable, javaTable)
   }
 
-  private def verifyTableEquals(expected: Table, actual: Table): Unit = {
-    assertEquals("Logical Plan do not match",
-                 RelOptUtil.toString(expected.getRelNode),
-                 RelOptUtil.toString(actual.getRelNode))
-  }
-
-
   @Test
   def testSQLWithCrossApply(): Unit = {
     val util = batchTestUtil()
@@ -133,7 +124,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func1($cor0.c)"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")
@@ -153,7 +144,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func1($cor0.c, '$')"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")
@@ -179,7 +170,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func1($cor0.c)"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "LEFT")
@@ -205,7 +196,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func2($cor0.c)"),
-        term("function", func2.toString),
+        term("function", func2.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, " +
                "VARCHAR(2147483647) f0, INTEGER f1)"),
@@ -232,7 +223,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "hierarchy($cor0.c)"),
-        term("function", function.toString),
+        term("function", function.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c," +
                " VARCHAR(2147483647) f0, BOOLEAN f1, INTEGER f2)"),
@@ -259,7 +250,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "pojo($cor0.c)"),
-        term("function", function.toString),
+        term("function", function.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c," +
                " INTEGER age, VARCHAR(2147483647) name)"),
@@ -287,7 +278,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func2($cor0.c)"),
-        term("function", func2.toString),
+        term("function", func2.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, " +
                "VARCHAR(2147483647) f0, INTEGER f1)"),
@@ -316,7 +307,7 @@ class UserDefinedTableFunctionTest extends TableTestBase {
         "DataSetCorrelate",
         batchTableNode(0),
         term("invocation", "func1(SUBSTRING($cor0.c, 2))"),
-        term("function", func1.toString),
+        term("function", func1.getClass.getCanonicalName),
         term("rowType",
              "RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, VARCHAR(2147483647) f0)"),
         term("joinType", "INNER")

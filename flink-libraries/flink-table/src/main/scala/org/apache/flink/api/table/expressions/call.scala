@@ -63,22 +63,26 @@ case class ScalarFunctionCall(
   override private[flink] def toRexNode(implicit relBuilder: RelBuilder): RexNode = {
     val typeFactory = relBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
     relBuilder.call(
-      createScalarSqlFunction(scalarFunction.toString, scalarFunction, typeFactory),
+      createScalarSqlFunction(
+        scalarFunction.getClass.getCanonicalName,
+        scalarFunction,
+        typeFactory),
       parameters.map(_.toRexNode): _*)
   }
 
-  override def toString = s"$scalarFunction(${parameters.mkString(", ")})"
+  override def toString =
+    s"${scalarFunction.getClass.getCanonicalName}(${parameters.mkString(", ")})"
 
   override private[flink] def resultType = getResultType(scalarFunction, foundSignature.get)
 
   override private[flink] def validateInput(): ValidationResult = {
     val signature = children.map(_.resultType)
     // look for a signature that matches the input types
-    foundSignature = getSignature(scalarFunction, signature)
+    foundSignature = getSignature(scalarFunction.getClass, signature)
     if (foundSignature.isEmpty) {
       ValidationFailure(s"Given parameters do not match any signature. \n" +
         s"Actual: ${signatureToString(signature)} \n" +
-        s"Expected: ${signaturesToString(scalarFunction)}")
+        s"Expected: ${signaturesToString(scalarFunction.getClass)}")
     } else {
       ValidationSuccess
     }

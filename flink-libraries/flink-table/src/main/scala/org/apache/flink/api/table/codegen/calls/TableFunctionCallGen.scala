@@ -42,7 +42,7 @@ class TableFunctionCallGen(
       operands: Seq[GeneratedExpression])
     : GeneratedExpression = {
     // determine function signature
-    val matchingSignature = getSignature(tableFunction, signature)
+    val matchingSignature = getSignature(tableFunction.getClass, signature)
       .getOrElse(throw new CodeGenException("No matching signature found."))
 
     // convert parameters for function (output boxing)
@@ -64,7 +64,7 @@ class TableFunctionCallGen(
         }
 
     // generate function call
-    val functionReference = codeGenerator.addReusableFunction(tableFunction)
+    val functionReference = codeGenerator.addReusableInstance(tableFunction)
     val functionCallCode =
       s"""
         |${parameters.map(_.code).mkString("\n")}

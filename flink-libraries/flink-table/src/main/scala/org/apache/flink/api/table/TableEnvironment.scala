@@ -158,7 +158,7 @@ abstract class TableEnvironment(val config: TableConfig) {
     */
   def registerFunction(name: String, function: ScalarFunction): Unit = {
     // check could be instantiated
-    checkForInstantiation(function)
+    checkForInstantiation(function.getClass)
 
     // register in Table API
     functionCatalog.registerFunction(name, function.getClass)
@@ -172,22 +172,22 @@ abstract class TableEnvironment(val config: TableConfig) {
     * user-defined functions under this name.
     */
   private[flink] def registerTableFunctionInternal[T: TypeInformation](
-    name: String, tf: TableFunction[T]): Unit = {
+    name: String, function: TableFunction[T]): Unit = {
     // check not Scala object
-    checkNotSingleton(tf)
+    checkNotSingleton(function.getClass)
     // check could be instantiated
-    checkForInstantiation(tf)
+    checkForInstantiation(function.getClass)
 
-    val typeInfo: TypeInformation[_] = if (tf.getResultType != null) {
-      tf.getResultType
+    val typeInfo: TypeInformation[_] = if (function.getResultType != null) {
+      function.getResultType
     } else {
       implicitly[TypeInformation[T]]
     }
 
     // register in Table API
-    functionCatalog.registerFunction(name, tf.getClass)
+    functionCatalog.registerFunction(name, function.getClass)
     // register in SQL API
-    val sqlFunctions = createTableSqlFunctions(name, tf, typeInfo, typeFactory)
+    val sqlFunctions = createTableSqlFunctions(name, function, typeInfo, typeFactory)
     functionCatalog.registerSqlFunctions(sqlFunctions)
   }
 

@@ -44,6 +44,12 @@ class TableTestBase {
     StreamTableTestUtil()
   }
 
+  def verifyTableEquals(expected: Table, actual: Table): Unit = {
+    assertEquals("Logical Plan do not match",
+                 RelOptUtil.toString(expected.getRelNode),
+                 RelOptUtil.toString(actual.getRelNode))
+  }
+
 }
 
 abstract class TableTestUtil {
