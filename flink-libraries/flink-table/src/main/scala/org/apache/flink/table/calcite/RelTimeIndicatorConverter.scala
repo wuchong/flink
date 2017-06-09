@@ -116,6 +116,11 @@ class RelTimeIndicatorConverter(rexBuilder: RexBuilder) extends RelShuttle {
         aggregate.getNamedProperties,
         convAggregate)
 
+    case m: LogicalMatch =>
+      // LogicalMatch doesn't support MEASURES currently,
+      // materialize the time indicator in the future
+      m
+
     case _ =>
       throw new TableException(s"Unsupported logical operator: ${other.getClass.getSimpleName}")
   }

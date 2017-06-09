@@ -387,6 +387,13 @@ class BasicOperatorTable extends ReflectiveSqlOperatorTable {
     SqlStdOperatorTable.SIGN,
     SqlStdOperatorTable.ROUND,
     SqlStdOperatorTable.PI,
+    // MATCH_RECOGNIZE
+    SqlStdOperatorTable.PREV,
+    SqlStdOperatorTable.NEXT,
+    SqlStdOperatorTable.FINAL,
+    SqlStdOperatorTable.RUNNING,
+    SqlStdOperatorTable.FIRST,
+    SqlStdOperatorTable.LAST,
     // EXTENSIONS
     SqlStdOperatorTable.TUMBLE,
     SqlStdOperatorTable.TUMBLE_START,

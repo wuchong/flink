@@ -30,6 +30,8 @@ import org.apache.flink.types.Row
 import org.junit.Assert._
 import org.junit._
 
+import scala.collection.mutable
+
 class SqlITCase extends StreamingWithStateTestBase {
 
    /** test row stream registered table **/
@@ -63,6 +65,52 @@ class SqlITCase extends StreamingWithStateTestBase {
 
     val expected = List("Hello,Worlds,1","Hello again,Worlds,2")
     assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+  @Test
+  def test() = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.clear
+
+    val data = new mutable.MutableList[(String, Long, Int)]
+    data.+=(("ACME", 1L, 12))
+    data.+=(("ACME", 2L, 17))
+    data.+=(("ACME", 3L, 19))
+    data.+=(("ACME", 4L, 21))
+    data.+=(("ACME", 5L, 25))
+    data.+=(("ACME", 6L, 12))
+    data.+=(("ACME", 7L, 15))
+    data.+=(("ACME", 8L, 20))
+    data.+=(("ACME", 9L, 24))
+    data.+=(("ACME", 10L, 25))
+
+    env.fromCollection(data)
+
+    val t = StreamTestData.get3TupleDataStream(env).toTable(tEnv).as('symbol, 'tstamp, 'price)
+    tEnv.registerTable("Ticker", t)
+
+
+    val sqlQuery =
+      s"""
+         |SELECT * FROM Ticker MATCH_RECOGNIZE
+         |(
+         |  PATTERN (STRT (A|B) DOWN+ UP{,3})
+         |  DEFINE
+         |    DOWN AS DOWN.price < PREV(DOWN.price),
+         |    UP AS UP.price > PREV(UP.price)
+         |) MR
+       """.stripMargin
+
+//    MEASURES STRT.tstamp AS start_tstamp,
+//    LAST(DOWN.tstamp) AS bottom_tstamp,
+//    LAST(UP.tstamp) AS end_tstamp
+    val result = tEnv.sql(sqlQuery).toAppendStream[Row]
+    result.addSink(new StreamITCase.StringSink).setParallelism(1)
+    env.execute()
+
+    val expected = List("1,1", "2,2", "3,3", "4,4", "5,5", "6,6")
+    assertEquals(expected.sorted, StreamITCase.retractedResults.sorted)
   }
     
   /** test unbounded groupby (without window) **/
