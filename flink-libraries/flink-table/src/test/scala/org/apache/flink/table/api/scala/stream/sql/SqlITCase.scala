@@ -98,7 +98,7 @@ class SqlITCase extends StreamingWithStateTestBase {
          |  PATTERN (STRT (A|B) DOWN+ UP{,3})
          |  DEFINE
          |    DOWN AS DOWN.price < PREV(DOWN.price),
-         |    UP AS UP.price > PREV(UP.price)
+         |    UP AS UP.price > PREV(UP.price) AND UP.price < 1000
          |) MR
        """.stripMargin
 

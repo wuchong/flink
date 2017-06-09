@@ -458,6 +458,13 @@ object FunctionGenerator {
     Seq(),
     new CurrentTimePointCallGen(SqlTimeTypeInfo.TIMESTAMP, local = true))
 
+
+  // MATCH_RECOGNIZE
+  addSqlFunction(
+    PREV,
+    Seq(),
+    new CurrentTimePointCallGen(SqlTimeTypeInfo.TIMESTAMP, local = true))
+
   // ----------------------------------------------------------------------------------------------
 
   /**
