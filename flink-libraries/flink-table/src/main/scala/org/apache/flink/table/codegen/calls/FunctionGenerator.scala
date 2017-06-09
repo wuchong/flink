@@ -502,6 +502,9 @@ object FunctionGenerator {
         )
       )
 
+    case PREV =>
+      Some(new PrevGen(resultType))
+
     // built-in scalar function
     case _ =>
       sqlFunctions.get((sqlOperator, operandTypes))

@@ -28,7 +28,7 @@ import org.apache.flink.api.common.functions.FilterFunction;
  * previously accepted elements in the pattern. Conditions that extend this class are simple {@code filter(...)}
  * functions that decide based on the properties of the element at hand.
  */
-public abstract class SimpleCondition<T> extends IterativeCondition<T> implements FilterFunction<T> {
+public abstract class SimpleCondition<T> implements IterativeCondition<T>, FilterFunction<T> {
 
 	private static final long serialVersionUID = 4942618239408140245L;
 

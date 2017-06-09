@@ -88,3 +88,5 @@ case class GeneratedInput[F <: InputFormat[_, _], T <: Any](
   * @param code code of the generated Collector.
   */
 case class GeneratedCollector(name: String, code: String)
+
+case class GeneratedIterativeCondition(name: String, code: String)

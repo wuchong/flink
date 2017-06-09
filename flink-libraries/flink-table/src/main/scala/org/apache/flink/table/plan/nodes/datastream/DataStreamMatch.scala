@@ -6,13 +6,14 @@ import java.math.{BigDecimal => JBigDecimal}
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex._
-import org.apache.calcite.sql.`type`.SqlTypeName.{CHAR, VARCHAR}
 import org.apache.calcite.sql.fun.SqlStdOperatorTable._
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.cep.pattern.Pattern
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.table.api.{StreamQueryConfig, StreamTableEnvironment, TableException}
 import org.apache.flink.table.codegen.CodeGenerator
 import org.apache.flink.table.plan.schema.RowSchema
+import org.apache.flink.table.runtime.CRowIterativeConditionRunner
 import org.apache.flink.table.runtime.types.CRow
 
 
@@ -62,8 +63,9 @@ class DataStreamMatch(
     val inputTypeInfo = inputSchema.physicalTypeInfo
     val inputDS = getInput.asInstanceOf[DataStreamRel].translateToPlan(tableEnv, queryConfig)
     // TODO
+    translatePattern(pattern, null)
 
-    def translatePattern(rexNode: RexNode, pattern: Pattern[_, _]): Pattern[_, _] = rexNode match {
+    def translatePattern(rexNode: RexNode, pattern: Pattern[CRow, CRow]): Pattern[CRow, CRow] = rexNode match {
       case literal: RexLiteral =>
         val name = parseToString(literal)
         next(pattern, name)
@@ -87,10 +89,9 @@ class DataStreamMatch(
               val condition = inputSchema.mapRexNode(definition)
               val generator = new CodeGenerator(config, false, inputTypeInfo)
               val body = generator.generateExpression(condition)
-
+              val function = generator.generateIterativeCondition(name, body, inputTypeInfo.asInstanceOf[TypeInformation[Any]])
+              newPattern.where(new CRowIterativeConditionRunner(function.name, function.code))
             }
-
-
 
             if (startNum == 0 && endNum == -1) {  // zero or more
               throw TableException("Currently, CEP doesn't support zeroOrMore (kleene star) operator.")
@@ -122,7 +123,7 @@ class DataStreamMatch(
 
 
 
-  private def next(pattern: Pattern[_, _], name: String): Pattern[_, _] = {
+  private def next(pattern: Pattern[CRow, CRow], name: String): Pattern[CRow, CRow] = {
     if (pattern == null) {
       Pattern.begin(name)
     } else {
