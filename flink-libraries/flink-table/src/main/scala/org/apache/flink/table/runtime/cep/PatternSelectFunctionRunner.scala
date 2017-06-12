@@ -23,6 +23,7 @@ import org.apache.flink.cep.PatternSelectFunction
 import org.apache.flink.table.runtime.types.CRow
 import org.apache.flink.types.Row
 
+// TODO: code gen this function when MEASURES supported
 class PatternSelectFunctionRunner(firstPatternName: String)
   extends PatternSelectFunction[Row, CRow] {
 
