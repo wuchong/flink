@@ -33,7 +33,6 @@ import org.apache.flink.api.common.typeinfo._
 import org.apache.flink.api.common.typeutils.CompositeType
 import org.apache.flink.api.java.typeutils._
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
-import org.apache.flink.cep.pattern.conditions.IterativeCondition
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.table.api.TableConfig
@@ -856,37 +855,6 @@ class CodeGenerator(
     """.stripMargin
 
     GeneratedCollector(className, funcCode)
-  }
-
-  def generateIterativeCondition(
-      name: String,
-      bodyCode: GeneratedExpression,
-      inputType: TypeInformation[Any])
-    : GeneratedIterativeCondition = {
-
-    val className = newName(name)
-    val inputTypeClass = boxedTypeTermForTypeInfo(inputType)
-
-    val funcCode = j"""
-      public class $className extends ${classOf[IterativeCondition[_]].getCanonicalName} {
-
-        ${reuseMemberCode()}
-
-        public $className() throws Exception {
-          ${reuseInitCode()}
-        }
-
-        @Override
-        public boolean filter(Object value, ${classOf[IterativeCondition.Context[_]]} ctx) throws Exception {
-          $inputTypeClass $input1Term = ($inputTypeClass) value;
-          ${reuseInputUnboxingCode()}
-          ${bodyCode.code}
-          return ${bodyCode.resultTerm};
-        }
-      }
-    """.stripMargin
-
-    GeneratedIterativeCondition(className, funcCode)
   }
 
   /**

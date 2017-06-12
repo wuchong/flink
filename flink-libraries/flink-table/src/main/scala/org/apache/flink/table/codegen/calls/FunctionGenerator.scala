@@ -28,7 +28,6 @@ import org.apache.calcite.util.BuiltInMethod
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo._
 import org.apache.flink.api.common.typeinfo.{BasicTypeInfo, SqlTimeTypeInfo, TypeInformation}
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
-import org.apache.flink.table.codegen.{CodeGenerator, GeneratedExpression}
 import org.apache.flink.table.functions.utils.{ScalarSqlFunction, TableSqlFunction}
 
 import scala.collection.mutable
@@ -458,13 +457,6 @@ object FunctionGenerator {
     Seq(),
     new CurrentTimePointCallGen(SqlTimeTypeInfo.TIMESTAMP, local = true))
 
-
-  // MATCH_RECOGNIZE
-  addSqlFunction(
-    PREV,
-    Seq(),
-    new CurrentTimePointCallGen(SqlTimeTypeInfo.TIMESTAMP, local = true))
-
   // ----------------------------------------------------------------------------------------------
 
   /**
@@ -501,9 +493,6 @@ object FunctionGenerator {
           resultType
         )
       )
-
-    case PREV =>
-      Some(new PrevGen(resultType))
 
     // built-in scalar function
     case _ =>

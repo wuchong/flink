@@ -102,7 +102,7 @@ public class StateTransition<T> implements Serializable {
 				.append("StateTransition(")
 				.append(action).append(", ")
 				.append("from ").append(sourceState.getName())
-				.append("to ").append(targetState.getName())
+				.append(" to ").append(targetState.getName())
 				.append(newCondition != null ? ", with condition)" : ")")
 				.toString();
 	}

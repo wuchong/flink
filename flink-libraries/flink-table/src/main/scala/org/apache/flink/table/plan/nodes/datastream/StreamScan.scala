@@ -62,7 +62,7 @@ trait StreamScan extends CommonScan[CRow] with DataStreamRel {
       val opName = s"from: (${getRowType.getFieldNames.asScala.toList.mkString(", ")})"
 
       // TODO we need a ProcessFunction here
-      input.map(mapFunc).name(opName).returns(internalType)
+      input.map(mapFunc).setParallelism(input.getParallelism).name(opName).returns(internalType)
     }
     // no conversion necessary, forward
     else {

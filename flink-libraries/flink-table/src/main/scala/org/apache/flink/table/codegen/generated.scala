@@ -89,4 +89,10 @@ case class GeneratedInput[F <: InputFormat[_, _], T <: Any](
   */
 case class GeneratedCollector(name: String, code: String)
 
+/**
+  * Describes a generated [[org.apache.flink.cep.pattern.conditions.IterativeCondition]].
+  *
+  * @param name class name of the generated IterativeCondition.
+  * @param code code of the generated IterativeCondition.
+  */
 case class GeneratedIterativeCondition(name: String, code: String)

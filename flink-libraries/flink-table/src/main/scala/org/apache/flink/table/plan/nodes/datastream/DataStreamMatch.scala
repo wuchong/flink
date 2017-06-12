@@ -8,13 +8,16 @@ import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex._
 import org.apache.calcite.sql.fun.SqlStdOperatorTable._
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.cep.{CEP, PatternStream}
 import org.apache.flink.cep.pattern.Pattern
+import org.apache.flink.cep.pattern.conditions.IterativeCondition
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.table.api.{StreamQueryConfig, StreamTableEnvironment, TableException}
-import org.apache.flink.table.codegen.CodeGenerator
+import org.apache.flink.table.api.{StreamQueryConfig, StreamTableEnvironment, TableConfig, TableException}
+import org.apache.flink.table.codegen.MatchCodeGenerator
 import org.apache.flink.table.plan.schema.RowSchema
-import org.apache.flink.table.runtime.CRowIterativeConditionRunner
-import org.apache.flink.table.runtime.types.CRow
+import org.apache.flink.table.runtime.cep.{ConvertToRow, IterativeConditionRunner, PatternSelectFunctionRunner}
+import org.apache.flink.table.runtime.types.{CRow, CRowTypeInfo}
+import org.apache.flink.types.Row
 
 
 /**
@@ -61,14 +64,36 @@ class DataStreamMatch(
 
     val config = tableEnv.config
     val inputTypeInfo = inputSchema.physicalTypeInfo
-    val inputDS = getInput.asInstanceOf[DataStreamRel].translateToPlan(tableEnv, queryConfig)
-    // TODO
-    translatePattern(pattern, null)
+    
+    val crowInput: DataStream[CRow] = getInput
+      .asInstanceOf[DataStreamRel]
+      .translateToPlan(tableEnv, queryConfig)
 
-    def translatePattern(rexNode: RexNode, pattern: Pattern[CRow, CRow]): Pattern[CRow, CRow] = rexNode match {
+    val inputDS: DataStream[Row] = crowInput
+      .map(new ConvertToRow)
+      .setParallelism(crowInput.getParallelism)
+      .name("ConvertToRow")
+      .returns(inputTypeInfo)
+
+    def translatePattern(rexNode: RexNode, pattern: Pattern[Row, Row]): Pattern[Row, Row] = rexNode match {
       case literal: RexLiteral =>
         val name = parseToString(literal)
-        next(pattern, name)
+        val previousPatternName = if (pattern == null) null else pattern.getName
+        val newPattern = next(pattern, name)
+
+        val definition = patternDefinitions.get(name)
+        if (definition != null) {
+          val condition = generateCondition(
+            name,
+            previousPatternName,
+            definition,
+            config,
+            inputTypeInfo)
+
+          newPattern.where(condition)
+        } else {
+          newPattern
+        }
 
       case call: RexCall =>
 
@@ -79,19 +104,11 @@ class DataStreamMatch(
             translatePattern(right, translatePattern(left, pattern))
 
           case PATTERN_QUANTIFIER =>
-            val name = parseToString(call.operands.get(0).asInstanceOf[RexLiteral])
+            val name = call.operands.get(0).asInstanceOf[RexLiteral]
+            val newPattern = translatePattern(name, pattern)
+
             val startNum = parseToInt(call.operands.get(1).asInstanceOf[RexLiteral])
             val endNum = parseToInt(call.operands.get(2).asInstanceOf[RexLiteral])
-            val newPattern = next(pattern, name) //.where
-
-            val definition = patternDefinitions.get(name)
-            if (definition != null) {
-              val condition = inputSchema.mapRexNode(definition)
-              val generator = new CodeGenerator(config, false, inputTypeInfo)
-              val body = generator.generateExpression(condition)
-              val function = generator.generateIterativeCondition(name, body, inputTypeInfo.asInstanceOf[TypeInformation[Any]])
-              newPattern.where(new CRowIterativeConditionRunner(function.name, function.code))
-            }
 
             if (startNum == 0 && endNum == -1) {  // zero or more
               throw TableException("Currently, CEP doesn't support zeroOrMore (kleene star) operator.")
@@ -99,6 +116,8 @@ class DataStreamMatch(
               newPattern.oneOrMore()
             } else if (startNum == endNum) {   // times
               newPattern.times(startNum)
+            } else if (startNum == 0 && endNum == 1) {  // optional
+              newPattern.optional()
             } else {
               throw TableException(s"Currently, CEP doesn't support '{$startNum, $endNum}' quantifier.")
             }
@@ -106,28 +125,60 @@ class DataStreamMatch(
           case PATTERN_ALTER =>
             throw TableException("Currently, CEP doesn't support branching patterns.")
 
-          case PATTERN_PERMUTE | PATTERN_EXCLUDE =>
-            throw TableException("Currently, CEP doesn't support PERMUTE and '{-' '-}' patterns.")
+          case PATTERN_PERMUTE =>
+            throw TableException("Currently, CEP doesn't support PERMUTE patterns.")
 
+          case PATTERN_EXCLUDE =>
+            throw TableException("Currently, CEP doesn't support '{-' '-}' patterns.")
         }
 
       case _ =>
         throw TableException("")
-
-
     }
 
+    val cepPattern = translatePattern(pattern, null)
+    val patternStream: PatternStream[Row] = CEP
+      .pattern[Row](inputDS, cepPattern)
 
-    null
+    val internalType = CRowTypeInfo(inputTypeInfo)
+    // FIXME: currently, MEASURES not supported, so hardcode output for test purpose
+    patternStream.select[CRow](new PatternSelectFunctionRunner(cepPattern.getName), internalType)
   }
 
 
+  private def generateCondition(
+      patternName: String,
+      previousPatternName: String,
+      definition: RexNode,
+      config: TableConfig,
+      inputTypeInfo: TypeInformation[_]): IterativeCondition[Row] = {
 
-  private def next(pattern: Pattern[CRow, CRow], name: String): Pattern[CRow, CRow] = {
+    val generator = new MatchCodeGenerator(config, inputTypeInfo, patternName, previousPatternName)
+    val condition = generator.generateExpression(inputSchema.mapRexNode(definition))
+    val body =
+      s"""
+         |${condition.code}
+         |return ${condition.resultTerm};
+       """.stripMargin
+
+    val genCondition = generator.generateIterativeCondition("MatchRecognizeCondition", body)
+    new IterativeConditionRunner(genCondition.name, genCondition.code)
+  }
+
+
+  private def next(pattern: Pattern[Row, Row], name: String): Pattern[Row, Row] = {
     if (pattern == null) {
       Pattern.begin(name)
     } else {
       pattern.next(name)
+    }
+  }
+
+  private def patternName(pattern: Pattern[Row, Row]): String = {
+    if (pattern == null) {
+      null
+    } else {
+      pattern.getPrevious.getName
     }
   }
 
@@ -138,11 +189,4 @@ class DataStreamMatch(
   private def parseToString(literal: RexLiteral): String = {
     literal.getValue3.toString
   }
-
-  private def parseToBoolean(literal: RexLiteral): Boolean = {
-    literal.getValue3.toString.toBoolean
-  }
-
-
-
 }
