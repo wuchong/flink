@@ -23,7 +23,8 @@ import org.apache.flink.table.functions.AggregateFunction
 /**
   * A class which creates a call to an aggregateFunction
   */
-case class UDAGGExpression[T: TypeInformation, ACC](aggregateFunction: AggregateFunction[T, ACC]) {
+case class UDAGGExpression[T: TypeInformation, ACC: TypeInformation](
+  aggregateFunction: AggregateFunction[T, ACC]) {
 
   /**
     * Creates a call to an [[AggregateFunction]].
@@ -31,6 +32,9 @@ case class UDAGGExpression[T: TypeInformation, ACC](aggregateFunction: Aggregate
     * @param params actual parameters of function
     * @return a [[AggFunctionCall]]
     */
-  def apply(params: Expression*): AggFunctionCall =
-    AggFunctionCall(aggregateFunction, params)
+  def apply(params: Expression*): AggFunctionCall = {
+    val resultTypeInfo: TypeInformation[_] = implicitly[TypeInformation[T]]
+    val accTypeInfo: TypeInformation[_] = implicitly[TypeInformation[ACC]]
+    AggFunctionCall(aggregateFunction, resultTypeInfo, accTypeInfo, params)
+  }
 }
