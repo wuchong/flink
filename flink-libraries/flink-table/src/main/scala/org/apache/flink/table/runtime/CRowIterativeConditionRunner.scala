@@ -21,14 +21,18 @@ class CRowIterativeConditionRunner(
     ctx: IterativeCondition.Context[CRow])
   : Boolean = {
     if (function == null) {
-      LOG.debug(s"Compiling RichIterativeCondition: $name \n\n Code:\n$code")
-      val clazz = compile(this.getClass.getClassLoader, name, code)
-      LOG.debug("Instantiating RichIterativeCondition.")
-      function = clazz.newInstance()
+      initFunction()
     }
 
     function.filter(
       in.row,
       ctx.asInstanceOf[IterativeCondition.Context[Row]])
+  }
+
+  def initFunction(): Unit = {
+    LOG.debug(s"Compiling RichIterativeCondition: $name \n\n Code:\n$code")
+    val clazz = compile(this.getClass.getClassLoader, name, code)
+    LOG.debug("Instantiating RichIterativeCondition.")
+    function = clazz.newInstance()
   }
 }
