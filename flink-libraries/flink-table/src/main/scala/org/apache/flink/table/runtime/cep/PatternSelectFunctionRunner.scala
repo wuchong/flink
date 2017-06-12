@@ -24,7 +24,7 @@ import org.apache.flink.table.runtime.types.CRow
 import org.apache.flink.types.Row
 
 // TODO: code gen this function when MEASURES supported
-class PatternSelectFunctionRunner(firstPatternName: String)
+class PatternSelectFunctionRunner(lastPatternName: String)
   extends PatternSelectFunction[Row, CRow] {
 
   private var outCRow: CRow = _
@@ -33,7 +33,7 @@ class PatternSelectFunctionRunner(firstPatternName: String)
     if (outCRow == null) {
       outCRow = new CRow(null, true)
     }
-    val list: util.List[Row] = pattern.get(firstPatternName)
+    val list: util.List[Row] = pattern.get(lastPatternName)
     outCRow.row = list.get(list.size() - 1) // get the last one
     outCRow
   }

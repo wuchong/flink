@@ -67,6 +67,8 @@ class CepITCase extends StreamingWithStateTestBase {
     result.addSink(new StreamITCase.StringSink)
     env.execute()
 
+    // Calcite doesn’t support MEASURES yet, as a workaround,
+    // we hardcode to only output the last event in the matched events
     val expected = List("8,c")
     assertEquals(expected.sorted, StreamITCase.testResults.sorted)
   }
@@ -105,6 +107,8 @@ class CepITCase extends StreamingWithStateTestBase {
     result.addSink(new StreamITCase.StringSink)
     env.execute()
 
+    // Calcite doesn’t support MEASURES yet, as a workaround,
+    // we hardcode to only output the last event in the matched events
     val expected = List("4,15", "5,20", "6,24", "7,25")
     assertEquals(expected.sorted, StreamITCase.testResults.sorted)
   }
