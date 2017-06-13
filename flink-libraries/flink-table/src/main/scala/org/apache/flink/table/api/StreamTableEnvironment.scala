@@ -626,6 +626,12 @@ abstract class StreamTableEnvironment(
       withChangeFlag: Boolean)
       (implicit tpe: TypeInformation[A]): DataStream[A] = {
 
+    // the logicalPlan can lose the field naming during optimization,
+    // and logicalType can have wrong field type, so we re-create a row type from them
+    val rowType = getTypeFactory.createStructType(
+      logicalPlan.getRowType.getFieldList.asScala.map(_.getType).asJava,
+      logicalType.getFieldNames)
+
     // if no change flags are requested, verify table is an insert-only (append-only) table.
     if (!withChangeFlag && !isAppendOnly(logicalPlan)) {
       throw new TableException(
@@ -640,13 +646,13 @@ abstract class StreamTableEnvironment(
     val conversion = if (withChangeFlag) {
       getConversionMapperWithChanges(
         plan.getType,
-        new RowSchema(logicalType),
+        new RowSchema(rowType),
         tpe,
         "DataStreamSinkConversion")
     } else {
       getConversionMapper(
         plan.getType,
-        new RowSchema(logicalType),
+        new RowSchema(rowType),
         tpe,
         "DataStreamSinkConversion")
     }

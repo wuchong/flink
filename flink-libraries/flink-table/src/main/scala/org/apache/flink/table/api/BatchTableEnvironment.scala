@@ -42,6 +42,9 @@ import org.apache.flink.table.sinks.{BatchTableSink, TableSink}
 import org.apache.flink.table.sources.{BatchTableSource, TableSource}
 import org.apache.flink.types.Row
 
+import _root_.scala.collection.JavaConversions._
+
+
 /**
   * The abstract base class for batch TableEnvironments.
   *
@@ -341,13 +344,19 @@ abstract class BatchTableEnvironment(
       (implicit tpe: TypeInformation[A]): DataSet[A] = {
     TableEnvironment.validateType(tpe)
 
+    // the logicalPlan can lose the field naming during optimization,
+    // and logicalType can have wrong field type, so we re-create a row type from them
+    val rowType = getTypeFactory.createStructType(
+      logicalPlan.getRowType.getFieldList.map(_.getType),
+      logicalType.getFieldNames)
+
     logicalPlan match {
       case node: DataSetRel =>
         val plan = node.translateToPlan(this)
         val conversion =
           getConversionMapper(
             plan.getType,
-            new RowSchema(logicalType),
+            new RowSchema(rowType),
             tpe,
             "DataSetSinkConversion")
         conversion match {
