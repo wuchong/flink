@@ -71,7 +71,8 @@ class MatchCodeGenerator(
         }
 
         @Override
-      	public boolean filter(Object _in1, ${classOf[IterativeCondition.Context[_]]} $contextTerm)
+      	public boolean filter(
+      	  Object _in1, ${classOf[IterativeCondition.Context[_]].getCanonicalName} $contextTerm)
       	  throws Exception {
 
           $inputTypeTerm $input1Term = ($inputTypeTerm) _in1;
