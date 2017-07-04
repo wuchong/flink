@@ -21,10 +21,12 @@ package org.apache.flink.table.api.scala.stream.table
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.table.accumulator.MapAccumulator
 import org.apache.flink.table.api.scala._
 import org.apache.flink.table.api.scala.stream.utils.{StreamITCase, StreamTestData, StreamingWithStateTestBase}
 import org.apache.flink.table.api.{StreamQueryConfig, TableEnvironment}
 import org.apache.flink.table.api.scala.stream.utils.StreamITCase.RetractingSink
+import org.apache.flink.table.functions.AggregateFunction
 import org.apache.flink.types.Row
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -117,4 +119,62 @@ class GroupAggregationsITCase extends StreamingWithStateTestBase {
       "12,3,5,1", "5,3,4,2")
     assertEquals(expected.sorted, StreamITCase.retractedResults.sorted)
   }
+
+  @Test
+  def testGroupAggregate2(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setStateBackend(getStateBackend)
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.clear
+
+    val data = new mutable.MutableList[(Int, Long, String)]
+    data.+=((1, 1L, "A"))
+    data.+=((2, 2L, "B"))
+    data.+=((3, 2L, "B"))
+    data.+=((4, 3L, "C"))
+    data.+=((5, 3L, "C"))
+    data.+=((6, 3L, "C"))
+    data.+=((7, 4L, "B"))
+    data.+=((8, 4L, "A"))
+    data.+=((9, 4L, "D"))
+    data.+=((10, 4L, "E"))
+    data.+=((11, 5L, "A"))
+    data.+=((12, 5L, "B"))
+
+    val distinct = new DistinctCount
+
+    val t = env.fromCollection(data).toTable(tEnv, 'a, 'b, 'c)
+      .groupBy('b)
+      .select('b, distinct('c))
+
+    val results = t.toRetractStream[Row](queryConfig)
+    results.addSink(new StreamITCase.RetractingSink)
+    env.execute()
+
+    val expected = List("1,1", "2,1", "3,1", "4,4", "5,2")
+    assertEquals(expected.sorted, StreamITCase.retractedResults.sorted)
+  }
+
+}
+
+class MyACC {
+
+  var map: MapAccumulator[String, java.lang.Integer] = _
+
+  var count: Int = 0
+
+}
+
+class DistinctCount extends AggregateFunction[Long, MyACC] {
+
+  override def createAccumulator(): MyACC = new MyACC
+
+  def accumulate(accumulator: MyACC, id: String): Unit = {
+    if (!accumulator.map.contains(id)) {
+      accumulator.map.put(id, 1)
+      accumulator.count += 1
+    }
+  }
+
+  override def getValue(accumulator: MyACC): Long = accumulator.count
 }

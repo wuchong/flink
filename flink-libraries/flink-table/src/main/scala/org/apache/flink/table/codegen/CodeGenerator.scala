@@ -35,6 +35,7 @@ import org.apache.flink.api.java.typeutils._
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.table.accumulator.{AccumulatorSpec, LazyAccumulatorConfig}
 import org.apache.flink.table.api.TableConfig
 import org.apache.flink.table.calcite.FlinkTypeFactory
 import org.apache.flink.table.codegen.CodeGenUtils._
@@ -298,7 +299,8 @@ class CodeGenerator(
       outputArity: Int,
       needRetract: Boolean,
       needMerge: Boolean,
-      needReset: Boolean)
+      needReset: Boolean,
+      accConfig: Option[LazyAccumulatorConfig] = None)
   : GeneratedAggregationsFunction = {
 
     // get unique function name
@@ -380,13 +382,34 @@ class CodeGenerator(
       }
     }
 
+    def genLazyAccumulatorSetter(accTerm: String, specs: Seq[AccumulatorSpec[_]]): String = {
+      val setters = for (spec <- specs) yield {
+        val lazyAccTerm = newName("lazyAcc")
+        val field = spec.field
+        val fieldSetter = if (field.isAccessible) {
+          s"$accTerm.${field.getName} = $lazyAccTerm;"
+        } else {
+          val fieldTerm = addReusablePrivateFieldAccess(field.getDeclaringClass, field.getName)
+          s"${reflectiveFieldWriteAccess(fieldTerm, field, accTerm, lazyAccTerm)};"
+        }
+
+        val lazyAccTypeTerm = field.getType.getCanonicalName
+
+        s"""
+           |$lazyAccTypeTerm $lazyAccTerm = ($lazyAccTypeTerm) getAccumulatorFactory().create("${spec.id}");
+           |$fieldSetter
+        """.stripMargin
+      }
+      setters.mkString("\n")
+    }
+
     def genSetAggregationResults: String = {
 
       val sig: String =
         j"""
            |  public final void setAggregationResults(
            |    org.apache.flink.types.Row accs,
-           |    org.apache.flink.types.Row output)""".stripMargin
+           |    org.apache.flink.types.Row output) throws Exception """.stripMargin
 
       val setAggs: String = {
         for (i <- aggs.indices) yield
@@ -397,13 +420,20 @@ class CodeGenerator(
                |      ${aggMapping(i)},
                |      (${accTypes(i)}) accs.getField($i));""".stripMargin
           } else {
+            val setLazyAccs = if (accConfig.isDefined && accConfig.get.isOnState) {
+              genLazyAccumulatorSetter(s"acc$i", accConfig.get.accSpecs(i))
+            } else {
+              ""
+            }
+
             j"""
                |    org.apache.flink.table.functions.AggregateFunction baseClass$i =
                |      (org.apache.flink.table.functions.AggregateFunction) ${aggs(i)};
-               |
+               |    ${accTypes(i)} acc$i = (${accTypes(i)}) accs.getField($i);
+               |    $setLazyAccs
                |    output.setField(
                |      ${aggMapping(i)},
-               |      baseClass$i.getValue((${accTypes(i)}) accs.getField($i)));""".stripMargin
+               |      baseClass$i.getValue(acc$i));""".stripMargin
           }
       }.mkString("\n")
 
@@ -419,14 +449,22 @@ class CodeGenerator(
         j"""
             |  public final void accumulate(
             |    org.apache.flink.types.Row accs,
-            |    org.apache.flink.types.Row input)""".stripMargin
+            |    org.apache.flink.types.Row input) throws Exception """.stripMargin
 
       val accumulate: String = {
-        for (i <- aggs.indices) yield
+        for (i <- aggs.indices) yield {
+          val setLazyAccs = if (accConfig.isDefined && accConfig.get.isOnState) {
+            genLazyAccumulatorSetter(s"acc$i", accConfig.get.accSpecs(i))
+          } else {
+            ""
+          }
           j"""
+             |    ${accTypes(i)} acc$i = (${accTypes(i)}) accs.getField($i);
+             |    $setLazyAccs
              |    ${aggs(i)}.accumulate(
-             |      ((${accTypes(i)}) accs.getField($i)),
+             |      acc$i,
              |      ${parameters(i)});""".stripMargin
+        }
       }.mkString("\n")
 
       j"""$sig {
@@ -440,14 +478,22 @@ class CodeGenerator(
         j"""
             |  public final void retract(
             |    org.apache.flink.types.Row accs,
-            |    org.apache.flink.types.Row input)""".stripMargin
+            |    org.apache.flink.types.Row input) throws Exception """.stripMargin
 
       val retract: String = {
-        for (i <- aggs.indices) yield
+        for (i <- aggs.indices) yield {
+          val setLazyAccs = if (accConfig.isDefined && accConfig.get.isOnState) {
+            genLazyAccumulatorSetter(s"acc$i", accConfig.get.accSpecs(i))
+          } else {
+            ""
+          }
           j"""
+             |    ${accTypes(i)} acc$i = (${accTypes(i)}) accs.getField($i);
+             |    $setLazyAccs
              |    ${aggs(i)}.retract(
-             |      ((${accTypes(i)}) accs.getField($i)),
+             |      acc$i,
              |      ${parameters(i)});""".stripMargin
+        }
       }.mkString("\n")
 
       if (needRetract) {
@@ -466,7 +512,7 @@ class CodeGenerator(
 
       val sig: String =
         j"""
-           |  public final org.apache.flink.types.Row createAccumulators()
+           |  public final org.apache.flink.types.Row createAccumulators() throws Exception
            |    """.stripMargin
       val init: String =
         j"""
@@ -474,12 +520,21 @@ class CodeGenerator(
            |          new org.apache.flink.types.Row(${aggs.length});"""
           .stripMargin
       val create: String = {
-        for (i <- aggs.indices) yield
+        for (i <- aggs.indices) yield {
+          val setLazyAccs = if (accConfig.isDefined && !accConfig.get.isOnState) {
+            // only on heap lazy accumulator need to inject the accumulator after creating
+            genLazyAccumulatorSetter(s"acc$i", accConfig.get.accSpecs(i))
+          } else {
+            ""
+          }
           j"""
+             |    ${accTypes(i)} acc$i = (${accTypes(i)}) ${aggs(i)}.createAccumulator();
+             |    $setLazyAccs
              |    accs.setField(
              |      $i,
-             |      ${aggs(i)}.createAccumulator());"""
+             |      acc$i);"""
             .stripMargin
+        }
       }.mkString("\n")
       val ret: String =
         j"""
@@ -557,17 +612,26 @@ class CodeGenerator(
         j"""
            |  public final org.apache.flink.types.Row mergeAccumulatorsPair(
            |    org.apache.flink.types.Row a,
-           |    org.apache.flink.types.Row b)
+           |    org.apache.flink.types.Row b) throws Exception
            """.stripMargin
       val merge: String = {
-        for (i <- aggs.indices) yield
+        for (i <- aggs.indices) yield {
+          val (setLazyAccs1, setLazyAccs2) = if (accConfig.isDefined && accConfig.get.isOnState) {
+            (genLazyAccumulatorSetter(s"aAcc$i", accConfig.get.accSpecs(i)),
+              genLazyAccumulatorSetter(s"bAcc$i", accConfig.get.accSpecs(i)))
+          } else {
+            ("", "")
+          }
           j"""
              |    ${accTypes(i)} aAcc$i = (${accTypes(i)}) a.getField($i);
              |    ${accTypes(i)} bAcc$i = (${accTypes(i)}) b.getField(${mapping(i)});
+             |    $setLazyAccs1
+             |    $setLazyAccs2
              |    accIt$i.setElement(bAcc$i);
              |    ${aggs(i)}.merge(aAcc$i, accIt$i);
              |    a.setField($i, aAcc$i);
              """.stripMargin
+        }
       }.mkString("\n")
       val ret: String =
         j"""
@@ -604,13 +668,20 @@ class CodeGenerator(
       val sig: String =
         j"""
            |  public final void resetAccumulator(
-           |    org.apache.flink.types.Row accs)""".stripMargin
+           |    org.apache.flink.types.Row accs) throws Exception""".stripMargin
 
       val reset: String = {
-        for (i <- aggs.indices) yield
+        for (i <- aggs.indices) yield {
+          val setLazyAccs = if (accConfig.isDefined && accConfig.get.isOnState) {
+            genLazyAccumulatorSetter(s"acc$i", accConfig.get.accSpecs(i))
+          } else {
+            ""
+          }
           j"""
-             |    ${aggs(i)}.resetAccumulator(
-             |      ((${accTypes(i)}) accs.getField($i)));""".stripMargin
+             |    ${accTypes(i)} acc$i = (${accTypes(i)}) accs.getField($i);
+             |    $setLazyAccs
+             |    ${aggs(i)}.resetAccumulator(acc$i);""".stripMargin
+        }
       }.mkString("\n")
 
       if (needReset) {
@@ -623,7 +694,18 @@ class CodeGenerator(
       }
     }
 
-    var funcCode =
+    val aggFuncCode = Seq(
+      genSetAggregationResults,
+      genAccumulate,
+      genRetract,
+      genCreateAccumulators,
+      genSetForwardedFields,
+      genSetConstantFlags,
+      genCreateOutputRow,
+      genMergeAccumulatorsPair,
+      genResetAccumulator).mkString("\n")
+
+    val funcCode =
       j"""
          |public final class $funcName
          |  extends org.apache.flink.table.runtime.aggregate.GeneratedAggregations {
@@ -634,19 +716,9 @@ class CodeGenerator(
          |    ${reuseInitCode()}
          |  }
          |  ${reuseConstructorCode(funcName)}
-         |
+         |  $aggFuncCode
+         |}
          """.stripMargin
-
-    funcCode += genSetAggregationResults + "\n"
-    funcCode += genAccumulate + "\n"
-    funcCode += genRetract + "\n"
-    funcCode += genCreateAccumulators + "\n"
-    funcCode += genSetForwardedFields + "\n"
-    funcCode += genSetConstantFlags + "\n"
-    funcCode += genCreateOutputRow + "\n"
-    funcCode += genMergeAccumulatorsPair + "\n"
-    funcCode += genResetAccumulator + "\n"
-    funcCode += "}"
 
     GeneratedAggregationsFunction(funcName, funcCode)
   }

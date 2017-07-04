@@ -19,8 +19,9 @@
 
 package org.apache.flink.table.functions.utils
 
+import java.util
 import java.lang.{Integer => JInt, Long => JLong}
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{Method, Modifier, ParameterizedType}
 import java.sql.{Date, Time, Timestamp}
 
 import org.apache.commons.codec.binary.Base64
@@ -29,7 +30,8 @@ import org.apache.calcite.sql.`type`.SqlTypeName
 import org.apache.calcite.sql.{SqlCallBinding, SqlFunction}
 import org.apache.flink.api.common.functions.InvalidTypesException
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.api.java.typeutils.{PojoField, PojoTypeInfo, TypeExtractor}
+import org.apache.flink.table.accumulator._
 import org.apache.flink.table.calcite.FlinkTypeFactory
 import org.apache.flink.table.api.{TableEnvironment, TableException, ValidationException}
 import org.apache.flink.table.expressions._
@@ -37,6 +39,8 @@ import org.apache.flink.table.plan.logical._
 import org.apache.flink.table.functions.{AggregateFunction, ScalarFunction, TableFunction, UserDefinedFunction}
 import org.apache.flink.table.plan.schema.FlinkTableFunctionImpl
 import org.apache.flink.util.InstantiationUtil
+
+import scala.collection.mutable
 
 object UserDefinedFunctionUtils {
 
@@ -305,6 +309,66 @@ object UserDefinedFunctionUtils {
   // ----------------------------------------------------------------------------------------------
   // Utilities for user-defined functions
   // ----------------------------------------------------------------------------------------------
+
+
+  def extractLazyAccumulatorSpec(aggFun: AggregateFunction[_, _], accType: TypeInformation[_]):
+    (TypeInformation[_], Option[Seq[AccumulatorSpec[_]]]) = {
+
+    val name = aggFun.getClass.getSimpleName
+    accType match {
+      case pojoType: PojoTypeInfo[_] if pojoType.getArity > 0 =>
+        val arity = pojoType.getArity
+        val newPojoFields = new util.ArrayList[PojoField]()
+        val accumulatorSpecs = new mutable.ArrayBuffer[AccumulatorSpec[_]]
+        for (i <- 0 until arity) {
+          val field = pojoType.getPojoFieldAt(i).getField
+          if (classOf[Accumulator].isAssignableFrom(field.getType)) {
+            val parameterizedType = field.getGenericType.asInstanceOf[ParameterizedType]
+            if (parameterizedType.getRawType == classOf[MapAccumulator[_, _]]) {
+              val args = parameterizedType.getActualTypeArguments
+              val keyType = args(0).asInstanceOf[Class[Any]]
+              val valueType = args(1).asInstanceOf[Class[Any]]
+              val spec = MapAccumulatorSpec[Any, Any](
+                name + "$" + field.getName,
+                TypeInformation.of(keyType),
+                TypeInformation.of(valueType),
+                field)
+              accumulatorSpecs += spec
+            } else if (parameterizedType.getRawType == classOf[ListAccumulator[_]]) {
+              val args = parameterizedType.getActualTypeArguments
+              val elementType = args(0).asInstanceOf[Class[Any]]
+              val spec = ListAccumulatorSpec[Any](
+                name + "$" + field.getName,
+                TypeInformation.of(elementType),
+                field)
+              accumulatorSpecs += spec
+            } else if (parameterizedType.getRawType == classOf[ValueAccumulator[_]]) {
+              val args = parameterizedType.getActualTypeArguments
+              val valueType = args(0).asInstanceOf[Class[Any]]
+              val spec = ValueAccumulatorSpec[Any](
+                name + "$" + field.getName,
+                TypeInformation.of(valueType),
+                field)
+              accumulatorSpecs += spec
+            } else {
+              newPojoFields.add(pojoType.getPojoFieldAt(i))
+            }
+          } else {
+            newPojoFields.add(pojoType.getPojoFieldAt(i))
+          }
+        }
+
+        if (arity == newPojoFields.size()) {  // no accumulator types
+          (accType, None)
+        } else {  // with accumulator types
+          val newPojoType = new PojoTypeInfo(accType.getTypeClass, newPojoFields)
+          (newPojoType, Some(accumulatorSpecs))
+        }
+
+      case _ => (accType, None)
+    }
+
+  }
 
   /**
     * Internal method of AggregateFunction#getResultType() that does some pre-checking and uses
