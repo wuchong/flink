@@ -22,7 +22,7 @@ import java.lang.{Iterable => JIterable}
 import org.apache.flink.api.common.state.{ListStateDescriptor, MapStateDescriptor, StateDescriptor, ValueStateDescriptor}
 
 
-class HeapAccumulatorFactory(lazyAccSpecs: Map[String, StateDescriptor[_, _]])
+private[flink] class HeapAccumulatorFactory(lazyAccSpecs: Map[String, StateDescriptor[_, _]])
   extends AccumulatorFactory(lazyAccSpecs) {
 
   override protected def createValue[T](vsd: ValueStateDescriptor[T]): ValueAccumulator[T] =
@@ -35,9 +35,11 @@ class HeapAccumulatorFactory(lazyAccSpecs: Map[String, StateDescriptor[_, _]])
     new HeapMapAccumulator[K, V]
 }
 
-class HeapMapAccumulator[K, V] extends MapAccumulator[K, V] {
+private[flink] class HeapMapAccumulator[K, V](initialMap: util.Map[K, V]) extends MapAccumulator[K, V] {
 
-  private val map = new util.HashMap[K, V]()
+  def this() = this(new util.HashMap[K, V]())
+
+  val map: util.Map[K, V] = initialMap
 
   override def get(key: K): V = map.get(key)
 
@@ -61,9 +63,11 @@ class HeapMapAccumulator[K, V] extends MapAccumulator[K, V] {
 }
 
 
-class HeapListAccumulator[T] extends ListAccumulator[T] {
+private[flink] class HeapListAccumulator[T](initialList: util.List[T]) extends ListAccumulator[T] {
 
-  private val list = new util.ArrayList[T]()
+  def this() = this(new util.ArrayList[T]())
+
+  private val list: util.List[T] = initialList
 
   override def get: JIterable[T] = list
 
@@ -73,9 +77,11 @@ class HeapListAccumulator[T] extends ListAccumulator[T] {
 }
 
 
-class HeapValueAccumulator[T] extends ValueAccumulator[T] {
+private[flink] class HeapValueAccumulator[T](initialValue: Option[T]) extends ValueAccumulator[T] {
 
-  private var value: Option[T] = None
+  def this() = this(None)
+
+  private var value: Option[T] = initialValue
 
   override def get: T = {
     if (value.isDefined) {

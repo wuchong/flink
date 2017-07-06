@@ -15,6 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.table.accumulator
+package org.apache.flink.table.api.java;
 
-private[flink] case class LazyAccumulatorConfig(accSpecs: Array[Seq[AccumulatorSpec[_]]], isOnState: Boolean)
+import org.apache.flink.table.accumulator.MapAccumulator;
+import org.apache.flink.table.functions.AggregateFunction;
+
+public class DistinctCount extends AggregateFunction<Long, MyACC> {
+
+	@Override
+	public MyACC createAccumulator() {
+		return new MyACC();
+	}
+
+	@Override
+	public Long getValue(MyACC accumulator) {
+		return accumulator.count;
+	}
+
+	public void accumulate(MyACC acc, String id) throws Exception {
+		if (acc.directory.contains(id)) {
+			acc.count++;
+		} else {
+			acc.directory.put(id, 1);
+		}
+	}
+}
+
+class MyACC {
+	MapAccumulator<String, Integer> directory;
+	long count = 0;
+}

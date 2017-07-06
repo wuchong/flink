@@ -1163,6 +1163,37 @@ object AggregateUtil {
     (propPos._1, propPos._2)
   }
 
+  private def analyzeAccumulatorTypes(
+    aggregates: Seq[TableAggregateFunction[_, _]],
+    isStateBackend: Boolean)
+  : (Array[TypeInformation[_]], Array[Seq[AccumulatorSpec[_]]]) = {
+
+    val accTypes = new Array[TypeInformation[_]](aggregates.size)
+    val accSpecs = new Array[Seq[AccumulatorSpec[_]]](aggregates.size)
+
+    // create accumulator type information for every aggregate function
+    aggregates.zipWithIndex.foreach { case (agg, index) =>
+
+
+
+      if (accTypes(index) != null) {
+        val (accType, specs) = extractLazyAccumulatorSpecs(agg, accTypes(index))
+        if (specs.isDefined) {
+          accSpecs(index) = specs.get
+          accTypes(index) = accType
+        } else {
+          accTypes(index) = getAccumulatorTypeOfAggregateFunction(agg)
+          accSpecs(index) = Seq()
+        }
+      } else {
+        accTypes(index) = getAccumulatorTypeOfAggregateFunction(agg)
+        accSpecs(index) = Seq()
+      }
+    }
+
+
+  }
+
   private def transformToAggregateFunctions(
       aggregateCalls: Seq[AggregateCall],
       inputType: RelDataType,
@@ -1410,7 +1441,7 @@ object AggregateUtil {
     // create accumulator type information for every aggregate function
     aggregates.zipWithIndex.foreach { case (agg, index) =>
       if (accTypes(index) != null) {
-        val (accType, specs) = extractLazyAccumulatorSpec(agg, accTypes(index))
+        val (accType, specs) = extractLazyAccumulatorSpecs(agg, accTypes(index))
         if (specs.isDefined) {
           accSpecs(index) = specs.get
           accTypes(index) = accType

@@ -23,7 +23,7 @@ import java.lang.{Iterable => JIterable}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.state._
 
-class StateAccumulatorFactory(ctx: RuntimeContext, lazyAccSpecs: Map[String, StateDescriptor[_, _]])
+private[flink] class StateAccumulatorFactory(ctx: RuntimeContext, lazyAccSpecs: Map[String, StateDescriptor[_, _]])
   extends AccumulatorFactory(lazyAccSpecs) {
 
   override protected def createValue[T](vsd: ValueStateDescriptor[T]): ValueAccumulator[T] = {
@@ -42,7 +42,7 @@ class StateAccumulatorFactory(ctx: RuntimeContext, lazyAccSpecs: Map[String, Sta
   }
 }
 
-class StateMapAccumulator[K, V](state: MapState[K, V]) extends MapAccumulator[K, V] {
+private[flink] class StateMapAccumulator[K, V](state: MapState[K, V]) extends MapAccumulator[K, V] {
 
   override def get(key: K): V = state.get(key)
 
@@ -66,7 +66,7 @@ class StateMapAccumulator[K, V](state: MapState[K, V]) extends MapAccumulator[K,
 }
 
 
-class StateListAccumulator[T](state: ListState[T]) extends ListAccumulator[T] {
+private[flink] class StateListAccumulator[T](state: ListState[T]) extends ListAccumulator[T] {
 
   override def get: JIterable[T] = state.get()
 
@@ -76,7 +76,7 @@ class StateListAccumulator[T](state: ListState[T]) extends ListAccumulator[T] {
 }
 
 
-class StateValueAccumulator[T](state: ValueState[T]) extends ValueAccumulator[T] {
+private[flink] class StateValueAccumulator[T](state: ValueState[T]) extends ValueAccumulator[T] {
 
   override def get: T = state.value()
 

@@ -19,6 +19,8 @@
 package org.apache.flink.table.api.scala.stream.table
 
 import org.apache.flink.api.common.time.Time
+import org.apache.flink.api.java.tuple.Tuple2
+import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.table.accumulator.MapAccumulator
@@ -127,25 +129,25 @@ class GroupAggregationsITCase extends StreamingWithStateTestBase {
     val tEnv = TableEnvironment.getTableEnvironment(env)
     StreamITCase.clear
 
-    val data = new mutable.MutableList[(Int, Long, String)]
-    data.+=((1, 1L, "A"))
-    data.+=((2, 2L, "B"))
-    data.+=((3, 2L, "B"))
-    data.+=((4, 3L, "C"))
-    data.+=((5, 3L, "C"))
-    data.+=((6, 3L, "C"))
-    data.+=((7, 4L, "B"))
-    data.+=((8, 4L, "A"))
-    data.+=((9, 4L, "D"))
-    data.+=((10, 4L, "E"))
-    data.+=((11, 5L, "A"))
-    data.+=((12, 5L, "B"))
+    val data = new mutable.MutableList[(Int, Long, String, String)]
+    data.+=((1, 1L, "A", "A"))
+    data.+=((2, 2L, "B", "B"))
+    data.+=((3, 2L, "B", "B"))
+    data.+=((4, 3L, "C", "C"))
+    data.+=((5, 3L, "C", "C"))
+    data.+=((6, 3L, "C", "C"))
+    data.+=((7, 4L, "B", "B"))
+    data.+=((8, 4L, "A", "A"))
+    data.+=((9, 4L, "D", "D"))
+    data.+=((10, 4L, "E", "E"))
+    data.+=((11, 5L, "A", "A"))
+    data.+=((12, 5L, "B", "B"))
 
     val distinct = new DistinctCount
 
-    val t = env.fromCollection(data).toTable(tEnv, 'a, 'b, 'c)
+    val t = env.fromCollection(data).toTable(tEnv, 'a, 'b, 'c, 'd)
       .groupBy('b)
-      .select('b, distinct('c))
+      .select('b, distinct('d), distinct('c))
 
     val results = t.toRetractStream[Row](queryConfig)
     results.addSink(new StreamITCase.RetractingSink)
@@ -155,15 +157,27 @@ class GroupAggregationsITCase extends StreamingWithStateTestBase {
     assertEquals(expected.sorted, StreamITCase.retractedResults.sorted)
   }
 
+  @Test
+  def test(): Unit = {
+    val typeinfo = TypeExtractor.createTypeInfo(classOf[MyACC])
+    print(typeinfo)
+  }
+
 }
 
 class MyACC {
 
-  var map: MapAccumulator[String, java.lang.Integer] = _
+  var map: MapAccumulator[String, java.lang.Integer] = null
+
+  var map2: MapAccumulator[String, Tuple2[String, String]] = _
+
+  var map3: MapAccumulator[_, _] = _
 
   var count: Int = 0
 
 }
+
+case class aaa(map: MapAccumulator[String, String])
 
 class DistinctCount extends AggregateFunction[Long, MyACC] {
 

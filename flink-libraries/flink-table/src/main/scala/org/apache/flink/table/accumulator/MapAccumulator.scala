@@ -20,6 +20,10 @@ package org.apache.flink.table.accumulator
 import java.util
 import java.lang.{Iterable => JIterable}
 
+import org.apache.flink.api.common.typeinfo.TypeInfo
+import org.apache.flink.table.typeutils.MapAccumulatorTypeInfoFactory
+
+@TypeInfo(classOf[MapAccumulatorTypeInfoFactory[_, _]])
 trait MapAccumulator[K, V] extends Accumulator {
 
   /**

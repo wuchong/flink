@@ -20,7 +20,7 @@ package org.apache.flink.table.accumulator
 import org.apache.flink.api.common.state.{ListStateDescriptor, MapStateDescriptor, StateDescriptor, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 
-abstract class AccumulatorFactory(lazyAccSpecs: Map[String, StateDescriptor[_, _]]) extends Serializable {
+private[flink] abstract class AccumulatorFactory(lazyAccSpecs: Map[String, StateDescriptor[_, _]]) extends Serializable {
 
   def create(id: String): Accumulator = {
     val spec = lazyAccSpecs.getOrElse(id, throw new RuntimeException(s"Can not find lazy accumulator specific: $id"))

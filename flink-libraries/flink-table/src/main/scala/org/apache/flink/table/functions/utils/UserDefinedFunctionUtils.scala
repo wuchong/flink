@@ -311,7 +311,7 @@ object UserDefinedFunctionUtils {
   // ----------------------------------------------------------------------------------------------
 
 
-  def extractLazyAccumulatorSpec(aggFun: AggregateFunction[_, _], accType: TypeInformation[_]):
+  def extractLazyAccumulatorSpecs(aggFun: AggregateFunction[_, _], accType: TypeInformation[_]):
     (TypeInformation[_], Option[Seq[AccumulatorSpec[_]]]) = {
 
     val name = aggFun.getClass.getSimpleName
@@ -323,8 +323,19 @@ object UserDefinedFunctionUtils {
         for (i <- 0 until arity) {
           val field = pojoType.getPojoFieldAt(i).getField
           if (classOf[Accumulator].isAssignableFrom(field.getType)) {
+//            if (field.getType == classOf[MapAccumulator[_, _]]) {
+//              val keyType = TypeExtractor.createTypeInfo(field.getGenericType)
+//
+//            } else if (field.getType == classOf[ListAccumulator[_]]) {
+//
+//            } else if (field.getType == classOf[ValueAccumulator[_]) {
+//
+//            }
+
+
             val parameterizedType = field.getGenericType.asInstanceOf[ParameterizedType]
             if (parameterizedType.getRawType == classOf[MapAccumulator[_, _]]) {
+              val xxx = TypeExtractor.createTypeInfo(field.getGenericType)
               val args = parameterizedType.getActualTypeArguments
               val keyType = args(0).asInstanceOf[Class[Any]]
               val valueType = args(1).asInstanceOf[Class[Any]]

@@ -22,13 +22,13 @@ import java.lang.reflect.Field
 import org.apache.flink.api.common.state.{ListStateDescriptor, MapStateDescriptor, StateDescriptor, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 
-trait AccumulatorSpec[ACC <: Accumulator] {
+private[flink] trait AccumulatorSpec[ACC <: Accumulator] {
   def id: String
   def field: Field
   def toStateDescriptor: StateDescriptor[_, _]
 }
 
-case class ValueAccumulatorSpec[T](
+private[flink] case class ValueAccumulatorSpec[T](
     id: String,
     ti: TypeInformation[T],
     field: Field)
@@ -36,7 +36,7 @@ case class ValueAccumulatorSpec[T](
   override def toStateDescriptor: StateDescriptor[_, _] = new ValueStateDescriptor[T](id, ti)
 }
 
-case class ListAccumulatorSpec[T](
+private[flink] case class ListAccumulatorSpec[T](
     id: String,
     ti: TypeInformation[T],
     field: Field)
@@ -44,7 +44,7 @@ case class ListAccumulatorSpec[T](
   override def toStateDescriptor: StateDescriptor[_, _] = new ListStateDescriptor[T](id, ti)
 }
 
-case class MapAccumulatorSpec[K, V](
+private[flink] case class MapAccumulatorSpec[K, V](
     id: String,
     key: TypeInformation[K],
     value: TypeInformation[V],
