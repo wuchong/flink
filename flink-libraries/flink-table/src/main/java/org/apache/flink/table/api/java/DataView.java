@@ -17,34 +17,12 @@
  */
 package org.apache.flink.table.api.java;
 
+import org.apache.flink.table.accumulator.HeapMapView;
 import org.apache.flink.table.accumulator.MapView;
-import org.apache.flink.table.functions.AggregateFunction;
 
+public abstract class DataView {
 
-
-class MyACC {
-	MapView<String, Integer> directory = DataView.create();
-	long count = 0;
-}
-
-
-public class DistinctCount extends AggregateFunction<Long, MyACC> {
-
-	@Override
-	public MyACC createAccumulator() {
-		return new MyACC();
-	}
-
-	@Override
-	public Long getValue(MyACC accumulator) {
-		return accumulator.count;
-	}
-
-	public void accumulate(MyACC acc, String id) throws Exception {
-		if (acc.directory.contains(id)) {
-			acc.count++;
-		} else {
-			acc.directory.put(id, 1);
-		}
+	public static <K, V> MapView<K, V> create() {
+		return new HeapMapView<>();
 	}
 }

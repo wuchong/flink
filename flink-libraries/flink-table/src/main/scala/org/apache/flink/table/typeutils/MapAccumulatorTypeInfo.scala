@@ -27,10 +27,10 @@ import org.apache.flink.api.common.typeutils.base.{MapSerializer, MapSerializerC
 import org.apache.flink.api.common.typeutils._
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import org.apache.flink.table.accumulator.{HeapMapAccumulator, MapAccumulator}
+import org.apache.flink.table.accumulator.{HeapMapView, MapView}
 
 class MapAccumulatorTypeInfo[K, V](val keyType: TypeInformation[K], val valueType: TypeInformation[V])
-  extends TypeInformation[MapAccumulator[K, V]] {
+  extends TypeInformation[MapView[K, V]] {
 
   override def isBasicType: Boolean = false
 
@@ -40,11 +40,11 @@ class MapAccumulatorTypeInfo[K, V](val keyType: TypeInformation[K], val valueTyp
 
   override def getTotalFields: Int = 2
 
-  override def getTypeClass: Class[MapAccumulator[K, V]] = classOf[MapAccumulator[K, V]]
+  override def getTypeClass: Class[MapView[K, V]] = classOf[MapView[K, V]]
 
   override def isKeyType: Boolean = false
 
-  override def createSerializer(config: ExecutionConfig): TypeSerializer[MapAccumulator[K, V]] = {
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[MapView[K, V]] = {
     val keySer = keyType.createSerializer(config)
     val valueSer = valueType.createSerializer(config)
     new MapAccumulatorSerializer[K, V](new MapSerializer[K, V](keySer, valueSer))
@@ -69,37 +69,37 @@ class MapAccumulatorTypeInfo[K, V](val keyType: TypeInformation[K], val valueTyp
 }
 
 class MapAccumulatorSerializer[K, V](mapSerializer: MapSerializer[K, V])
-  extends TypeSerializer[MapAccumulator[K, V]] {
+  extends TypeSerializer[MapView[K, V]] {
 
   override def isImmutableType: Boolean = mapSerializer.isImmutableType
 
-  override def duplicate(): TypeSerializer[MapAccumulator[K, V]] =
+  override def duplicate(): TypeSerializer[MapView[K, V]] =
     new MapAccumulatorSerializer[K, V](
       mapSerializer.duplicate().asInstanceOf[MapSerializer[K, V]])
 
-  override def createInstance(): MapAccumulator[K, V] =
-    new HeapMapAccumulator[K, V](mapSerializer.createInstance())
+  override def createInstance(): MapView[K, V] =
+    new HeapMapView[K, V](mapSerializer.createInstance())
 
-  override def copy(from: MapAccumulator[K, V]): MapAccumulator[K, V] = {
-    val map = from.asInstanceOf[HeapMapAccumulator[K, V]].map
-    new HeapMapAccumulator[K, V](mapSerializer.copy(map))
+  override def copy(from: MapView[K, V]): MapView[K, V] = {
+    val map = from.asInstanceOf[HeapMapView[K, V]].map
+    new HeapMapView[K, V](mapSerializer.copy(map))
   }
 
-  override def copy(from: MapAccumulator[K, V], reuse: MapAccumulator[K, V])
-  : MapAccumulator[K, V] = copy(from)
+  override def copy(from: MapView[K, V], reuse: MapView[K, V])
+  : MapView[K, V] = copy(from)
 
   override def getLength: Int = -1  // var length
 
-  override def serialize(record: MapAccumulator[K, V], target: DataOutputView): Unit = {
-    val map = record.asInstanceOf[HeapMapAccumulator[K, V]].map
+  override def serialize(record: MapView[K, V], target: DataOutputView): Unit = {
+    val map = record.asInstanceOf[HeapMapView[K, V]].map
     mapSerializer.serialize(map, target)
   }
 
-  override def deserialize(source: DataInputView): MapAccumulator[K, V] =
-    new HeapMapAccumulator[K, V](mapSerializer.deserialize(source))
+  override def deserialize(source: DataInputView): MapView[K, V] =
+    new HeapMapView[K, V](mapSerializer.deserialize(source))
 
-  override def deserialize(reuse: MapAccumulator[K, V], source: DataInputView)
-  : MapAccumulator[K, V] = deserialize(source)
+  override def deserialize(reuse: MapView[K, V], source: DataInputView)
+  : MapView[K, V] = deserialize(source)
 
   override def copy(source: DataInputView, target: DataOutputView): Unit =
     mapSerializer.copy(source, target)
@@ -118,7 +118,7 @@ class MapAccumulatorSerializer[K, V](mapSerializer: MapSerializer[K, V])
 
   // copy and modified from MapSerializer.ensureCompatibility
   override def ensureCompatibility(configSnapshot: TypeSerializerConfigSnapshot)
-  : CompatibilityResult[MapAccumulator[K, V]] = {
+  : CompatibilityResult[MapView[K, V]] = {
 
     configSnapshot match {
       case snapshot: MapSerializerConfigSnapshot[_, _] =>
@@ -137,7 +137,7 @@ class MapAccumulatorSerializer[K, V](mapSerializer: MapSerializer[K, V])
           mapSerializer.getValueSerializer)
 
         if (!keyCompatResult.isRequiresMigration && !valueCompatResult.isRequiresMigration) {
-          CompatibilityResult.compatible[MapAccumulator[K, V]]
+          CompatibilityResult.compatible[MapView[K, V]]
         } else if (keyCompatResult.getConvertDeserializer != null
           && valueCompatResult.getConvertDeserializer != null) {
           CompatibilityResult.requiresMigration(
@@ -148,20 +148,20 @@ class MapAccumulatorSerializer[K, V](mapSerializer: MapSerializer[K, V])
             )
           )
         } else {
-          CompatibilityResult.requiresMigration[MapAccumulator[K, V]]
+          CompatibilityResult.requiresMigration[MapView[K, V]]
         }
 
-      case _ => CompatibilityResult.requiresMigration[MapAccumulator[K, V]]
+      case _ => CompatibilityResult.requiresMigration[MapView[K, V]]
     }
   }
 }
 
-class MapAccumulatorTypeInfoFactory[K, V] extends TypeInfoFactory[MapAccumulator[K, V]] {
+class MapAccumulatorTypeInfoFactory[K, V] extends TypeInfoFactory[MapView[K, V]] {
 
   override def createTypeInfo(
     t: Type,
     genericParameters: util.Map[String, TypeInformation[_]])
-  : TypeInformation[MapAccumulator[K, V]] = {
+  : TypeInformation[MapView[K, V]] = {
     var keyType = genericParameters.get("K")
     var valueType = genericParameters.get("V")
 

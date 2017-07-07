@@ -36,13 +36,13 @@ private[flink] class StateAccumulatorFactory(ctx: RuntimeContext, lazyAccSpecs: 
     new StateListAccumulator(state)
   }
 
-  override protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapAccumulator[K, V] = {
+  override protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapView[K, V] = {
     val state = ctx.getMapState(msd)
-    new StateMapAccumulator(state)
+    new StateMapView(state)
   }
 }
 
-private[flink] class StateMapAccumulator[K, V](state: MapState[K, V]) extends MapAccumulator[K, V] {
+private[flink] class StateMapView[K, V](state: MapState[K, V]) extends MapView[K, V] {
 
   override def get(key: K): V = state.get(key)
 

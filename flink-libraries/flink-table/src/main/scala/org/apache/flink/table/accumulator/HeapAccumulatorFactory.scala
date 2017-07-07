@@ -31,11 +31,11 @@ private[flink] class HeapAccumulatorFactory(lazyAccSpecs: Map[String, StateDescr
   override protected def createList[T](lsd: ListStateDescriptor[T]): ListAccumulator[T] =
     new HeapListAccumulator[T]
 
-  override protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapAccumulator[K, V] =
-    new HeapMapAccumulator[K, V]
+  override protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapView[K, V] =
+    new HeapMapView[K, V]
 }
 
-private[flink] class HeapMapAccumulator[K, V](initialMap: util.Map[K, V]) extends MapAccumulator[K, V] {
+private[flink] class HeapMapView[K, V](initialMap: util.Map[K, V]) extends MapView[K, V] {
 
   def this() = this(new util.HashMap[K, V]())
 

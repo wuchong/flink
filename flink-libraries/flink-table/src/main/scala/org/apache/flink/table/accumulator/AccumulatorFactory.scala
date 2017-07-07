@@ -39,7 +39,7 @@ private[flink] abstract class AccumulatorFactory(lazyAccSpecs: Map[String, State
 
   protected def createList[T](lsd: ListStateDescriptor[T]): ListAccumulator[T]
 
-  protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapAccumulator[K, V]
+  protected def createMap[K, V](msd: MapStateDescriptor[K, V]): MapView[K, V]
 
 //  protected def createValue[T](id: String, ti: TypeInformation[T]): ValueAccumulator[T]
 //

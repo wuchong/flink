@@ -24,7 +24,7 @@ import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.apache.flink.table.typeutils.MapAccumulatorTypeInfoFactory
 
 @TypeInfo(classOf[MapAccumulatorTypeInfoFactory[_, _]])
-trait MapAccumulator[K, V] extends Accumulator {
+abstract class MapView[K, V] extends Accumulator {
 
   /**
     * Returns the current value associated with the given key.
@@ -110,4 +110,5 @@ trait MapAccumulator[K, V] extends Accumulator {
   @throws[Exception]
   def iterator: util.Iterator[util.Map.Entry[K, V]]
 
+  def create(): MapView[K, V] = new HeapMapView[K, V]()
 }

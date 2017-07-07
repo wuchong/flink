@@ -49,6 +49,6 @@ private[flink] case class MapAccumulatorSpec[K, V](
     key: TypeInformation[K],
     value: TypeInformation[V],
     field: Field)
-  extends AccumulatorSpec[MapAccumulator[K, V]] {
+  extends AccumulatorSpec[MapView[K, V]] {
   override def toStateDescriptor: StateDescriptor[_, _] = new MapStateDescriptor[K, V](id, key, value)
 }

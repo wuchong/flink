@@ -334,7 +334,7 @@ object UserDefinedFunctionUtils {
 
 
             val parameterizedType = field.getGenericType.asInstanceOf[ParameterizedType]
-            if (parameterizedType.getRawType == classOf[MapAccumulator[_, _]]) {
+            if (parameterizedType.getRawType == classOf[MapView[_, _]]) {
               val xxx = TypeExtractor.createTypeInfo(field.getGenericType)
               val args = parameterizedType.getActualTypeArguments
               val keyType = args(0).asInstanceOf[Class[Any]]

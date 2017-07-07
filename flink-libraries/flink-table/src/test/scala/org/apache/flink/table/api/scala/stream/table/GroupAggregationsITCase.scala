@@ -23,7 +23,7 @@ import org.apache.flink.api.java.tuple.Tuple2
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.table.accumulator.MapAccumulator
+import org.apache.flink.table.accumulator.MapView
 import org.apache.flink.table.api.scala._
 import org.apache.flink.table.api.scala.stream.utils.{StreamITCase, StreamTestData, StreamingWithStateTestBase}
 import org.apache.flink.table.api.{StreamQueryConfig, TableEnvironment}
@@ -167,17 +167,17 @@ class GroupAggregationsITCase extends StreamingWithStateTestBase {
 
 class MyACC {
 
-  var map: MapAccumulator[String, java.lang.Integer] = null
+  var map: MapView[String, java.lang.Integer] = null
 
-  var map2: MapAccumulator[String, Tuple2[String, String]] = _
+  var map2: MapView[String, Tuple2[String, String]] = _
 
-  var map3: MapAccumulator[_, _] = _
+  var map3: MapView[_, _] = _
 
   var count: Int = 0
 
 }
 
-case class aaa(map: MapAccumulator[String, String])
+case class aaa(map: MapView[String, String])
 
 class DistinctCount extends AggregateFunction[Long, MyACC] {
 
