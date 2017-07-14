@@ -189,7 +189,8 @@ class Table(
             functionCall.parameters,
             functionCall.resultType,
             fields.map(_.asInstanceOf[UnresolvedFieldReference].name).toArray,
-            functionCall.child)
+            functionCall.child,
+            functionCall.accType)
         )
       case _ =>
         // prepend an AliasNode
@@ -535,7 +536,8 @@ class Table(
         udtf.parameters,
         udtf.resultType,
         udtf.fieldNames,
-        this.logicalPlan
+        this.logicalPlan,
+        udtf.accType
       ).validate(tableEnv)
 
       new Table(

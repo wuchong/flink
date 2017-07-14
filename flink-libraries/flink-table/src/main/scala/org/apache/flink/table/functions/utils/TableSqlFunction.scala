@@ -40,6 +40,7 @@ class TableSqlFunction(
     name: String,
     udtf: TableFunction[_],
     rowTypeInfo: TypeInformation[_],
+    accTypeInfo: Option[TypeInformation[_]],
     returnTypeInference: SqlReturnTypeInference,
     operandTypeInference: SqlOperandTypeInference,
     operandTypeChecker: SqlOperandTypeChecker,
@@ -62,6 +63,8 @@ class TableSqlFunction(
     * Get the type information of the table returned by the table function.
     */
   def getRowTypeInfo = rowTypeInfo
+
+  def getAccTypeInfo = accTypeInfo
 
   /**
     * Get additional mapping information if the returned table type is a POJO
@@ -88,6 +91,7 @@ object TableSqlFunction {
     name: String,
     udtf: TableFunction[_],
     rowTypeInfo: TypeInformation[_],
+    accTypeInfo: Option[TypeInformation[_]],
     typeFactory: FlinkTypeFactory,
     functionImpl: FlinkTableFunctionImpl[_]): TableSqlFunction = {
 
@@ -112,6 +116,7 @@ object TableSqlFunction {
       name,
       udtf,
       rowTypeInfo,
+      accTypeInfo,
       ReturnTypes.CURSOR,
       InferTypes.explicit(argTypes),
       typeChecker,

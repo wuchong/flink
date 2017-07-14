@@ -680,7 +680,8 @@ case class LogicalTableFunctionCall(
     parameters: Seq[Expression],
     resultType: TypeInformation[_],
     fieldNames: Array[String],
-    child: LogicalNode)
+    child: LogicalNode,
+    accType: Option[TypeInformation[_]] = None)
   extends UnaryNode {
 
   private val (generatedNames, fieldIndexes, fieldTypes) = getFieldInfo(resultType)
@@ -705,12 +706,13 @@ case class LogicalTableFunctionCall(
     // check if class could be instantiated
     checkForInstantiation(tableFunction.getClass)
     // look for a signature that matches the input types
-    val signature = node.parameters.map(_.resultType)
-    val foundMethod = getUserDefinedMethod(tableFunction, "eval", typeInfoToClass(signature))
+    val parameters = node.parameters.map(_.resultType)
+    val signatures = Seq() ++ accType ++ parameters
+    val foundMethod = getUserDefinedMethod(tableFunction, "eval", typeInfoToClass(signatures))
     if (foundMethod.isEmpty) {
       failValidation(
         s"Given parameters of function '$functionName' do not match any signature. \n" +
-          s"Actual: ${signatureToString(signature)} \n" +
+          s"Actual: ${signatureToString(signatures)} \n" +
           s"Expected: ${signaturesToString(tableFunction, "eval")}")
     } else {
       node.evalMethod = foundMethod.get
@@ -730,6 +732,7 @@ case class LogicalTableFunctionCall(
       tableFunction.functionIdentifier,
       tableFunction,
       resultType,
+      accType,
       typeFactory,
       function)
 

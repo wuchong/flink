@@ -160,7 +160,13 @@ class TimeAttributesITCase extends StreamingMultipleProgramsTestBase {
       tEnv, 'rowtime.rowtime, 'int, 'double, 'float, 'bigdec, 'string, 'proctime.proctime)
     val func = new TableFunc
 
-    val t = table.join(func('rowtime, 'proctime, 'string) as 's).select('rowtime, 's)
+    val t = table.select('int,  'proctime)
+
+      .window(Tumble over 3.milli on 'proctime as 'w)
+    .groupBy('w, 'int)
+    .select('w.start, 'int)
+
+//    val t = table.join(func('rowtime, 'proctime, 'string) as 's).select('rowtime, 's)
 
     val results = t.toAppendStream[Row]
     results.addSink(new StreamITCase.StringSink[Row])

@@ -41,7 +41,7 @@ import org.apache.flink.table.expressions._
 import org.apache.flink.table.functions.aggfunctions._
 import org.apache.flink.table.functions.utils.AggSqlFunction
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils._
-import org.apache.flink.table.functions.{AggregateFunction => TableAggregateFunction}
+import org.apache.flink.table.functions.{UserDefinedFunction, AggregateFunction => TableAggregateFunction}
 import org.apache.flink.table.plan.logical._
 import org.apache.flink.table.runtime.types.{CRow, CRowTypeInfo}
 import org.apache.flink.table.typeutils.TypeCheckUtils._
@@ -330,7 +330,6 @@ object AggregateUtil {
     val mapReturnType: RowTypeInfo =
       createRowTypeForKeysAndAggregates(
         groupings,
-        aggregates,
         accTypes,
         inputType,
         Some(Array(BasicTypeInfo.LONG_TYPE_INFO)))
@@ -435,7 +434,6 @@ object AggregateUtil {
 
     val returnType: RowTypeInfo = createRowTypeForKeysAndAggregates(
       groupings,
-      aggregates,
       accTypes,
       physicalInputRowType,
       Some(Array(BasicTypeInfo.LONG_TYPE_INFO)))
@@ -703,7 +701,6 @@ object AggregateUtil {
         val combineReturnType: RowTypeInfo =
           createRowTypeForKeysAndAggregates(
             groupings,
-            aggregates,
             accTypes,
             physicalInputRowType,
             Option(Array(BasicTypeInfo.LONG_TYPE_INFO, BasicTypeInfo.LONG_TYPE_INFO)))
@@ -778,7 +775,6 @@ object AggregateUtil {
         val combineReturnType: RowTypeInfo =
           createRowTypeForKeysAndAggregates(
             groupings,
-            aggregates,
             accTypes,
             physicalInputRowType,
             Option(Array(BasicTypeInfo.LONG_TYPE_INFO, BasicTypeInfo.LONG_TYPE_INFO)))
@@ -1057,7 +1053,7 @@ object AggregateUtil {
     * Return true if all aggregates can be partially merged. False otherwise.
     */
   private[flink] def doAllSupportPartialMerge(
-      aggregateList: Array[TableAggregateFunction[_ <: Any, _ <: Any]]): Boolean = {
+      aggregateList: Array[UserDefinedFunction]): Boolean = {
     aggregateList.forall(ifMethodExistInFunction("merge", _))
   }
 
@@ -1161,11 +1157,11 @@ object AggregateUtil {
       aggregateCalls: Seq[AggregateCall],
       inputType: RelDataType,
       needRetraction: Boolean)
-  : (Array[Array[Int]], Array[TableAggregateFunction[_, _]], Array[TypeInformation[_]]) = {
+  : (Array[Array[Int]], Array[UserDefinedFunction], Array[TypeInformation[_]]) = {
 
     // store the aggregate fields of each aggregate function, by the same order of aggregates.
     val aggFieldIndexes = new Array[Array[Int]](aggregateCalls.size)
-    val aggregates = new Array[TableAggregateFunction[_ <: Any, _ <: Any]](aggregateCalls.size)
+    val aggregates = new Array[UserDefinedFunction](aggregateCalls.size)
     val accTypes = new Array[TypeInformation[_]](aggregateCalls.size)
 
     // create aggregate function instances by function type and aggregate field data type.
@@ -1411,7 +1407,6 @@ object AggregateUtil {
 
   private def createRowTypeForKeysAndAggregates(
       groupings: Array[Int],
-      aggregates: Array[TableAggregateFunction[_, _]],
       aggTypes: Array[TypeInformation[_]],
       inputType: RelDataType,
       windowKeyTypes: Option[Array[TypeInformation[_]]] = None): RowTypeInfo = {

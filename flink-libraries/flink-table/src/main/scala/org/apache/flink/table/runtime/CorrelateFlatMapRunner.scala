@@ -27,7 +27,7 @@ import org.apache.flink.table.codegen.Compiler
 import org.apache.flink.util.Collector
 import org.slf4j.{Logger, LoggerFactory}
 
-class CorrelateFlatMapRunner[IN, OUT](
+class CorrelateFlatMapRunner[IN, OUT] (
     flatMapName: String,
     flatMapCode: String,
     collectorName: String,

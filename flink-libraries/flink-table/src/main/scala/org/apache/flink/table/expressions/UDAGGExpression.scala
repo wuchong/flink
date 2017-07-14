@@ -18,8 +18,9 @@
 package org.apache.flink.table.expressions
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.table.functions.AggregateFunction
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils.{getAccumulatorTypeOfAggregateFunction, getResultTypeOfAggregateFunction}
+import org.apache.flink.table.functions.{AggregateFunction, MultisetAggregateFunction, OperatorFunction}
+import org.apache.flink.table.typeutils.MultisetTypeInfo
 
 /**
   * A class which creates a call to an aggregateFunction
@@ -45,3 +46,43 @@ case class UDAGGExpression[T: TypeInformation, ACC: TypeInformation](
     AggFunctionCall(aggregateFunction, resultTypeInfo, accTypeInfo, params)
   }
 }
+
+case class MultisetUDAGGExpression[T: TypeInformation, ACC: TypeInformation](
+    aggregateFunction: MultisetAggregateFunction[T, ACC]) {
+
+  /**
+    * Creates a call to an [[AggregateFunction]].
+    *
+    * @param params actual parameters of function
+    * @return a [[AggFunctionCall]]
+    */
+  def apply(params: Expression*): AggFunctionCall = {
+    val resultTypeInfo: TypeInformation[_] = getResultTypeOfAggregateFunction(
+      aggregateFunction,
+      implicitly[TypeInformation[T]])
+
+    val accTypeInfo: TypeInformation[_] = getAccumulatorTypeOfAggregateFunction(
+      aggregateFunction,
+      implicitly[TypeInformation[ACC]])
+
+    val multsetTypeInfo = new MultisetTypeInfo(resultTypeInfo)
+
+    AggFunctionCall(aggregateFunction, multsetTypeInfo, accTypeInfo, params)
+  }
+}
+
+
+///**
+//  * A class which creates a call to an aggregateFunction
+//  */
+//case class UDOPExpression[T: TypeInformation, ACC](operatorFunction: OperatorFunction[T, ACC]) {
+//
+//  /**
+//    * Creates a call to an [[AggregateFunction]].
+//    *
+//    * @param params actual parameters of function
+//    * @return a [[AggFunctionCall]]
+//    */
+//  def apply(params: Expression*): OperatorFunctionCall =
+//    OperatorFunctionCall(operatorFunction, params)
+//}

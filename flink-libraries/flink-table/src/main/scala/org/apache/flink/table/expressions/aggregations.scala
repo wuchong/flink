@@ -24,7 +24,7 @@ import org.apache.calcite.sql.fun._
 import org.apache.calcite.tools.RelBuilder
 import org.apache.calcite.tools.RelBuilder.AggCall
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.table.functions.AggregateFunction
+import org.apache.flink.table.functions.{AggregateFunction, UserDefinedFunction}
 import org.apache.flink.table.functions.utils.AggSqlFunction
 import org.apache.flink.table.typeutils.TypeCheckUtils
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo
@@ -227,7 +227,7 @@ case class VarSamp(child: Expression) extends Aggregation {
 }
 
 case class AggFunctionCall(
-    aggregateFunction: AggregateFunction[_, _],
+    aggregateFunction: UserDefinedFunction,
     resultTypeInfo: TypeInformation[_],
     accTypeInfo: TypeInformation[_],
     args: Seq[Expression])
@@ -240,7 +240,7 @@ case class AggFunctionCall(
   override def validateInput(): ValidationResult = {
     val signature = children.map(_.resultType)
     // look for a signature that matches the input types
-    val foundSignature = getAccumulateMethodSignature(aggregateFunction, signature)
+    val foundSignature = getAccumulateMethodSignature(aggregateFunction, accTypeInfo, signature)
     if (foundSignature.isEmpty) {
       ValidationFailure(s"Given parameters do not match any signature. \n" +
                           s"Actual: ${signatureToString(signature)} \n" +
@@ -260,16 +260,65 @@ case class AggFunctionCall(
 
   override private[flink] def getSqlAggFunction()(implicit relBuilder: RelBuilder) = {
     val typeFactory = relBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
+    val requiresOver = aggregateFunction match {
+      case af: AggregateFunction[_, _] => af.requiresOver
+      case _ => false
+    }
+
     AggSqlFunction(
       aggregateFunction.getClass.getSimpleName,
       aggregateFunction,
       resultType,
       accTypeInfo,
       typeFactory,
-      aggregateFunction.requiresOver)
+      requiresOver)
   }
 
   override private[flink] def toRexNode(implicit relBuilder: RelBuilder): RexNode = {
     relBuilder.call(this.getSqlAggFunction(), args.map(_.toRexNode): _*)
   }
 }
+
+//case class OperatorFunctionCall(
+//  operatorFunction: OperatorFunction[_, _],
+//  args: Seq[Expression])
+//  extends Aggregation {
+//
+//  override private[flink] def children: Seq[Expression] = args
+//
+//  override def resultType: TypeInformation[_] = getResultTypeOfAggregateFunction(operatorFunction)
+//
+//  override def validateInput(): ValidationResult = {
+//    val signature = children.map(_.resultType)
+//    // look for a signature that matches the input types
+//    val foundSignature = getAccumulateMethodSignature(operatorFunction, signature)
+//    if (foundSignature.isEmpty) {
+//      ValidationFailure(s"Given parameters do not match any signature. \n" +
+//                          s"Actual: ${signatureToString(signature)} \n" +
+//                          s"Expected: ${
+//                            getMethodSignatures(operatorFunction, "accumulate").drop(1)
+//                            .map(signatureToString).mkString(", ")}")
+//    } else {
+//      ValidationSuccess
+//    }
+//  }
+//
+//  override def toString(): String = s"${operatorFunction.getClass.getSimpleName}($args)"
+//
+//  override def toAggCall(name: String)(implicit relBuilder: RelBuilder): AggCall = {
+//    relBuilder.aggregateCall(this.getSqlAggFunction(), false, null, name, args.map(_.toRexNode): _*)
+//  }
+//
+//  override private[flink] def getSqlAggFunction()(implicit relBuilder: RelBuilder) = {
+//    val typeFactory = relBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
+//    val sqlAgg = OperatorSqlFunction(operatorFunction.getClass.getSimpleName,
+//                                     operatorFunction,
+//                                     resultType,
+//                                     typeFactory)
+//    sqlAgg
+//  }
+//
+//  override private[flink] def toRexNode(implicit relBuilder: RelBuilder): RexNode = {
+//    relBuilder.call(this.getSqlAggFunction(), args.map(_.toRexNode): _*)
+//  }
+//}

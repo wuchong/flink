@@ -22,6 +22,7 @@ import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex.{RexCall, RexNode}
 import org.apache.calcite.sql.SemiJoinType
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.functions.NullByteKeySelector
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.table.api.{StreamQueryConfig, StreamTableEnvironment}
@@ -29,7 +30,7 @@ import org.apache.flink.table.functions.utils.TableSqlFunction
 import org.apache.flink.table.plan.nodes.CommonCorrelate
 import org.apache.flink.table.plan.nodes.logical.FlinkLogicalTableFunctionScan
 import org.apache.flink.table.plan.schema.RowSchema
-import org.apache.flink.table.runtime.CRowCorrelateProcessRunner
+import org.apache.flink.table.runtime.{CRowCorrelateProcessRunner, TableFunctionProcessFunction}
 import org.apache.flink.table.runtime.types.{CRow, CRowTypeInfo}
 
 /**
@@ -97,6 +98,7 @@ class DataStreamCorrelate(
     val sqlFunction = rexCall.getOperator.asInstanceOf[TableSqlFunction]
     val pojoFieldMapping = Some(sqlFunction.getPojoFieldMapping)
     val udtfTypeInfo = sqlFunction.getRowTypeInfo.asInstanceOf[TypeInformation[Any]]
+    val udtfAccTypeInfo = sqlFunction.getAccTypeInfo
 
     val process = generateFunction(
       config,
@@ -107,7 +109,7 @@ class DataStreamCorrelate(
       rexCall,
       pojoFieldMapping,
       ruleDescription,
-      classOf[ProcessFunction[CRow, CRow]])
+      classOf[TableFunctionProcessFunction[CRow, CRow]])
 
     val collector = generateCollector(
       config,
@@ -122,15 +124,23 @@ class DataStreamCorrelate(
       process.code,
       collector.name,
       collector.code,
-      CRowTypeInfo(process.returnType))
+      CRowTypeInfo(process.returnType),
+      udtfAccTypeInfo)
 
     val inputParallelism = inputDS.getParallelism
 
-    inputDS
-      .process(processFunc)
-      // preserve input parallelism to ensure that acc and retract messages remain in order
-      .setParallelism(inputParallelism)
-      .name(correlateOpName(rexCall, sqlFunction, schema.logicalType))
+    if (udtfAccTypeInfo.isEmpty) {
+      inputDS
+        .process(processFunc)
+        // preserve input parallelism to ensure that acc and retract messages remain in order
+        .setParallelism(inputParallelism)
+        .name(correlateOpName(rexCall, sqlFunction, schema.logicalType))
+    } else {
+      inputDS
+        .keyBy(new NullByteKeySelector[CRow])
+        .process(processFunc).setParallelism(1).setMaxParallelism(1)
+        .name(correlateOpName(rexCall, sqlFunction, schema.logicalType))
+    }
   }
 
 }

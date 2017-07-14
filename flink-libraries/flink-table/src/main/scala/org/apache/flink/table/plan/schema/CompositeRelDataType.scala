@@ -61,7 +61,7 @@ object CompositeRelDataType {
   /**
     * Converts the fields of a composite type to list of [[RelDataTypeField]].
     */
-  private def createFieldList(
+  private[flink] def createFieldList(
       compositeType: CompositeType[_],
       typeFactory: FlinkTypeFactory)
     : util.List[RelDataTypeField] = {

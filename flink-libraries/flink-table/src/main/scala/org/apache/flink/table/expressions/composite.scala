@@ -23,6 +23,7 @@ import org.apache.calcite.tools.RelBuilder
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.CompositeType
 import org.apache.flink.table.api.UnresolvedException
+import org.apache.flink.table.typeutils.MultisetTypeInfo
 import org.apache.flink.table.validate.{ValidationFailure, ValidationResult, ValidationSuccess}
 
 /**
@@ -47,11 +48,15 @@ case class GetCompositeField(child: Expression, key: Any) extends UnaryExpressio
   override def toString = s"$child.get($key)"
 
   override private[flink] def validateInput(): ValidationResult = {
+    val resultType = child.resultType match {
+      case mt: MultisetTypeInfo[_] => mt.elementType
+      case ti@_ => ti
+    }
     // check for composite type
-    if (!child.resultType.isInstanceOf[CompositeType[_]]) {
+    if (!resultType.isInstanceOf[CompositeType[_]]) {
       return ValidationFailure(s"Cannot access field of non-composite type '${child.resultType}'.")
     }
-    val compositeType = child.resultType.asInstanceOf[CompositeType[_]]
+    val compositeType = resultType.asInstanceOf[CompositeType[_]]
 
     // check key
     key match {
@@ -75,10 +80,15 @@ case class GetCompositeField(child: Expression, key: Any) extends UnaryExpressio
     }
   }
 
-  override private[flink] def resultType: TypeInformation[_] =
-    child.resultType.asInstanceOf[CompositeType[_]].getTypeAt(fieldIndex.get)
+  override private[flink] def resultType: TypeInformation[_] = child.resultType match {
+      case mt: MultisetTypeInfo[_] =>
+        new MultisetTypeInfo[Any](
+          mt.elementType.asInstanceOf[CompositeType[_]].getTypeAt(fieldIndex.get))
+      case ti@_ => ti.asInstanceOf[CompositeType[_]].getTypeAt(fieldIndex.get)
+    }
 
   override private[flink] def toRexNode(implicit relBuilder: RelBuilder): RexNode = {
+
     relBuilder
       .getRexBuilder
       .makeFieldAccess(child.toRexNode, fieldIndex.get)

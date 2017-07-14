@@ -21,7 +21,7 @@ package org.apache.flink.table.api.scala
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.table.api.Table
 import org.apache.flink.table.expressions._
-import org.apache.flink.table.functions.TableFunction
+import org.apache.flink.table.functions.{RichTableFunction, TableFunction}
 import org.apache.flink.table.plan.logical.LogicalTableFunctionCall
 
 /**
@@ -50,6 +50,40 @@ class TableFunctionConversions[T](tf: TableFunction[T]) {
         resultType,
         Array.empty,
         child = null // Child will be set later.
+      )
+    )
+  }
+}
+
+/**
+  * Holds methods to convert a [[TableFunction]] call in the Scala Table API into a [[Table]].
+  *
+  * @param tf The TableFunction to convert.
+  */
+class RichTableFunctionConversions[T, ACC](tf: RichTableFunction[T, ACC]) {
+
+  /**
+    * Creates a [[Table]] from a [[TableFunction]] in Scala Table API.
+    *
+    * @param args The arguments of the table function call.
+    * @return A [[Table]] with which represents the [[LogicalTableFunctionCall]].
+    */
+  final def apply(args: Expression*)
+                 (implicit resultTypeInfo: TypeInformation[T],
+                  accTypeInfo: TypeInformation[ACC]): Table = {
+
+    val resultType = if (tf.getResultType == null) resultTypeInfo else tf.getResultType
+
+    new Table(
+      tableEnv = null, // Table environment will be set later.
+      LogicalTableFunctionCall(
+        tf.getClass.getCanonicalName,
+        tf,
+        args.toList,
+        resultType,
+        Array.empty,
+        child = null, // Child will be set later.
+        Some(accTypeInfo)
       )
     )
   }

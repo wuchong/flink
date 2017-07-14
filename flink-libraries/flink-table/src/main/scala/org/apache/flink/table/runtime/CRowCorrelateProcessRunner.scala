@@ -19,6 +19,7 @@
 package org.apache.flink.table.runtime
 
 import org.apache.flink.api.common.functions.util.FunctionUtils
+import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.configuration.Configuration
@@ -37,14 +38,15 @@ class CRowCorrelateProcessRunner(
     processCode: String,
     collectorName: String,
     collectorCode: String,
-    @transient var returnType: TypeInformation[CRow])
+    @transient var returnType: TypeInformation[CRow],
+    accType: Option[TypeInformation[_]])
   extends ProcessFunction[CRow, CRow]
   with ResultTypeQueryable[CRow]
   with Compiler[Any] {
 
   val LOG: Logger = LoggerFactory.getLogger(this.getClass)
 
-  private var function: ProcessFunction[Row, Row] = _
+  private var function: TableFunctionProcessFunction[Row, Row] = _
   private var collector: TableFunctionCollector[_] = _
   private var cRowWrapper: CRowWrappingCollector = _
 
@@ -59,7 +61,17 @@ class CRowCorrelateProcessRunner(
     val processClazz = compile(getRuntimeContext.getUserCodeClassLoader, processName, processCode)
     val constructor = processClazz.getConstructor(classOf[TableFunctionCollector[_]])
     LOG.debug("Instantiating ProcessFunction.")
-    function = constructor.newInstance(collector).asInstanceOf[ProcessFunction[Row, Row]]
+    function = constructor.newInstance(collector).asInstanceOf[TableFunctionProcessFunction[Row, Row]]
+
+    // set the accumulator state if this is a rich table function
+    accType match {
+      case Some(acc) =>
+        val valueDesc = new ValueStateDescriptor("udtf-state", acc)
+        val accState = getRuntimeContext.getState(valueDesc)
+        function.setState(accState)
+      case _ => // do nothing
+    }
+
     FunctionUtils.setFunctionRuntimeContext(function, getRuntimeContext)
     FunctionUtils.openFunction(function, parameters)
   }

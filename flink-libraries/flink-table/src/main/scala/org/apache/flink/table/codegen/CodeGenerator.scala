@@ -45,8 +45,9 @@ import org.apache.flink.table.codegen.calls.ScalarOperators._
 import org.apache.flink.table.functions.sql.ScalarSqlFunctions
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils.{getUserDefinedMethod, signatureToString}
-import org.apache.flink.table.functions.{AggregateFunction, FunctionContext, TimeMaterializationSqlFunction, UserDefinedFunction}
-import org.apache.flink.table.runtime.TableFunctionCollector
+import org.apache.flink.table.functions.{AggregateFunction, MultisetAggregateFunction, TimeMaterializationSqlFunction, UserDefinedFunction, FunctionContext}
+import org.apache.flink.table.runtime.{TableFunctionCollector, TableFunctionProcessFunction}
+import org.apache.flink.table.typeutils.MultisetTypeInfo
 import org.apache.flink.table.typeutils.TypeCheckUtils._
 import org.apache.flink.types.Row
 
@@ -289,7 +290,7 @@ class CodeGenerator(
       name: String,
       generator: CodeGenerator,
       physicalInputTypes: Seq[TypeInformation[_]],
-      aggregates: Array[AggregateFunction[_ <: Any, _ <: Any]],
+      aggregates: Array[UserDefinedFunction],
       aggFields: Array[Array[Int]],
       aggMapping: Array[Int],
       partialResults: Boolean,
@@ -398,13 +399,17 @@ class CodeGenerator(
                |      ${aggMapping(i)},
                |      (${accTypes(i)}) accs.getField($i));""".stripMargin
           } else {
+            val (aggFnClass, resultMethodName) = aggregates(i) match {
+              case _: AggregateFunction[_, _] =>
+                (classOf[AggregateFunction[_, _]].getCanonicalName, "getValue")
+              case _: MultisetAggregateFunction[_, _] =>
+                (classOf[MultisetAggregateFunction[_, _]].getCanonicalName, "getTable")
+            }
             j"""
-               |    org.apache.flink.table.functions.AggregateFunction baseClass$i =
-               |      (org.apache.flink.table.functions.AggregateFunction) ${aggs(i)};
-               |
+               |    $aggFnClass baseClass$i = ($aggFnClass) ${aggs(i)};
                |    output.setField(
                |      ${aggMapping(i)},
-               |      baseClass$i.getValue((${accTypes(i)}) accs.getField($i)));""".stripMargin
+               |      baseClass$i.$resultMethodName((${accTypes(i)}) accs.getField($i)));""".stripMargin
           }
       }.mkString("\n")
 
@@ -708,8 +713,8 @@ class CodeGenerator(
       }
 
       // ProcessFunction
-      else if (clazz == classOf[ProcessFunction[_, _]]) {
-        val baseClass = classOf[ProcessFunction[_, _]]
+      else if (clazz == classOf[ProcessFunction[_, _]] || clazz == classOf[TableFunctionProcessFunction[_, _]]) {
+        val baseClass = clazz
         val inputTypeTerm = boxedTypeTermForTypeInfo(input1)
         (baseClass,
           s"void processElement(Object _in1, " +
@@ -1716,6 +1721,24 @@ class CodeGenerator(
         val fieldTypeTerm = boxedTypeTermForTypeInfo(at)
         val inputCode = s"($fieldTypeTerm) $inputTerm"
         generateInputFieldUnboxing(at, inputCode)
+
+      case mt: MultisetTypeInfo[_] =>
+        val resultTerm = newName("result")
+        val elementTerm = newName("ele")
+        val elementTypeTerm = boxedTypeTermForTypeInfo(mt.getElementTypeInfo)
+        val fieldAccessExpr = generateFieldAccess(mt.getElementTypeInfo, elementTerm, index)
+        val body =
+          s"""
+            |java.util.List $resultTerm = new java.util.ArrayList();
+            |for (int i = 0 ; i<$inputTerm.size(); i++) {
+            |  $elementTypeTerm $elementTerm = ($elementTypeTerm) $inputTerm.get(i);
+            |  ${fieldAccessExpr.code}
+            |  $resultTerm.add(${fieldAccessExpr.resultTerm});
+            |}
+          """.stripMargin
+
+        val resultType = new MultisetTypeInfo[Any](fieldAccessExpr.resultType.asInstanceOf[TypeInformation[Any]])
+        new GeneratedExpression(resultTerm, NEVER_NULL, body, resultType)
 
       case _ =>
         throw new CodeGenException("Unsupported type for input field access.")

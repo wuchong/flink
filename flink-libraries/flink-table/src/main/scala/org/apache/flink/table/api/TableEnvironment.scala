@@ -51,10 +51,9 @@ import org.apache.flink.table.catalog.{ExternalCatalog, ExternalCatalogSchema}
 import org.apache.flink.table.codegen.{CodeGenerator, ExpressionReducer, GeneratedFunction}
 import org.apache.flink.table.expressions.{Alias, Expression, UnresolvedFieldReference}
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils._
-import org.apache.flink.table.functions.AggregateFunction
+import org.apache.flink.table.functions.{AggregateFunction, OperatorFunction, ScalarFunction, TableFunction}
 import org.apache.flink.table.expressions._
 import org.apache.flink.table.functions.utils.UserDefinedFunctionUtils.{checkForInstantiation, checkNotSingleton, createScalarSqlFunction, createTableSqlFunctions}
-import org.apache.flink.table.functions.{ScalarFunction, TableFunction}
 import org.apache.flink.table.plan.cost.DataSetCostFactory
 import org.apache.flink.table.plan.logical.{CatalogNode, LogicalRelNode}
 import org.apache.flink.table.plan.rules.FlinkRuleSets
@@ -385,6 +384,22 @@ abstract class TableEnvironment(val config: TableConfig) {
       typeFactory)
 
     functionCatalog.registerSqlFunction(sqlFunctions)
+  }
+
+  private[flink] def registerOperatorFunctionInternal[T: TypeInformation, ACC: TypeInformation](
+    name: String, function: OperatorFunction[T, ACC]): Unit = {
+    // check if class not Scala object
+    checkNotSingleton(function.getClass)
+    // check if class could be instantiated
+    checkForInstantiation(function.getClass)
+
+    val returnTypeInfo: TypeInformation[T] = implicitly[TypeInformation[T]]
+    val accTypeInfo: TypeInformation[ACC] = implicitly[TypeInformation[ACC]]
+
+    // register in Table API
+    functionCatalog.registerFunction(name, function.getClass)
+
+
   }
 
   /**

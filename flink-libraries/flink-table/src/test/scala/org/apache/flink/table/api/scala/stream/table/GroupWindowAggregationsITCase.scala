@@ -18,24 +18,36 @@
 
 package org.apache.flink.table.api.scala.stream.table
 
+import java.lang.{Integer => JInt, Boolean => JBoolean, Double => JDouble}
+import java.util.Comparator
+import java.util.{ArrayList => JArrayList, List => JList}
+
+import com.google.common.collect.MinMaxPriorityQueue
+import org.apache.flink.api.java.tuple.{Tuple2 => JTuple2}
 import org.apache.flink.api.common.time.Time
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, ObjectArrayTypeInfo, RowTypeInfo, TupleTypeInfo}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.util.StreamingMultipleProgramsTestBase
-import org.apache.flink.table.api.{StreamQueryConfig, TableEnvironment}
+import org.apache.flink.table.api.{StreamQueryConfig, TableEnvironment, Types}
 import org.apache.flink.table.api.java.utils.UserDefinedAggFunctions.{WeightedAvg, WeightedAvgWithMerge}
+import org.apache.flink.table.api.java.utils.UserDefinedOperators.{EvenFilterOperator, JoinOperator, TopN}
 import org.apache.flink.table.api.scala._
 import org.apache.flink.table.api.scala.stream.table.GroupWindowAggregationsITCase.TimestampAndWatermarkWithOffset
 import org.apache.flink.table.api.scala.stream.utils.StreamITCase
+import org.apache.flink.table.functions.{AggregateFunction, OperatorFunction}
 import org.apache.flink.table.functions.aggfunctions.CountAggFunction
+import org.apache.flink.table.typeutils.MultisetTypeInfo
 import org.apache.flink.types.Row
 import org.junit.Assert._
 import org.junit.Test
 
 import scala.collection.mutable
+import scala.collection.JavaConversions._
 
 /**
   * We only test some aggregations until better testing of constructed DataStream
@@ -50,6 +62,119 @@ class GroupWindowAggregationsITCase extends StreamingMultipleProgramsTestBase {
     (4L, 2, "Hello"),
     (8L, 3, "Hello world"),
     (16L, 3, "Hello world"))
+
+
+  @Test
+  def testEventTimeTumblingWindow2(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.testResults = mutable.MutableList()
+
+    val data = List(
+      (1L, 1, "GO"),
+      (2L, 2, "JAVA"),
+      (2L, 1, "JAVA"),
+      (3L, 5, "GO"),
+      (3L, 5, "C++"),
+      (3L, 5, "C++"),
+      (3L, 2, "GO"),
+      (4L, 2, ".NET"),
+      (8L, 3, ".NET"),
+      (16L, 3, ".NET"))
+
+    val stream = env
+                 .fromCollection(data)
+                 .assignTimestampsAndWatermarks(new TimestampAndWatermarkWithOffset(0L))
+    val table = stream.toTable(tEnv, 'long, 'int, 'string, 'rowtime.rowtime)
+
+    val topn = new TopN(3)
+
+    val windowedTable = table
+                        .window(Tumble over 5.milli on 'rowtime as 'w)
+                        .groupBy('w)
+                        .select('w.start as 'wstart, topn('string, 'int) as 'agg)
+//                        .select('wstart, 'agg.get("f0"))
+
+    windowedTable.printSchema()
+
+    val results = windowedTable.toAppendStream[Row]
+    results.addSink(new StreamITCase.StringSink[Row])
+    env.execute()
+
+    val expected = Seq(
+      "1970-01-01 00:00:00.0,[(C++,10), (GO,8), (JAVA,3)]",
+      "1970-01-01 00:00:00.005,[(.NET,3)]",
+      "1970-01-01 00:00:00.015,[(.NET,3)]")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+
+  @Test
+  def testJoinOperator(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.testResults = mutable.MutableList()
+
+    val data: List[(JInt, String, JInt, JDouble, JBoolean)] = List(
+      (1, "apple", 0, 0.0, true),
+      (0, null, 1, 12.1, false),
+      (2, "orange", 0, 0.0, true),
+      (4, "pencil", 0, 0.0, true),
+      (0, null, 3, 45.1, false),
+      (0, null, 4, 11.1, false))
+
+    val stream = env
+      .fromCollection(data)
+    val table = stream.toTable(tEnv, 'id1, 'itemName, 'id2, 'itemPrice, 'leftOrRight)
+
+    val join = new JoinOperator
+
+    val res = table
+      .join(join('id1, 'itemName, 'id2, 'itemPrice, 'leftOrRight) as ('id, 'name, 'price))
+      .select('id, 'name, 'price)
+
+    val results = res.toAppendStream[Row]
+    results.addSink(new StreamITCase.StringSink[Row])
+    env.execute()
+
+    val expected = Seq(
+      "1,apple,12.1", "4,pencil,11.1")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
+
+  @Test
+  def testEvenFilter(): Unit = {
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
+    val tEnv = TableEnvironment.getTableEnvironment(env)
+    StreamITCase.testResults = mutable.MutableList()
+
+    val data = List(
+      (1, "apple"),
+      (2, "orange"),
+      (3, "pencil"),
+      (4, "iphone"),
+      (5, "mac"))
+
+    val stream = env
+      .fromCollection(data)
+    val table = stream.toTable(tEnv, 'id, 'name)
+
+    val even = new EvenFilterOperator
+
+    val res = table
+      .join(even('id, 'name) as ('newId, 'newName))
+      .select('newId, 'newName)
+
+    val results = res.toAppendStream[Row]
+    results.addSink(new StreamITCase.StringSink[Row])
+    env.execute()
+
+    val expected = Seq(
+      "2,orange", "4,iphone")
+    assertEquals(expected.sorted, StreamITCase.testResults.sorted)
+  }
 
   @Test
   def testProcessingTimeSlidingGroupWindowOverCount(): Unit = {

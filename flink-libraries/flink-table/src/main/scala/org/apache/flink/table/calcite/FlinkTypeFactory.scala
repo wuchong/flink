@@ -23,18 +23,18 @@ import org.apache.calcite.jdbc.JavaTypeFactoryImpl
 import org.apache.calcite.rel.`type`._
 import org.apache.calcite.sql.SqlIntervalQualifier
 import org.apache.calcite.sql.`type`.SqlTypeName._
-import org.apache.calcite.sql.`type`.{BasicSqlType, SqlTypeName}
+import org.apache.calcite.sql.`type`.{BasicSqlType, MultisetSqlType, SqlTypeName}
 import org.apache.calcite.sql.parser.SqlParserPos
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo._
 import org.apache.flink.api.common.typeinfo._
 import org.apache.flink.api.common.typeutils.CompositeType
 import org.apache.flink.api.java.typeutils.ValueTypeInfo._
-import org.apache.flink.api.java.typeutils.{MapTypeInfo, ObjectArrayTypeInfo, RowTypeInfo}
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, ObjectArrayTypeInfo, RowTypeInfo}
 import org.apache.flink.table.api.TableException
 import org.apache.flink.table.calcite.FlinkTypeFactory.typeInfoToSqlTypeName
 import org.apache.flink.table.plan.schema._
 import org.apache.flink.table.typeutils.TypeCheckUtils.isSimple
-import org.apache.flink.table.typeutils.{TimeIndicatorTypeInfo, TimeIntervalTypeInfo}
+import org.apache.flink.table.typeutils.{MultisetTypeInfo, TimeIndicatorTypeInfo, TimeIntervalTypeInfo}
 import org.apache.flink.types.Row
 
 import scala.collection.JavaConverters._
@@ -190,6 +190,9 @@ class FlinkTypeFactory(typeSystem: RelDataTypeSystem) extends JavaTypeFactoryImp
       new MapRelDataType(mp, createTypeFromTypeInfo(mp.getKeyTypeInfo),
         createTypeFromTypeInfo(mp.getValueTypeInfo), true)
 
+    case mt: MultisetTypeInfo[_] =>
+      new MultisetRelDataType(mt, this)
+
     case ti: TypeInformation[_] =>
       new GenericRelDataType(typeInfo, getTypeSystem.asInstanceOf[FlinkTypeSystem])
 
@@ -326,9 +329,6 @@ object FlinkTypeFactory {
       val compositeRelDataType = relDataType.asInstanceOf[CompositeRelDataType]
       compositeRelDataType.compositeType
 
-    // ROW and CURSOR for UDTF case, whose type info will never be used, just a placeholder
-    case ROW | CURSOR => new NothingTypeInfo
-
     case ARRAY if relDataType.isInstanceOf[ArrayRelDataType] =>
       val arrayRelDataType = relDataType.asInstanceOf[ArrayRelDataType]
       arrayRelDataType.typeInfo
@@ -336,6 +336,17 @@ object FlinkTypeFactory {
     case MAP if relDataType.isInstanceOf[MapRelDataType] =>
       val mapRelDataType = relDataType.asInstanceOf[MapRelDataType]
       mapRelDataType.typeInfo
+
+    case MULTISET if relDataType.isInstanceOf[MultisetRelDataType] =>
+      val multisetDataType = relDataType.asInstanceOf[MultisetRelDataType]
+      multisetDataType.typeInfo
+
+    case MULTISET if relDataType.isInstanceOf[MultisetAtomicRelDataType] =>
+      val multisetDataType = relDataType.asInstanceOf[MultisetAtomicRelDataType]
+      multisetDataType.typeInfo
+
+    // ROW and CURSOR for UDTF case, whose type info will never be used, just a placeholder
+    case ROW | CURSOR => new NothingTypeInfo
 
     case _@t =>
       throw TableException(s"Type is not supported: $t")

@@ -17,19 +17,30 @@
  */
 package org.apache.flink.table.runtime.datastream
 
+import java.lang.reflect.ParameterizedType
+import java.util
+import java.util.Comparator
+
+import org.apache.flink.api.java.tuple.{Tuple2 => JTuple2}
+import com.google.common.collect.MinMaxPriorityQueue
+import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, StateDescriptor}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.{RowTypeInfo, TypeExtractor}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.util.StreamingMultipleProgramsTestBase
-import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.api.{TableEnvironment, Types}
 import org.apache.flink.table.api.scala._
 import org.apache.flink.table.api.scala.stream.utils.{StreamITCase, StreamTestData}
 import org.apache.flink.table.expressions.utils.{Func13, Func18, RichFunc2}
+import org.apache.flink.table.functions.{AggregateFunction, OperatorFunction}
 import org.apache.flink.table.utils._
 import org.apache.flink.types.Row
 import org.junit.Assert._
 import org.junit.{Before, Test}
 
 import scala.collection.mutable
+import scala.collection.JavaConversions._
 
 class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestBase {
 
@@ -48,12 +59,12 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     val pojoFunc0 = new PojoTableFunc()
 
     val result = t
-      .join(func0('c) as('d, 'e))
-      .select('c, 'd, 'e)
-      .join(pojoFunc0('c))
-      .where('age > 20)
-      .select('c, 'name, 'age)
-      .toAppendStream[Row]
+                 .join(func0('c) as('d, 'e))
+                 .select('c, 'd, 'e)
+                 .join(pojoFunc0('c))
+                 .where('age > 20)
+                 .select('c, 'name, 'age)
+                 .toAppendStream[Row]
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -68,9 +79,9 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     val func0 = new TableFunc0
 
     val result = t
-      .leftOuterJoin(func0('c) as('d, 'e))
-      .select('c, 'd, 'e)
-      .toAppendStream[Row]
+                 .leftOuterJoin(func0('c) as('d, 'e))
+                 .select('c, 'd, 'e)
+                 .toAppendStream[Row]
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -87,10 +98,10 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     val func0 = new TableFunc0
 
     val result = t
-      .join(func0('c) as('d, 'e))
-      .where(Func18('d, "J"))
-      .select('c, 'd, 'e)
-      .toAppendStream[Row]
+                 .join(func0('c) as('d, 'e))
+                 .where(Func18('d, "J"))
+                 .select('c, 'd, 'e)
+                 .toAppendStream[Row]
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -107,9 +118,9 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     StreamITCase.testResults = mutable.MutableList()
 
     val result = StreamTestData.getSmall3TupleDataStream(env)
-      .toTable(tEnv, 'a, 'b, 'c)
-      .join(tableFunc1('c) as 's)
-      .select('a, 's)
+                 .toTable(tEnv, 'a, 'b, 'c)
+                 .join(tableFunc1('c) as 's)
+                 .select('a, 's)
 
     val results = result.toAppendStream[Row]
     results.addSink(new StreamITCase.StringSink[Row])
@@ -131,9 +142,9 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     StreamITCase.testResults = mutable.MutableList()
 
     val result = StreamTestData.getSmall3TupleDataStream(env)
-      .toTable(tEnv, 'a, 'b, 'c)
-      .join(tableFunc1(richFunc2('c)) as 's)
-      .select('a, 's)
+                 .toTable(tEnv, 'a, 'b, 'c)
+                 .join(tableFunc1(richFunc2('c)) as 's)
+                 .select('a, 's)
 
     val results = result.toAppendStream[Row]
     results.addSink(new StreamITCase.StringSink[Row])
@@ -158,13 +169,13 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     val func32 = new TableFunc3("TwoConf_", config)
 
     val result = t
-      .join(func30('c) as('d, 'e))
-      .select('c, 'd, 'e)
-      .join(func31('c) as ('f, 'g))
-      .select('c, 'd, 'e, 'f, 'g)
-      .join(func32('c) as ('h, 'i))
-      .select('c, 'd, 'f, 'h, 'e, 'g, 'i)
-      .toAppendStream[Row]
+                 .join(func30('c) as('d, 'e))
+                 .select('c, 'd, 'e)
+                 .join(func31('c) as('f, 'g))
+                 .select('c, 'd, 'e, 'f, 'g)
+                 .join(func32('c) as('h, 'i))
+                 .select('c, 'd, 'f, 'h, 'e, 'g, 'i)
+                 .toAppendStream[Row]
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -187,7 +198,7 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     val func1 = new Func13("Sunny")
     val func2 = new Func13("kevin2")
 
-    val result = t.select(func0('c), func1('c),func2('c))
+    val result = t.select(func0('c), func1('c), func2('c))
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -207,9 +218,9 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     tEnv.registerFunction("VarArgsFunc0", varArgsFunc0)
 
     val result = testData(env)
-      .toTable(tEnv, 'a, 'b, 'c)
-      .select('c)
-      .join(varArgsFunc0("1", "2", 'c))
+                 .toTable(tEnv, 'a, 'b, 'c)
+                 .select('c)
+                 .join(varArgsFunc0("1", "2", 'c))
 
     result.addSink(new StreamITCase.StringSink[Row])
     env.execute()
@@ -231,8 +242,8 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
   }
 
   private def testData(
-      env: StreamExecutionEnvironment)
-    : DataStream[(Int, Long, String)] = {
+    env: StreamExecutionEnvironment)
+  : DataStream[(Int, Long, String)] = {
 
     val data = new mutable.MutableList[(Int, Long, String)]
     data.+=((1, 1L, "Jack#22"))
@@ -242,4 +253,53 @@ class DataStreamUserDefinedFunctionITCase extends StreamingMultipleProgramsTestB
     env.fromCollection(data)
   }
 
+  @Test
+  def test(): Unit = {
+    val clazz = classOf[MyAcc]
+    val field = clazz.getDeclaredFields.head
+    val tp = field.getGenericType.asInstanceOf[ParameterizedType]
+    //    val f0: Type = tp.getActualTypeArguments.head
+    //    val f1: Type = tp.getActualTypeArguments.tail
+    val t1 = TypeExtractor.createTypeInfo(tp.getActualTypeArguments.head)
+    val t2 = TypeExtractor.createTypeInfo(tp.getActualTypeArguments.last)
+    //    val t1 = TypeExtractor.createTypeInfo(classOf[MapState[_, _]], tp, 0, null, null)
+    //    val t2 = TypeExtractor.createTypeInfo(classOf[MapState[_, _]], tp, 1, null, null)
+    println()
+  }
+
+
 }
+
+class MyAcc {
+
+  @transient
+  var map: MapState[String, Double] = _
+
+}
+
+
+class LazyAccumulator(descriptor: StateDescriptor[_, _]) extends transient
+
+
+
+//class TopN_UDAF(n: Int) extends AggregateFunction[Array[Row], util.TreeMap[String, Long]] {
+//
+//  def accumulate(accumulator: util.Map[String, Long], key: String, value: Long): Unit = {
+//    if (accumulator.containsKey(key)) {
+//      accumulator.put(key, accumulator.get(key) + value)
+//    } else {
+//      accumulator.put(key, value)
+//    }
+//  }
+//
+//  override def createAccumulator(): util.TreeMap[String, Long] = new util.TreeMap[String, Long]()
+//
+//  override def getValue(acc: util.TreeMap[String, Long]): Array[Row] = {
+//    var i = 0
+//    acc.descendingKeySet()
+//
+//  }
+//}
+
+
+

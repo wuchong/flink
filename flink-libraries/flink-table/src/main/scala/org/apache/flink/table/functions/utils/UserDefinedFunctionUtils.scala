@@ -90,11 +90,10 @@ object UserDefinedFunctionUtils {
     * Elements of the signature can be null (act as a wildcard).
     */
   def getAccumulateMethodSignature(
-      function: AggregateFunction[_, _],
+      function: UserDefinedFunction,
+      accType: TypeInformation[_],
       signature: Seq[TypeInformation[_]])
   : Option[Array[Class[_]]] = {
-    val accType = TypeExtractor.createTypeInfo(
-      function, classOf[AggregateFunction[_, _]], function.getClass, 1)
     val input = (Array(accType) ++ signature).toSeq
     getUserDefinedMethod(
       function,
@@ -271,7 +270,7 @@ object UserDefinedFunctionUtils {
 
     evalMethods.map { method =>
       val function = new FlinkTableFunctionImpl(resultType, fieldIndexes, fieldNames, method)
-      TableSqlFunction(name, tableFunction, resultType, typeFactory, function)
+      TableSqlFunction(name, tableFunction, resultType, None, typeFactory, function)
     }
   }
 
@@ -311,7 +310,7 @@ object UserDefinedFunctionUtils {
     * [[TypeExtractor]] as default return type inference.
     */
   def getResultTypeOfAggregateFunction(
-      aggregateFunction: AggregateFunction[_, _],
+      aggregateFunction: UserDefinedFunction,
       extractedType: TypeInformation[_] = null)
     : TypeInformation[_] = {
     getParameterTypeOfAggregateFunction(aggregateFunction, "getResultType", 0, extractedType)
@@ -322,14 +321,14 @@ object UserDefinedFunctionUtils {
     * and uses [[TypeExtractor]] as default return type inference.
     */
   def getAccumulatorTypeOfAggregateFunction(
-    aggregateFunction: AggregateFunction[_, _],
+    aggregateFunction: UserDefinedFunction,
     extractedType: TypeInformation[_] = null)
   : TypeInformation[_] = {
     getParameterTypeOfAggregateFunction(aggregateFunction, "getAccumulatorType", 1, extractedType)
   }
 
   private def getParameterTypeOfAggregateFunction(
-    aggregateFunction: AggregateFunction[_, _],
+    aggregateFunction: UserDefinedFunction,
     getTypeMethod: String,
     parameterTypePos: Int,
     extractedType: TypeInformation[_] = null)

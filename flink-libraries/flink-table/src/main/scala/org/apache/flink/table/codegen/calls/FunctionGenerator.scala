@@ -515,6 +515,7 @@ object FunctionGenerator {
         new TableFunctionCallGen(
           tsf.getTableFunction,
           operandTypes,
+          tsf.getAccTypeInfo,
           resultType
         )
       )

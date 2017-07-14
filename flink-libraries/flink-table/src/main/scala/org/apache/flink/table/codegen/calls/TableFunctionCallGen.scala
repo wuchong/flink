@@ -37,6 +37,7 @@ import org.apache.flink.table.typeutils.TypeCheckUtils
 class TableFunctionCallGen(
     tableFunction: TableFunction[_],
     signature: Seq[TypeInformation[_]],
+    accType: Option[TypeInformation[_]],
     returnType: TypeInformation[_])
   extends CallGenerator {
 
@@ -45,7 +46,8 @@ class TableFunctionCallGen(
       operands: Seq[GeneratedExpression])
     : GeneratedExpression = {
     // determine function method
-    val matchingMethod = getUserDefinedMethod(tableFunction, "eval", typeInfoToClass(signature))
+    val signatures = Seq() ++ accType ++ signature
+    val matchingMethod = getUserDefinedMethod(tableFunction, "eval", typeInfoToClass(signatures))
       .getOrElse(throw new CodeGenException("No matching signature found."))
     val matchingSignature = matchingMethod.getParameterTypes
 
@@ -85,11 +87,24 @@ class TableFunctionCallGen(
 
     // generate function call
     val functionReference = codeGenerator.addReusableFunction(tableFunction)
-    val functionCallCode =
-      s"""
-        |${parameters.map(_.code).mkString("\n")}
-        |$functionReference.eval(${parameters.map(_.resultTerm).mkString(", ")});
-        |""".stripMargin
+    val functionCallCode = accType match {
+      case Some(acc) =>
+        val accTypeClass = acc.getTypeClass.getCanonicalName
+        s"""
+           |${parameters.map(_.code).mkString("\n")}
+           |$accTypeClass acc = ($accTypeClass) getState().value();
+           |if (acc == null) {
+           |  acc = ($accTypeClass) $functionReference.createAccumulator();
+           |}
+           |$functionReference.eval(acc, ${parameters.map(_.resultTerm).mkString(", ")});
+           |getState().update(acc);
+           |""".stripMargin
+      case _ =>
+        s"""
+           |${parameters.map(_.code).mkString("\n")}
+           |$functionReference.eval(${parameters.map(_.resultTerm).mkString(", ")});
+           |""".stripMargin
+    }
 
     // has no result
     GeneratedExpression(
