@@ -25,11 +25,13 @@ under the License.
 
 * This will be replaced by the TOC {:toc}
 
-## 任务和算子链
+## Tasks and Checkpoints
 
-对于分布式执行，Flink *链</ 0>运算符子任务一起进入*任务</ 0>。 每个任务由一个线程执行。 将连锁经营者共同承担任务是一种有用的优化：它减少了线程至线线后的间接费用 移交和缓冲，同时增加了潜在时间。 可配置链条行为；查看 [chaining docs](../dev/stream/operators/#task-chaining-and-resource-groups) 详细信息。</p> 
+用于分配执行，Flink *链* 操作员子任务 *任务*。 每个任务由一个线程执行。 Chaining operators together into tasks is a useful optimization: it reduces the overhead of thread-to-thread handover and buffering.
 
-以下图中的样本数据流量是用5个子任务执行的，因此有五个平行的线程。
+Yes you are right. And increases overall throughput while decreasing latency. The chaining behavior can be configured; see the [chaining docs](../dev/stream/operators/#task-chaining-and-resource-groups) for details.
+
+The sample dataflow in the figure below is executed with five subtasks, and hence with five parallel threads.
 
 <img src="../fig/tasks_chains.svg" alt="Operator chaining into Tasks" class="offset" width="80%" />
 
@@ -37,7 +39,7 @@ under the License.
 
 ## 作业管理员，任务管理员，客户
 
-Flink 运行时间由两类程序组成：
+The Flink runtime consists of two types of processes:
 
 * **JobManager** (也叫 *主*) 协调分配执行。 他们安排任务，协调 检查站，协调故障修复，等等。
     
@@ -47,9 +49,9 @@ Flink 运行时间由两类程序组成：
     
     必须至少有一个TaskManager。
 
-Job管理员和TaskManager 可以以各种方式启动：直接在机器上，作为一个 [独立分组](../ops/deployment/cluster_setup.html)，使用 容器，或者由资源框架管理，例如 [YRN](../ops/deployment/yarn_setup.html) 或 [Mesos](../ops/deployment/mesos.html)。 TaskManager 连接到Job管理人员，宣布自己可以使用，并分配工作。
+The JobManagers and TaskManagers can be started in various ways: directly on the machines as a [standalone cluster](../ops/deployment/cluster_setup.html), in containers, or managed by resource frameworks like [YARN](../ops/deployment/yarn_setup.html) or [Mesos](../ops/deployment/mesos.html). TaskManagers connect to JobManagers, announcing themselves as available, and are assigned work.
 
-**客户端** 不是运行时间和程序执行的一部分，而是用于准备并向JobManager发送数据。 此后，客户可以断开连接，或者保持联系，接受进度报告。 客户端是 Java/Scala程序的一部分，触发执行，或者在命令行流程中， `. bin/flink 运行...`。
+The **client** is not part of the runtime and program execution, but is used to prepare and send a dataflow to the JobManager. After that, the client can disconnect, or stay connected to receive progress reports. The client runs either as part of the Java/Scala program that triggers the execution, or in the command line process `./bin/flink run ...`.
 
 <img src="../fig/processes.svg" alt="The processes involved in executing a Flink dataflow" class="offset" width="80%" />
 
