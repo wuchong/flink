@@ -35,7 +35,7 @@ under the License.
 
 {% top %}
 
-## Job Managers, Task Managers, Clients
+## 作业管理员，任务管理员，客户
 
 The Flink runtime consists of two types of processes:
 
