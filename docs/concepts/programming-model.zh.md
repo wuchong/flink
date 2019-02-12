@@ -2,7 +2,7 @@
 title: 数据流编程模型
 nav-id: programming-model
 nav-pos: 1
-nav-title: Programming Model
+nav-title: 编程模型
 nav-parent_id: concepts
 ---
 <!--
@@ -30,9 +30,9 @@ under the License.
 
 Flink 提供不同的抽象水平，以发展流流/批处理应用。
 
-<img src="../fig/levels_of_abstraction.svg" alt="Programming levels of abstraction" class="offset" width="80%" />
+<img src="../fig/levels_of_abstraction.svg" alt="抽象的编程级别" class="offset" width="80%" />
 
-* 最低级别的抽象只是提供 **有状态流**。 It is embedded into the [DataStream API](../dev/datastream_api.html) via the [Process Function](../dev/stream/operators/process_function.html). It allows users freely process events from one or more streams, and use consistent fault tolerant *state*. In addition, users can register event time and processing time callbacks, allowing programs to realize sophisticated computations.
+* 最低级别的抽象只是提供 **有状态流**。 它嵌入到 [数据流 API](../dev/datastream_api.html) 通过 [进程功能](../dev/stream/operators/process_function.html)。 It allows users freely process events from one or more streams, and use consistent fault tolerant *state*. In addition, users can register event time and processing time callbacks, allowing programs to realize sophisticated computations.
 
 * In practice, most applications would not need the above described low level abstraction, but would instead program against the **Core APIs** like the [DataStream API](../dev/datastream_api.html) (bounded/unbounded streams) and the [DataSet API](../dev/batch/index.html) (bounded data sets). These fluent APIs offer the common building blocks for data processing, like various forms of user-specified transformations, joins, aggregations, windows, state, etc. Data types processed in these APIs are represented as classes in the respective programming languages.
     
