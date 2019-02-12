@@ -37,19 +37,19 @@ under the License.
 
 ## 作业管理员，任务管理员，客户
 
-The Flink runtime consists of two types of processes:
+Flink 运行时间由两类程序组成：
 
-* The **JobManagers** (also called *masters*) coordinate the distributed execution. They schedule tasks, coordinate checkpoints, coordinate recovery on failures, etc.
+* **JobManager** (也叫 *主*) 协调分配执行。 他们安排任务，协调 检查站，协调故障修复，等等。
     
-    There is always at least one Job Manager. A high-availability setup will have multiple JobManagers, one of which one is always the *leader*, and the others are *standby*.
+    至少有一个作业管理器。 高可用性设置将有多个 jobmecs, 其中一个是, 其中一个始终是 *引线*, 其他是 *待机*。
 
-* The **TaskManagers** (also called *workers*) execute the *tasks* (or more specifically, the subtasks) of a dataflow, and buffer and exchange the data *streams*.
+* **TaskManager** (也叫 *个工人*) 执行 *任务* (或更具体地说，子任务) 数据流量, 和缓冲区并交换数据 *流*。
     
-    There must always be at least one TaskManager.
+    必须至少有一个TaskManager。
 
-The JobManagers and TaskManagers can be started in various ways: directly on the machines as a [standalone cluster](../ops/deployment/cluster_setup.html), in containers, or managed by resource frameworks like [YARN](../ops/deployment/yarn_setup.html) or [Mesos](../ops/deployment/mesos.html). TaskManagers connect to JobManagers, announcing themselves as available, and are assigned work.
+Job管理员和TaskManager 可以以各种方式启动：直接在机器上，作为一个 [独立分组](../ops/deployment/cluster_setup.html)，使用 容器，或者由资源框架管理，例如 [YRN](../ops/deployment/yarn_setup.html) 或 [Mesos](../ops/deployment/mesos.html)。 TaskManager 连接到Job管理人员，宣布自己可以使用，并分配工作。
 
-The **client** is not part of the runtime and program execution, but is used to prepare and send a dataflow to the JobManager. After that, the client can disconnect, or stay connected to receive progress reports. The client runs either as part of the Java/Scala program that triggers the execution, or in the command line process `./bin/flink run ...`.
+**客户端** 不是运行时间和程序执行的一部分，而是用于准备并向JobManager发送数据。 此后，客户可以断开连接，或者保持联系，接受进度报告。 客户端是 Java/Scala程序的一部分，触发执行，或者在命令行流程中， `. bin/flink 运行...`。
 
 <img src="../fig/processes.svg" alt="The processes involved in executing a Flink dataflow" class="offset" width="80%" />
 
