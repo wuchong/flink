@@ -1,5 +1,5 @@
 ---
-title: Distributed Runtime Environment
+title: 分布式运行环境
 nav-pos: 2
 nav-title: Distributed Runtime
 nav-parent_id: concepts
@@ -25,11 +25,11 @@ under the License.
 
 * This will be replaced by the TOC {:toc}
 
-## Tasks and Operator Chains
+## 任务和操作员链
 
-For distributed execution, Flink *chains* operator subtasks together into *tasks*. Each task is executed by one thread. Chaining operators together into tasks is a useful optimization: it reduces the overhead of thread-to-thread handover and buffering, and increases overall throughput while decreasing latency. The chaining behavior can be configured; see the [chaining docs](../dev/stream/operators/#task-chaining-and-resource-groups) for details.
+对于分布式执行，Flink *链</ 0>运算符子任务一起进入*任务</ 0>。 每个任务由一个线程执行。 将连锁经营者共同承担任务是一种有用的优化：它减少了线程至线线后的间接费用 移交和缓冲，同时增加了潜在时间。 可配置链条行为；查看 [chaining docs](../dev/stream/operators/#task-chaining-and-resource-groups) 详细信息。</p> 
 
-The sample dataflow in the figure below is executed with five subtasks, and hence with five parallel threads.
+以下图中的样本数据流量是用5个子任务执行的，因此有五个平行的线程。
 
 <img src="../fig/tasks_chains.svg" alt="Operator chaining into Tasks" class="offset" width="80%" />
 
