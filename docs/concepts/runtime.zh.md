@@ -25,7 +25,7 @@ under the License.
 
 * This will be replaced by the TOC {:toc}
 
-## 任务和操作员链
+## 任务和算子链
 
 对于分布式执行，Flink *链</ 0>运算符子任务一起进入*任务</ 0>。 每个任务由一个线程执行。 将连锁经营者共同承担任务是一种有用的优化：它减少了线程至线线后的间接费用 移交和缓冲，同时增加了潜在时间。 可配置链条行为；查看 [chaining docs](../dev/stream/operators/#task-chaining-and-resource-groups) 详细信息。</p> 
 
