@@ -1931,7 +1931,7 @@ object ScalarOperatorGens {
     expr.copy(resultType = targetType)
   }
 
-  private def numericCasting(
+  def numericCasting(
       operandType: InternalType,
       resultType: InternalType): String => String = {
 
@@ -1986,7 +1986,7 @@ object ScalarOperatorGens {
     }
   }
 
-  private def stringToInternalCode(
+  def stringToInternalCode(
       targetType: InternalType,
       operandTerm: String,
       zoneTerm: String): String =

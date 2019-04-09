@@ -30,6 +30,7 @@ import org.apache.flink.table.codegen.GenerateUtils._
 import org.apache.flink.table.codegen.GeneratedExpression.{NEVER_NULL, NO_CODE}
 import org.apache.flink.table.codegen.calls.{BinaryStringCallGen, FunctionGenerator, ScalarFunctionCallGen, TableFunctionCallGen}
 import org.apache.flink.table.codegen.calls.ScalarOperatorGens._
+import org.apache.flink.table.codegen.expr._
 import org.apache.flink.table.dataformat._
 import org.apache.flink.table.functions.sql.FlinkSqlOperatorTable._
 import org.apache.flink.table.functions.utils.{ScalarSqlFunction, TableSqlFunction}
@@ -449,6 +450,232 @@ class ExprCodeGenerator(ctx: CodeGeneratorContext, nullableInput: Boolean)
     throw new CodeGenException("Pattern field references are not supported yet.")
 
   // ----------------------------------------------------------------------------------------
+
+  private def generateCallExpression2(
+      ctx: CodeGeneratorContext,
+      operator: SqlOperator,
+      operands: Seq[GeneratedExpression],
+      resultType: InternalType): GeneratedExpression = {
+    val exprCodeGen = operator match {
+      // arithmetic
+      case PLUS | DATETIME_PLUS =>
+        val left = operands.head
+        val right = operands(1)
+        PlusCodeGen(left, right, resultType)
+
+      case MINUS | MINUS_DATE =>
+        val left = operands.head
+        val right = operands(1)
+        MinusCodeGen(left, right, resultType)
+
+      case MULTIPLY =>
+        val left = operands.head
+        val right = operands(1)
+        MultiplyCodeGen(left, right, resultType)
+
+      case DIVIDE | DIVIDE_INTEGER =>
+        val left = operands.head
+        val right = operands(1)
+        DivideCodeGen(left, right, resultType)
+
+      case MOD =>
+        val left = operands.head
+        val right = operands(1)
+        ModCodeGen(left, right, resultType)
+
+      case UNARY_MINUS =>
+        val operand = operands.head
+        UnaryMinusCodeGen(operand)
+
+      case UNARY_PLUS =>
+        val operand = operands.head
+        UnaryPlusCodeGen(operand)
+
+      // comparison
+      case EQUALS =>
+        val left = operands.head
+        val right = operands(1)
+        EqualsCodeGen(left, right)
+
+      case NOT_EQUALS =>
+        val left = operands.head
+        val right = operands(1)
+        NotEqualsCodeGen(left, right)
+
+      case GREATER_THAN =>
+        val left = operands.head
+        val right = operands(1)
+        GreaterThanCodeGen(left, right)
+
+      case GREATER_THAN_OR_EQUAL =>
+        val left = operands.head
+        val right = operands(1)
+        GreaterThanOrEqualCodeGen(left, right)
+
+      case LESS_THAN =>
+        val left = operands.head
+        val right = operands(1)
+        LessThanCodeGen(left, right)
+
+      case LESS_THAN_OR_EQUAL =>
+        val left = operands.head
+        val right = operands(1)
+        LessThanOrEqualCodeGen(left, right)
+
+      case IS_NULL =>
+        val operand = operands.head
+        IsNullCodeGen(operand)
+
+      case IS_NOT_NULL =>
+        val operand = operands.head
+        IsNotNullCodeGen(operand)
+
+      // logic
+      case AND =>
+        val left = operands.head
+        val right = operands(1)
+        AndCodeGen(left, right)
+
+      case OR =>
+        val left = operands.head
+        val right = operands(1)
+        OrCodeGen(left, right)
+
+      case NOT =>
+        val operand = operands.head
+        NotCodeGen(operand)
+
+      case CASE =>
+        IfThenElseCodeGen(operands, resultType)
+
+      case IS_TRUE =>
+        val operand = operands.head
+        IsTrueCodeGen(operand)
+
+      case IS_NOT_TRUE =>
+        val operand = operands.head
+        IsNotTrueCodeGen(operand)
+
+      case IS_FALSE =>
+        val operand = operands.head
+        IsFalseCodeGen(operand)
+
+      case IS_NOT_FALSE =>
+        val operand = operands.head
+        IsNotFalseCodeGen(operand)
+
+      case IN =>
+        val left = operands.head
+        val right = operands.tail
+        generateIn(ctx, left, right)
+
+      case NOT_IN =>
+        val left = operands.head
+        val right = operands.tail
+        generateNot(ctx, generateIn(ctx, left, right))
+
+      // casting
+      case CAST =>
+        val operand = operands.head
+        CastCodeGen(operand, resultType)
+
+      // Reinterpret
+      case REINTERPRET =>
+        val operand = operands.head
+        generateReinterpret(ctx, operand, resultType)
+
+      // as / renaming
+      case AS =>
+        operands.head
+
+      // rows
+      case ROW =>
+        generateRow(ctx, resultType, operands)
+
+      // arrays
+      case ARRAY_VALUE_CONSTRUCTOR =>
+        generateArray(ctx, resultType, operands)
+
+      // maps
+      case MAP_VALUE_CONSTRUCTOR =>
+        generateMap(ctx, resultType, operands)
+
+      case ITEM =>
+        operands.head.resultType match {
+          case t: InternalType if TypeCheckUtils.isArray(t) =>
+            val array = operands.head
+            val index = operands(1)
+            requireInteger(index)
+            generateArrayElementAt(ctx, array, index)
+
+          case t: InternalType if TypeCheckUtils.isMap(t) =>
+            val key = operands(1)
+            generateMapGet(ctx, operands.head, key)
+
+          case _ => throw new CodeGenException("Expect an array or a map.")
+        }
+
+      case CARDINALITY =>
+        operands.head.resultType match {
+          case t: InternalType if TypeCheckUtils.isArray(t) =>
+            val array = operands.head
+            generateArrayCardinality(ctx, array)
+
+          case t: InternalType if TypeCheckUtils.isMap(t) =>
+            val map = operands.head
+            generateMapCardinality(ctx, map)
+
+          case _ => throw new CodeGenException("Expect an array or a map.")
+        }
+
+      case ELEMENT =>
+        val array = operands.head
+        requireArray(array)
+        generateArrayElement(ctx, array)
+
+      case DOT =>
+        generateDot(ctx, operands)
+
+      case PROCTIME =>
+        // attribute is proctime indicator.
+        // We use a null literal and generate a timestamp when we need it.
+        generateNullLiteral(InternalTypes.PROCTIME_INDICATOR, ctx.nullCheck)
+
+      case PROCTIME_MATERIALIZE =>
+        generateProctimeTimestamp(ctx, contextTerm)
+
+      case STREAMRECORD_TIMESTAMP =>
+        generateRowtimeAccess(ctx, contextTerm)
+
+      case ssf: ScalarSqlFunction =>
+        new ScalarFunctionCallGen(ssf.getScalarFunction).generate(ctx, operands, resultType)
+
+      case tsf: TableSqlFunction =>
+        new TableFunctionCallGen(tsf.getTableFunction).generate(ctx, operands, resultType)
+
+      // advanced scalar functions
+      case sqlOperator: SqlOperator =>
+        BinaryStringCallGen.generateCallExpression(ctx, operator, operands, resultType).getOrElse {
+          FunctionGenerator
+            .getCallGenerator(
+              sqlOperator,
+              operands.map(expr => expr.resultType),
+              resultType)
+            .getOrElse(
+              throw new CodeGenException(s"Unsupported call: " +
+                s"$sqlOperator(${operands.map(_.resultType).mkString(", ")}) \n" +
+                s"If you think this function should be supported, " +
+                s"you can create an issue and start a discussion for it."))
+            .generate(ctx, operands, resultType)
+        }
+
+      // unknown or invalid
+      case call@_ =>
+        val explainCall = s"$call(${operands.map(_.resultType).mkString(", ")})"
+        throw new CodeGenException(s"Unsupported call: $explainCall")
+    }
+    null
+  }
 
   private def generateCallExpression(
       ctx: CodeGeneratorContext,
