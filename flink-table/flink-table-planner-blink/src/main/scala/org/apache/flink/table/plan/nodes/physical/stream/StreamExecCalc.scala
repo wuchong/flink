@@ -26,8 +26,7 @@ import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.plan.nodes.common.CommonCalc
 import org.apache.flink.table.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.plan.util.RelExplainUtil
-import org.apache.flink.table.runtime.AbstractProcessStreamOperator
-
+import org.apache.flink.table.runtime.TableStreamOperator
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
@@ -94,7 +93,7 @@ class StreamExecCalc(
 //    }
 
     val ctx = CodeGeneratorContext(config).setOperatorBaseClass(
-      classOf[AbstractProcessStreamOperator[BaseRow]])
+      classOf[TableStreamOperator[BaseRow]])
     val outputType = FlinkTypeFactory.toInternalRowType(getRowType)
     val substituteStreamOperator = CalcCodeGenerator.generateCalcOperator(
       ctx,

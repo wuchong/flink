@@ -25,13 +25,12 @@ import org.apache.flink.table.`type`.{InternalTypes, RowType}
 import org.apache.flink.table.api.StreamTableEnvironment
 import org.apache.flink.table.calcite.FlinkRelBuilder
 import org.apache.flink.table.codegen.CodeGeneratorContext
-import org.apache.flink.table.codegen.OperatorCodeGenerator.ELEMENT
 import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.functions.sql.StreamRecordTimestampSqlFunction
 import org.apache.flink.table.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.plan.schema.DataStreamTable
 import org.apache.flink.table.plan.util.ScanUtil
-import org.apache.flink.table.runtime.AbstractProcessStreamOperator
+import org.apache.flink.table.runtime.TableStreamOperator
 import org.apache.flink.table.typeutils.TimeIndicatorTypeInfo.{ROWTIME_INDICATOR, ROWTIME_STREAM_MARKER}
 
 import org.apache.calcite.plan._
@@ -106,15 +105,8 @@ class StreamExecDataStreamScan(
     if (rowtimeExpr.isDefined || ScanUtil.needsConversion(
       dataStreamTable.typeInfo, dataStreamTable.dataStream.getType.getTypeClass)) {
 
-      // extract time if the index is -1 or -2.
-      val (extractElement, resetElement) =
-        if (ScanUtil.hasTimeAttributeField(dataStreamTable.fieldIndexes)) {
-          (s"ctx.$ELEMENT = $ELEMENT;", s"ctx.$ELEMENT = null;")
-        } else {
-          ("", "")
-        }
       val ctx = CodeGeneratorContext(config).setOperatorBaseClass(
-        classOf[AbstractProcessStreamOperator[BaseRow]])
+        classOf[TableStreamOperator[BaseRow]])
       ScanUtil.convertToInternalRow(
         ctx,
         transform,
@@ -123,9 +115,7 @@ class StreamExecDataStreamScan(
         getRowType,
         getTable.getQualifiedName,
         config,
-        rowtimeExpr,
-        beforeConvert = extractElement,
-        afterConvert = resetElement)
+        rowtimeExpr)
     } else {
       transform.asInstanceOf[StreamTransformation[BaseRow]]
     }

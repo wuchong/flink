@@ -62,9 +62,7 @@ object ScanUtil {
       outRowType: RelDataType,
       qualifiedName: Seq[String],
       config: TableConfig,
-      rowtimeExpr: Option[RexNode] = None,
-      beforeConvert: String = "",
-      afterConvert: String = ""): StreamTransformation[BaseRow] = {
+      rowtimeExpr: Option[RexNode] = None): StreamTransformation[BaseRow] = {
 
     val outputRowType = FlinkTypeFactory.toInternalRowType(outRowType)
 
@@ -96,10 +94,8 @@ object ScanUtil {
               outputRowType, classOf[GenericRow], rowtimeExpression = rowtimeExpr)
 
         s"""
-           |$beforeConvert
            |${conversion.code}
            |${generateCollect(conversion.resultTerm)}
-           |$afterConvert
            |""".stripMargin
       }
 

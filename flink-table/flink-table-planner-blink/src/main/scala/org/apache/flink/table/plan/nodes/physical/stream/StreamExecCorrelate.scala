@@ -25,7 +25,7 @@ import org.apache.flink.table.functions.utils.TableSqlFunction
 import org.apache.flink.table.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.plan.nodes.logical.FlinkLogicalTableFunctionScan
 import org.apache.flink.table.plan.util.RelExplainUtil
-import org.apache.flink.table.runtime.AbstractProcessStreamOperator
+import org.apache.flink.table.runtime.TableStreamOperator
 
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
@@ -114,7 +114,7 @@ class StreamExecCorrelate(
     val inputTransformation = getInputNodes.get(0).translateToPlan(tableEnv)
       .asInstanceOf[StreamTransformation[BaseRow]]
     val operatorCtx = CodeGeneratorContext(tableEnv.getConfig)
-      .setOperatorBaseClass(classOf[AbstractProcessStreamOperator[_]])
+      .setOperatorBaseClass(classOf[TableStreamOperator[_]])
     CorrelateCodeGenerator.generateCorrelateTransformation(
       tableEnv,
       operatorCtx,

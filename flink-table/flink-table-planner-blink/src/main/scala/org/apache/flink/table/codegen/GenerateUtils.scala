@@ -27,9 +27,9 @@ import org.apache.flink.table.codegen.calls.CurrentTimePointCallGen
 import org.apache.flink.table.dataformat._
 import org.apache.flink.table.plan.util.SortUtil
 import org.apache.flink.table.typeutils.TypeCheckUtils.{isReference, isTemporal}
-
 import org.apache.calcite.avatica.util.ByteString
 import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.flink.util.Preconditions
 
 import java.math.{BigDecimal => JBigDecimal}
 
@@ -429,12 +429,11 @@ object GenerateUtils {
   }
 
   def generateProctimeTimestamp(
-      ctx: CodeGeneratorContext,
-      contextTerm: String): GeneratedExpression = {
+      ctx: CodeGeneratorContext): GeneratedExpression = {
     val resultTerm = ctx.addReusableLocalVariable("long", "result")
     val resultCode =
       s"""
-         |$resultTerm = $contextTerm.timerService().currentProcessingTime();
+         |$resultTerm = getProcessingTimeService().getCurrentProcessingTime();
          |""".stripMargin.trim
     // the proctime has been materialized, so it's TIMESTAMP now, not PROCTIME_INDICATOR
     GeneratedExpression(resultTerm, NEVER_NULL, resultCode, InternalTypes.TIMESTAMP)
@@ -447,20 +446,22 @@ object GenerateUtils {
 
   def generateRowtimeAccess(
       ctx: CodeGeneratorContext,
-      contextTerm: String): GeneratedExpression = {
+      inputTerm: String): GeneratedExpression = {
     val Seq(resultTerm, nullTerm) = ctx.addReusableLocalVariables(
       ("Long", "result"),
       ("boolean", "isNull"))
 
     val accessCode =
       s"""
-         |$resultTerm = $contextTerm.timestamp();
-         |if ($resultTerm == null) {
+         |${className[Preconditions]}.checkState($inputTerm != null);
+         |if ($inputTerm.hasTimestamp()) {
+         |  $resultTerm = $inputTerm.getTimestamp();
+         |  $nullTerm = false;
+         |} else {
          |  throw new RuntimeException("Rowtime timestamp is null. Please make sure that a " +
          |    "proper TimestampAssigner is defined and the stream environment uses the EventTime " +
          |    "time characteristic.");
          |}
-         |$nullTerm = false;
        """.stripMargin.trim
 
     GeneratedExpression(resultTerm, nullTerm, accessCode, InternalTypes.ROWTIME_INDICATOR)

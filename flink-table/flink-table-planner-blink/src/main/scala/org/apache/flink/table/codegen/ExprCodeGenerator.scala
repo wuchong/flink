@@ -701,10 +701,10 @@ class ExprCodeGenerator(ctx: CodeGeneratorContext, nullableInput: Boolean)
         generateNullLiteral(InternalTypes.PROCTIME_INDICATOR, ctx.nullCheck)
 
       case PROCTIME_MATERIALIZE =>
-        generateProctimeTimestamp(ctx, contextTerm)
+        generateProctimeTimestamp(ctx)
 
       case STREAMRECORD_TIMESTAMP =>
-        generateRowtimeAccess(ctx, contextTerm)
+        generateRowtimeAccess(ctx, input1Term)
 
       case THROW_EXCEPTION =>
         val code =
