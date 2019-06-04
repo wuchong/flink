@@ -19,19 +19,25 @@
 package org.apache.flink.table.sinks;
 
 import org.apache.flink.annotation.Experimental;
+import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 
 /**
  * Defines an external {@link TableSink} to emit a bounded {@link Table}.
  *
- * @param <T> Type of the bounded {@link DataStream} that this {@link TableSink} expects and supports.
+ * @param <T> Type of the bounded {@link OutputFormat} that this {@link TableSink} expects and supports.
  */
 @Experimental
-public interface BoundedTableSink<T> extends TableSink<T> {
+public abstract class BoundedTableSink<T> implements StreamTableSink<T> {
 
 	/**
-	 * Emits a bounded DataStream.
+	 * Returns an {@link OutputFormat} for writing the data of the table.
 	 */
-	void emitBoundedDataStream(DataStream<T> boundedDataStream);
+	public abstract OutputFormat<T> getOutputFormat();
+
+	@Override
+	public void emitDataStream(DataStream<T> dataStream) {
+		dataStream.writeUsingOutputFormat(getOutputFormat());
+	}
 }
