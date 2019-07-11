@@ -21,14 +21,13 @@ package org.apache.flink.table.runtime.utils
 import org.apache.flink.table.api.{Table, TableException}
 import org.apache.flink.table.calcite.FlinkTypeFactory
 import org.apache.flink.table.dataformat.GenericRow
+import org.apache.flink.table.runtime.functions.CalciteDateTimeUtils
 import org.apache.flink.table.runtime.utils.JavaPojos.Pojo1
 import org.apache.flink.table.sinks.TableSink
 import org.apache.flink.table.types.TypeInfoLogicalTypeConverter
 import org.apache.flink.table.util.TableTestUtil
 import org.apache.flink.types.Row
 import org.apache.flink.util.StringUtils
-
-import org.apache.calcite.avatica.util.DateTimeUtils
 
 import java.sql.{Date, Time, Timestamp}
 import java.util.TimeZone
@@ -57,7 +56,7 @@ object TestSinkUtil {
   def fieldToString(field: Any, tz: TimeZone): String = {
     field match {
       case _: Date | _: Time | _: Timestamp =>
-        DateTimeUtils.unixDateTimeToString(field, tz)
+        CalciteDateTimeUtils.unixDateTimeToString(field, tz)
       case _ => StringUtils.arrayAwareToString(field)
     }
   }

@@ -14,9 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.avatica.util;
+
+package org.apache.flink.table.runtime.functions;
 
 import org.apache.flink.table.api.ValidationException;
+
+import org.apache.calcite.avatica.util.TimeUnitRange;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
@@ -39,37 +42,54 @@ import java.util.TimeZone;
  * <p>TODO: review methods for performance. Due to allocations required, it may
  * be preferable to introduce a "formatter" with the required state.
  */
-public class DateTimeUtils {
-	/** The julian date of the epoch, 1970-01-01. */
+public class CalciteDateTimeUtils {
+	/**
+	 * The julian date of the epoch, 1970-01-01.
+	 */
 	public static final int EPOCH_JULIAN = 2440588;
 
-	private DateTimeUtils() {}
+	private CalciteDateTimeUtils() {
+	}
 
 	//~ Static fields/initializers ---------------------------------------------
 
-	/** The SimpleDateFormat string for ISO dates, "yyyy-MM-dd". */
+	/**
+	 * The SimpleDateFormat string for ISO dates, "yyyy-MM-dd".
+	 */
 	public static final String DATE_FORMAT_STRING = "yyyy-MM-dd";
 
-	/** The SimpleDateFormat string for ISO times, "HH:mm:ss". */
+	/**
+	 * The SimpleDateFormat string for ISO times, "HH:mm:ss".
+	 */
 	public static final String TIME_FORMAT_STRING = "HH:mm:ss";
 
-	/** The SimpleDateFormat string for ISO timestamps, "yyyy-MM-dd HH:mm:ss". */
+	/**
+	 * The SimpleDateFormat string for ISO timestamps, "yyyy-MM-dd HH:mm:ss".
+	 */
 	public static final String TIMESTAMP_FORMAT_STRING =
 		DATE_FORMAT_STRING + " " + TIME_FORMAT_STRING;
 
-	/** The GMT time zone.
+	/**
+	 * The GMT time zone.
 	 *
-	 * @deprecated Use {@link #UTC_ZONE} */
+	 * @deprecated Use {@link #UTC_ZONE}
+	 */
 	@Deprecated // to be removed before 2.0
 	public static final TimeZone GMT_ZONE = TimeZone.getTimeZone("GMT");
 
-	/** The UTC time zone. */
+	/**
+	 * The UTC time zone.
+	 */
 	public static final TimeZone UTC_ZONE = TimeZone.getTimeZone("UTC");
 
-	/** The Java default time zone. */
+	/**
+	 * The Java default time zone.
+	 */
 	public static final TimeZone DEFAULT_ZONE = TimeZone.getDefault();
 
-	/** User's configured time zone*/
+	/**
+	 * User's configured time zone.
+	 */
 	private static volatile TimeZone userZone = UTC_ZONE;
 
 	/**
@@ -116,7 +136,7 @@ public class DateTimeUtils {
 	public static final Calendar ZERO_CALENDAR;
 
 	static {
-		ZERO_CALENDAR = Calendar.getInstance(DateTimeUtils.UTC_ZONE, Locale.ROOT);
+		ZERO_CALENDAR = Calendar.getInstance(CalciteDateTimeUtils.UTC_ZONE, Locale.ROOT);
 		ZERO_CALENDAR.setTimeInMillis(0);
 	}
 
@@ -125,6 +145,7 @@ public class DateTimeUtils {
 	public static TimeZone getUserZone() {
 		return userZone;
 	}
+
 	public static void setUserZone(TimeZone zone) {
 		userZone = zone;
 	}
@@ -136,11 +157,11 @@ public class DateTimeUtils {
 	 * The parsing is strict and requires months to be less than 12, days to be
 	 * less than 31, etc.
 	 *
-	 * @param s       string to be parsed
+	 * @param s          string to be parsed
 	 * @param dateFormat Date format
-	 * @param tz      time zone in which to interpret string. Defaults to the Java
-	 *                default time zone
-	 * @param pp      position to start parsing from
+	 * @param tz         time zone in which to interpret string. Defaults to the Java
+	 *                   default time zone
+	 * @param pp         position to start parsing from
 	 * @return a Calendar initialized with the parsed value, or null if parsing
 	 * failed. If returned, the Calendar is configured to the GMT time zone.
 	 */
@@ -163,8 +184,7 @@ public class DateTimeUtils {
 	}
 
 	@Deprecated // to be removed before 2.0
-	public static Calendar parseDateFormat(String s, String pattern,
-										   TimeZone tz) {
+	public static Calendar parseDateFormat(String s, String pattern, TimeZone tz) {
 		return parseDateFormat(s, new SimpleDateFormat(pattern, Locale.ROOT), tz);
 	}
 
@@ -172,15 +192,14 @@ public class DateTimeUtils {
 	 * Parses a string using {@link SimpleDateFormat} and a given pattern. The
 	 * entire string must match the pattern specified.
 	 *
-	 * @param s       string to be parsed
+	 * @param s          string to be parsed
 	 * @param dateFormat Date format
-	 * @param tz      time zone in which to interpret string. Defaults to the Java
-	 *                default time zone
+	 * @param tz         time zone in which to interpret string. Defaults to the Java
+	 *                   default time zone
 	 * @return a Calendar initialized with the parsed value, or null if parsing
 	 * failed. If returned, the Calendar is configured to the UTC time zone.
 	 */
-	public static Calendar parseDateFormat(String s, DateFormat dateFormat,
-										   TimeZone tz) {
+	public static Calendar parseDateFormat(String s, DateFormat dateFormat, TimeZone tz) {
 		ParsePosition pp = new ParsePosition(0);
 		Calendar ret = parseDateFormat(s, dateFormat, tz, pp);
 		if (pp.getIndex() != s.length()) {
@@ -207,16 +226,16 @@ public class DateTimeUtils {
 	 * digits. The precision is rounded to a maximum of 3 digits of fractional
 	 * seconds precision (to obtain milliseconds).
 	 *
-	 * @param s       string to be parsed
+	 * @param s          string to be parsed
 	 * @param dateFormat Date format
-	 * @param tz      time zone in which to interpret string. Defaults to the
-	 *                local time zone
-	 * @return a {@link DateTimeUtils.PrecisionTime PrecisionTime} initialized
+	 * @param tz         time zone in which to interpret string. Defaults to the
+	 *                   local time zone
+	 * @return a {@link CalciteDateTimeUtils.PrecisionTime PrecisionTime} initialized
 	 * with the parsed value, or null if parsing failed. The PrecisionTime
 	 * contains a GMT Calendar and a precision.
 	 */
-	public static PrecisionTime parsePrecisionDateTimeLiteral(String s,
-															  DateFormat dateFormat, TimeZone tz, int maxPrecision) {
+	public static PrecisionTime parsePrecisionDateTimeLiteral(
+		String s, DateFormat dateFormat, TimeZone tz, int maxPrecision) {
 		final ParsePosition pp = new ParsePosition(0);
 		final Calendar cal = parseDateFormat(s, dateFormat, tz, pp);
 		if (cal == null) {
@@ -278,7 +297,7 @@ public class DateTimeUtils {
 	}
 
 	/**
-	 * Gets the active time zone based on a Calendar argument
+	 * Gets the active time zone based on a Calendar argument.
 	 */
 	public static TimeZone getTimeZone(Calendar cal) {
 		if (cal == null) {
@@ -288,7 +307,7 @@ public class DateTimeUtils {
 	}
 
 	/**
-	 * Checks if the date/time format is valid
+	 * Checks if the date/time format is valid.
 	 *
 	 * @param pattern {@link SimpleDateFormat}  pattern
 	 * @throws IllegalArgumentException if the given pattern is invalid
@@ -309,7 +328,9 @@ public class DateTimeUtils {
 		return sdf;
 	}
 
-	/** Helper for CAST({timestamp} Or {date} or {time} AS VARCHAR(n)). */
+	/**
+	 * Helper for CAST({timestamp} Or {date} or {time} AS VARCHAR(n)).
+	 */
 	public static String unixDateTimeToString(Object o, TimeZone tz) {
 		int offset = tz.getOffset(Calendar.ZONE_OFFSET);
 		if (tz.useDaylightTime()) {
@@ -331,15 +352,17 @@ public class DateTimeUtils {
 		return o.toString();
 	}
 
-	/** Helper for CAST({timestamp} AS VARCHAR(n)). */
+	/**
+	 * Helper for CAST({timestamp} AS VARCHAR(n)).
+	 */
 	public static String unixTimestampToString(long timestamp) {
 		return unixTimestampToString(timestamp, 0);
 	}
 
 	/**
-	 *  Returns the formatted timestamp string
-	 *  now, it is only for Timestamp Literal (TimestampString)
-	 *  don't use it for scalar functions
+	 * Returns the formatted timestamp string
+	 * now, it is only for Timestamp Literal (TimestampString)
+	 * don't use it for scalar functions.
 	 */
 	public static String unixTimestampToString(long timestamp, int precision) {
 		final StringBuilder buf = new StringBuilder(17);
@@ -361,7 +384,9 @@ public class DateTimeUtils {
 		return buf.toString();
 	}
 
-	/** Helper for CAST({timestamp} AS VARCHAR(n)). */
+	/**
+	 * Helper for CAST({timestamp} AS VARCHAR(n)).
+	 */
 	public static String unixTimeToString(int time) {
 		return unixTimeToString(time, 0);
 	}
@@ -372,8 +397,7 @@ public class DateTimeUtils {
 		return buf.toString();
 	}
 
-	private static void unixTimeToString(StringBuilder buf, int time,
-										 int precision) {
+	private static void unixTimeToString(StringBuilder buf, int time, int precision) {
 		int h = time / 3600000;
 		int time2 = time % 3600000;
 		int m = time2 / 60000;
@@ -408,7 +432,9 @@ public class DateTimeUtils {
 		buf.append((char) ('0' + i % 10));
 	}
 
-	/** Helper for CAST({date} AS VARCHAR(n)). */
+	/**
+	 * Helper for CAST({date} AS VARCHAR(n)).
+	 */
 	public static String unixDateToString(int date) {
 		final StringBuilder buf = new StringBuilder(10);
 		unixDateToString(buf, date);
@@ -425,7 +451,7 @@ public class DateTimeUtils {
 		if (julian > 2299160) {
 			int a = julian + 32044;
 			b = (4 * a + 3) / 146097;
-			c = a - b *146097 / 4;
+			c = a - b * 146097 / 4;
 		} else {
 			b = 0;
 			c = julian + 32082;
@@ -485,7 +511,7 @@ public class DateTimeUtils {
 	}
 
 	public static int digitCount(int v) {
-		for (int n = 1;; n++) {
+		for (int n = 1; ; n++) {
 			v /= 10;
 			if (v == 0) {
 				return n;
@@ -502,7 +528,9 @@ public class DateTimeUtils {
 		return dividend;
 	}
 
-	/** Cheap, unsafe, long power. power(2, 3) returns 8. */
+	/**
+	 * Cheap, unsafe, long power. power(2, 3) returns 8.
+	 */
 	public static long powerX(long a, long b) {
 		long x = 1;
 		while (b > 0) {
@@ -512,8 +540,7 @@ public class DateTimeUtils {
 		return x;
 	}
 
-	public static String intervalDayTimeToString(long v, TimeUnitRange range,
-												 int scale) {
+	public static String intervalDayTimeToString(long v, TimeUnitRange range, int scale) {
 		final StringBuilder buf = new StringBuilder();
 		if (v >= 0) {
 			buf.append('+');
@@ -650,8 +677,9 @@ public class DateTimeUtils {
 	/**
 	 * Rounds a dividend to the nearest divisor.
 	 * For example roundUp(31, 10) yields 30; roundUp(37, 10) yields 40.
+	 *
 	 * @param dividend Number to be divided
-	 * @param divisor Number to divide by
+	 * @param divisor  Number to divide by
 	 * @return Rounded dividend
 	 */
 	private static long roundUp(long dividend, long divisor) {
@@ -676,9 +704,8 @@ public class DateTimeUtils {
 
 	private static boolean isInteger(String s) {
 		boolean isInt = s.length() > 0;
-		for(int i = 0; i < s.length(); i++)
-		{
-			if(s.charAt(i) < '0' || s.charAt(i) > '9') {
+		for (int i = 0; i < s.length(); i++) {
+			if (s.charAt(i) < '0' || s.charAt(i) > '9') {
 				isInt = false;
 				break;
 			}
@@ -692,17 +719,17 @@ public class DateTimeUtils {
 
 	private static boolean isIllegalDate(int y, int m, int d) {
 		int[] monthOf31Days = new int[]{1, 3, 5, 7, 8, 10, 12};
-		if(y < 0 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) {
+		if (y < 0 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) {
 			return false;
 		}
-		if(m == 2 && d > 28) {
-			if(!(isLeapYear(y) && d == 29)) {
+		if (m == 2 && d > 28) {
+			if (!(isLeapYear(y) && d == 29)) {
 				return false;
 			}
 		}
-		if(d == 31) {
-			for(int i: monthOf31Days) {
-				if(i == m) {
+		if (d == 31) {
+			for (int i : monthOf31Days) {
+				if (i == m) {
 					return true;
 				}
 			}
@@ -722,36 +749,36 @@ public class DateTimeUtils {
 		int m;
 		int d;
 		if (hyphen1 < 0) {
-			if(!isInteger(s.trim())) {
+			if (!isInteger(s.trim())) {
 				return null;
 			}
 			y = Integer.parseInt(s.trim());
 			m = 1;
 			d = 1;
 		} else {
-			if(!isInteger(s.substring(0, hyphen1).trim())) {
+			if (!isInteger(s.substring(0, hyphen1).trim())) {
 				return null;
 			}
 			y = Integer.parseInt(s.substring(0, hyphen1).trim());
 			final int hyphen2 = s.indexOf('-', hyphen1 + 1);
 			if (hyphen2 < 0) {
-				if(!isInteger(s.substring(hyphen1 + 1).trim())) {
+				if (!isInteger(s.substring(hyphen1 + 1).trim())) {
 					return null;
 				}
 				m = Integer.parseInt(s.substring(hyphen1 + 1).trim());
 				d = 1;
 			} else {
-				if(!isInteger(s.substring(hyphen1 + 1, hyphen2).trim())) {
+				if (!isInteger(s.substring(hyphen1 + 1, hyphen2).trim())) {
 					return null;
 				}
 				m = Integer.parseInt(s.substring(hyphen1 + 1, hyphen2).trim());
-				if(!isInteger(s.substring(hyphen2 + 1).trim())) {
+				if (!isInteger(s.substring(hyphen2 + 1).trim())) {
 					return null;
 				}
 				d = Integer.parseInt(s.substring(hyphen2 + 1).trim());
 			}
 		}
-		if(!isIllegalDate(y, m, d)) {
+		if (!isIllegalDate(y, m, d)) {
 			return null;
 		}
 		return ymdToUnixDate(y, m, d);
@@ -774,8 +801,7 @@ public class DateTimeUtils {
 		int operator = -1;
 		int end = v.length();
 		int timezone = v.indexOf('-', start);
-		if (timezone < 0)
-		{
+		if (timezone < 0) {
 			timezone = v.indexOf('+', start);
 			operator = 1;
 		}
@@ -786,24 +812,24 @@ public class DateTimeUtils {
 			end = timezone;
 			final int colon3 = v.indexOf(':', timezone);
 			if (colon3 < 0) {
-				if(!isInteger(v.substring(timezone + 1).trim())) {
+				if (!isInteger(v.substring(timezone + 1).trim())) {
 					return null;
 				}
 				timezoneHour = Integer.parseInt(v.substring(timezone + 1).trim());
 				timezoneMinute = 0;
 			} else {
-				if(!isInteger(v.substring(timezone + 1, colon3).trim())) {
+				if (!isInteger(v.substring(timezone + 1, colon3).trim())) {
 					return null;
 				}
 				timezoneHour = Integer.parseInt(v.substring(timezone + 1, colon3).trim());
-				if(!isInteger(v.substring(colon3 + 1).trim())) {
+				if (!isInteger(v.substring(colon3 + 1).trim())) {
 					return null;
 				}
 				timezoneMinute = Integer.parseInt(v.substring(colon3 + 1).trim());
 			}
 		}
 		if (colon1 < 0) {
-			if(!isInteger(v.substring(start, end).trim())) {
+			if (!isInteger(v.substring(start, end).trim())) {
 				return null;
 			}
 			hour = Integer.parseInt(v.substring(start, end).trim());
@@ -811,32 +837,32 @@ public class DateTimeUtils {
 			second = 1;
 			milli = 0;
 		} else {
-			if(!isInteger(v.substring(start, colon1).trim())) {
+			if (!isInteger(v.substring(start, colon1).trim())) {
 				return null;
 			}
 			hour = Integer.parseInt(v.substring(start, colon1).trim());
 			final int colon2 = v.indexOf(':', colon1 + 1);
 			if (colon2 < 0) {
-				if(!isInteger(v.substring(colon1 + 1, end).trim())) {
+				if (!isInteger(v.substring(colon1 + 1, end).trim())) {
 					return null;
 				}
 				minute = Integer.parseInt(v.substring(colon1 + 1, end).trim());
 				second = 1;
 				milli = 0;
 			} else {
-				if(!isInteger(v.substring(colon1 + 1, colon2).trim())) {
+				if (!isInteger(v.substring(colon1 + 1, colon2).trim())) {
 					return null;
 				}
 				minute = Integer.parseInt(v.substring(colon1 + 1, colon2).trim());
 				int dot = v.indexOf('.', colon2);
 				if (dot < 0) {
-					if(!isInteger(v.substring(colon2 + 1, end).trim())) {
+					if (!isInteger(v.substring(colon2 + 1, end).trim())) {
 						return null;
 					}
 					second = Integer.parseInt(v.substring(colon2 + 1, end).trim());
 					milli = 0;
 				} else {
-					if(!isInteger(v.substring(colon2 + 1, dot).trim())) {
+					if (!isInteger(v.substring(colon2 + 1, dot).trim())) {
 						return null;
 					}
 					second = Integer.parseInt(v.substring(colon2 + 1, dot).trim());
@@ -852,11 +878,13 @@ public class DateTimeUtils {
 			+ milli;
 	}
 
-	/** Parses a fraction, multiplying the first character by {@code multiplier},
+	/**
+	 * Parses a fraction, multiplying the first character by {@code multiplier},
 	 * the second character by {@code multiplier / 10},
 	 * the third character by {@code multiplier / 100}, and so forth.
 	 *
-	 * <p>For example, {@code parseFraction("1234", 100)} yields {@code 123}. */
+	 * <p>For example, {@code parseFraction("1234", 100)} yields {@code 123}.
+	 */
 	private static int parseFraction(String v, int multiplier) {
 		int r = 0;
 		for (int i = 0; i < v.length(); i++) {
@@ -901,7 +929,7 @@ public class DateTimeUtils {
 		if (julian > 2299160) {
 			int a = julian + 32044;
 			b = (4 * a + 3) / 146097;
-			c = a - b *146097 / 4;
+			c = a - b * 146097 / 4;
 		} else {
 			b = 0;
 			c = julian + 32082;
@@ -946,23 +974,28 @@ public class DateTimeUtils {
 		}
 	}
 
-	/** Returns the first day of the first week of a year.
+	/**
+	 * Returns the first day of the first week of a year.
 	 * Per ISO-8601 it is the Monday of the week that contains Jan 4,
 	 * or equivalently, it is a Monday between Dec 29 and Jan 4.
-	 * Sometimes it is in the year before the given year. */
+	 * Sometimes it is in the year before the given year.
+	 */
 	private static long firstMondayOfFirstWeek(int year) {
 		final long janFirst = ymdToJulian(year, 1, 1);
 		final long janFirstDow = floorMod(janFirst + 1, 7); // sun=0, sat=6
 		return janFirst + (11 - janFirstDow) % 7 - 3;
 	}
 
-	/** Extracts a time unit from a UNIX date (milliseconds since epoch). */
-	public static int unixTimestampExtract(TimeUnitRange range,
-										   long timestamp) {
+	/**
+	 * Extracts a time unit from a UNIX date (milliseconds since epoch).
+	 */
+	public static int unixTimestampExtract(TimeUnitRange range, long timestamp) {
 		return unixTimeExtract(range, (int) floorMod(timestamp, MILLIS_PER_DAY));
 	}
 
-	/** Extracts a time unit from a time value (milliseconds since midnight). */
+	/**
+	 * Extracts a time unit from a time value (milliseconds since midnight).
+	 */
 	public static int unixTimeExtract(TimeUnitRange range, int time) {
 		assert time >= 0;
 		assert time < MILLIS_PER_DAY;
@@ -980,13 +1013,17 @@ public class DateTimeUtils {
 		}
 	}
 
-	/** Resets to zero the "time" part of a timestamp. */
+	/**
+	 * Resets to zero the "time" part of a timestamp.
+	 */
 	public static long resetTime(long timestamp) {
 		int date = (int) (timestamp / MILLIS_PER_DAY);
 		return (long) date * MILLIS_PER_DAY;
 	}
 
-	/** Resets to epoch (1970-01-01) the "date" part of a timestamp. */
+	/**
+	 * Resets to epoch (1970-01-01) the "date" part of a timestamp.
+	 */
 	public static long resetDate(long timestamp) {
 		return floorMod(timestamp, MILLIS_PER_DAY);
 	}
@@ -1011,14 +1048,13 @@ public class DateTimeUtils {
 		return julianDateFloor(range, (int) date + EPOCH_JULIAN, false);
 	}
 
-	private static int julianDateFloor(TimeUnitRange range, int julian,
-									   boolean floor) {
+	private static int julianDateFloor(TimeUnitRange range, int julian, boolean floor) {
 		// Algorithm the book "Astronomical Algorithms" by Jean Meeus, 1998
 		int b, c;
 		if (julian > 2299160) {
 			int a = julian + 32044;
 			b = (4 * a + 3) / 146097;
-			c = a - b *146097 / 4;
+			c = a - b * 146097 / 4;
 		} else {
 			b = 0;
 			c = julian + 32082;
@@ -1067,8 +1103,7 @@ public class DateTimeUtils {
 		return j;
 	}
 
-	public static long unixTimestamp(int year, int month, int day, int hour,
-									 int minute, int second) {
+	public static long unixTimestamp(int year, int month, int day, int hour, int minute, int second) {
 		final int date = ymdToUnixDate(year, month, day);
 		return (long) date * MILLIS_PER_DAY
 			+ (long) hour * MILLIS_PER_HOUR
@@ -1076,23 +1111,27 @@ public class DateTimeUtils {
 			+ (long) second * MILLIS_PER_SECOND;
 	}
 
-	/** Adds a given number of months to a timestamp, represented as the number
-	 * of milliseconds since the epoch. */
+	/**
+	 * Adds a given number of months to a timestamp, represented as the number
+	 * of milliseconds since the epoch.
+	 */
 	public static long addMonths(long timestamp, int m) {
 		final long millis =
-			DateTimeUtils.floorMod(timestamp, DateTimeUtils.MILLIS_PER_DAY);
+			CalciteDateTimeUtils.floorMod(timestamp, CalciteDateTimeUtils.MILLIS_PER_DAY);
 		timestamp -= millis;
 		final long x =
-			addMonths((int) (timestamp / DateTimeUtils.MILLIS_PER_DAY), m);
-		return x * DateTimeUtils.MILLIS_PER_DAY + millis;
+			addMonths((int) (timestamp / CalciteDateTimeUtils.MILLIS_PER_DAY), m);
+		return x * CalciteDateTimeUtils.MILLIS_PER_DAY + millis;
 	}
 
-	/** Adds a given number of months to a date, represented as the number of
-	 * days since the epoch. */
+	/**
+	 * Adds a given number of months to a date, represented as the number of
+	 * days since the epoch.
+	 */
 	public static int addMonths(int date, int m) {
-		int y0 = (int) DateTimeUtils.unixDateExtract(TimeUnitRange.YEAR, date);
-		int m0 = (int) DateTimeUtils.unixDateExtract(TimeUnitRange.MONTH, date);
-		int d0 = (int) DateTimeUtils.unixDateExtract(TimeUnitRange.DAY, date);
+		int y0 = (int) CalciteDateTimeUtils.unixDateExtract(TimeUnitRange.YEAR, date);
+		int m0 = (int) CalciteDateTimeUtils.unixDateExtract(TimeUnitRange.MONTH, date);
+		int d0 = (int) CalciteDateTimeUtils.unixDateExtract(TimeUnitRange.DAY, date);
 		int y = m / 12;
 		y0 += y;
 		m0 += m - y * 12;
@@ -1104,7 +1143,7 @@ public class DateTimeUtils {
 				++y0;
 			}
 		}
-		return DateTimeUtils.ymdToUnixDate(y0, m0, d0);
+		return CalciteDateTimeUtils.ymdToUnixDate(y0, m0, d0);
 	}
 
 	private static int lastDay(int y, int m) {
@@ -1124,8 +1163,10 @@ public class DateTimeUtils {
 		}
 	}
 
-	/** Finds the number of months between two dates, each represented as the
-	 * number of days since the epoch. */
+	/**
+	 * Finds the number of months between two dates, each represented as the
+	 * number of days since the epoch.
+	 */
 	public static int subtractMonths(int date0, int date1) {
 		if (date0 < date1) {
 			return -subtractMonths(date1, date0);
@@ -1133,7 +1174,7 @@ public class DateTimeUtils {
 		// Start with an estimate.
 		// Since no month has more than 31 days, the estimate is <= the true value.
 		int m = (date0 - date1) / 31;
-		for (;;) {
+		for (; ; ) {
 			int date2 = addMonths(date1, m);
 			if (date2 >= date0) {
 				return m;
@@ -1148,13 +1189,13 @@ public class DateTimeUtils {
 
 	public static int subtractMonths(long t0, long t1) {
 		final long millis0 =
-			DateTimeUtils.floorMod(t0, DateTimeUtils.MILLIS_PER_DAY);
-		final int d0 = (int) DateTimeUtils.floorDiv(t0 - millis0,
-			DateTimeUtils.MILLIS_PER_DAY);
+			CalciteDateTimeUtils.floorMod(t0, CalciteDateTimeUtils.MILLIS_PER_DAY);
+		final int d0 = (int) CalciteDateTimeUtils.floorDiv(t0 - millis0,
+			CalciteDateTimeUtils.MILLIS_PER_DAY);
 		final long millis1 =
-			DateTimeUtils.floorMod(t1, DateTimeUtils.MILLIS_PER_DAY);
-		final int d1 = (int) DateTimeUtils.floorDiv(t1 - millis1,
-			DateTimeUtils.MILLIS_PER_DAY);
+			CalciteDateTimeUtils.floorMod(t1, CalciteDateTimeUtils.MILLIS_PER_DAY);
+		final int d1 = (int) CalciteDateTimeUtils.floorDiv(t1 - millis1,
+			CalciteDateTimeUtils.MILLIS_PER_DAY);
 		int x = subtractMonths(d0, d1);
 		final long d2 = addMonths(d1, x);
 		if (d2 == d0 && millis0 < millis1) {
@@ -1163,7 +1204,9 @@ public class DateTimeUtils {
 		return x;
 	}
 
-	/** Divide, rounding towards negative infinity. */
+	/**
+	 * Divide, rounding towards negative infinity.
+	 */
 	public static long floorDiv(long x, long y) {
 		long r = x / y;
 		// if the signs are different and modulo not zero, round down
@@ -1173,13 +1216,17 @@ public class DateTimeUtils {
 		return r;
 	}
 
-	/** Modulo, always returning a non-negative result. */
+	/**
+	 * Modulo, always returning a non-negative result.
+	 */
 	public static long floorMod(long x, long y) {
 		return x - floorDiv(x, y) * y;
 	}
 
-	/** Creates an instance of {@link Calendar} in the root locale and UTC time
-	 * zone. */
+	/**
+	 * Creates an instance of {@link Calendar} in the root locale and UTC time
+	 * zone.
+	 */
 	public static Calendar calendar() {
 		return Calendar.getInstance(UTC_ZONE, Locale.ROOT);
 	}
@@ -1187,7 +1234,7 @@ public class DateTimeUtils {
 	//~ Inner Classes ----------------------------------------------------------
 
 	/**
-	 * Helper class for {@link DateTimeUtils#parsePrecisionDateTimeLiteral}
+	 * Helper class for {@link CalciteDateTimeUtils#parsePrecisionDateTimeLiteral}.
 	 */
 	public static class PrecisionTime {
 		private final Calendar cal;

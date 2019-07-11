@@ -23,7 +23,6 @@ import org.apache.flink.table.types.logical.DateType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.TimestampType;
 
-import org.apache.calcite.avatica.util.DateTimeUtils;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.slf4j.Logger;
@@ -288,7 +287,7 @@ public class SqlDateTimeUtils {
 		ZoneId zoneId = ZoneId.of("UTC");
 		Instant instant = Instant.ofEpochMilli(ts);
 		ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, zoneId);
-		return DateTimeUtils.ymdToUnixDate(zdt.getYear(), zdt.getMonthValue(), zdt.getDayOfMonth());
+		return CalciteDateTimeUtils.ymdToUnixDate(zdt.getYear(), zdt.getMonthValue(), zdt.getDayOfMonth());
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -509,7 +508,7 @@ public class SqlDateTimeUtils {
 	}
 
 	public static long unixTimeExtract(TimeUnitRange range, int ts) {
-		return DateTimeUtils.unixTimeExtract(range, ts);
+		return CalciteDateTimeUtils.unixTimeExtract(range, ts);
 	}
 
 	public static long extractFromTimestamp(TimeUnitRange range, long ts, TimeZone tz) {
@@ -533,7 +532,7 @@ public class SqlDateTimeUtils {
 			case WEEK:
 				if (type instanceof TimestampType) {
 					long d = divide(utcTs, TimeUnit.DAY.multiplier);
-					return DateTimeUtils.unixDateExtract(range, d);
+					return CalciteDateTimeUtils.unixDateExtract(range, d);
 				} else if (type instanceof DateType) {
 					return divide(utcTs, TimeUnit.DAY.multiplier);
 				} else {
@@ -696,17 +695,17 @@ public class SqlDateTimeUtils {
 				if (!floor && (month > 1 || day > 1)) {
 					year += 1;
 				}
-				return DateTimeUtils.ymdToUnixDate(year, 1, 1);
+				return CalciteDateTimeUtils.ymdToUnixDate(year, 1, 1);
 			case MONTH:
 				if (!floor && day > 1) {
 					month += 1;
 				}
-				return DateTimeUtils.ymdToUnixDate(year, month, 1);
+				return CalciteDateTimeUtils.ymdToUnixDate(year, month, 1);
 			case QUARTER:
 				if (!floor && (month > 1 || day > 1)) {
 					quarter += 1;
 				}
-				return DateTimeUtils.ymdToUnixDate(year, quarter * 3 - 2, 1);
+				return CalciteDateTimeUtils.ymdToUnixDate(year, quarter * 3 - 2, 1);
 			default:
 				throw new AssertionError(range);
 		}
