@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.api;
 
+import org.apache.flink.annotation.docs.Documentation;
 import org.apache.flink.configuration.ConfigOption;
 
 import static org.apache.flink.configuration.ConfigOptions.key;
@@ -30,6 +31,7 @@ public class OptimizerConfigOptions {
 	// ------------------------------------------------------------------------
 	//  Optimizer Options
 	// ------------------------------------------------------------------------
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH_STREAMING)
 	public static final ConfigOption<String> SQL_OPTIMIZER_AGG_PHASE_STRATEGY =
 			key("sql.optimizer.agg-phase.strategy")
 					.defaultValue("AUTO")
@@ -40,12 +42,14 @@ public class OptimizerConfigOptions {
 							"NOTE: If aggregate call does not support split into two phase, still use one stage aggregate.\n" +
 							"ONE_PHASE: Enforce to use one stage aggregate which only has CompleteGlobalAggregate.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH)
 	public static final ConfigOption<Long> SQL_OPTIMIZER_BROADCAST_JOIN_THRESHOLD =
 			key("sql.optimizer.join.broadcast.threshold")
 					.defaultValue(1024 * 1024L)
 					.withDescription("Configures the maximum size in bytes for a table that will be broadcast to all worker " +
 							"nodes when performing a join.  By setting this value to -1 broadcasting can be disabled. ");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.STREAMING)
 	public static final ConfigOption<Boolean> SQL_OPTIMIZER_DISTINCT_AGG_SPLIT_ENABLED =
 			key("sql.optimizer.distinct-agg.split.enabled")
 					.defaultValue(false)
@@ -56,6 +60,7 @@ public class OptimizerConfigOptions {
 							"when there is data skew in distinct aggregation and gives the ability to scale-up the job. " +
 							"Default is false.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.STREAMING)
 	public static final ConfigOption<Integer> SQL_OPTIMIZER_DISTINCT_AGG_SPLIT_BUCKET_NUM =
 			key("sql.optimizer.distinct-agg.split.bucket-num")
 					.defaultValue(1024)
@@ -63,24 +68,28 @@ public class OptimizerConfigOptions {
 							"The number is used in the first level aggregation to calculate a bucket key " +
 							"'hash_code(distinct_key) % BUCKET_NUM' which is used as an additional group key after splitting.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH_STREAMING)
 	public static final ConfigOption<Boolean> SQL_OPTIMIZER_REUSE_SUB_PLAN_ENABLED =
 			key("sql.optimizer.reuse.sub-plan.enabled")
 					.defaultValue(true)
 					.withDescription("When it is true, optimizer will try to find out duplicated " +
 							"sub-plan and reuse them.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH_STREAMING)
 	public static final ConfigOption<Boolean> SQL_OPTIMIZER_REUSE_TABLE_SOURCE_ENABLED =
 			key("sql.optimizer.reuse.table-source.enabled")
 					.defaultValue(true)
 					.withDescription("When it is true, optimizer will try to find out duplicated table-source and " +
 							"reuse them. This works only when " + SQL_OPTIMIZER_REUSE_SUB_PLAN_ENABLED.key() + " is true.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH_STREAMING)
 	public static final ConfigOption<Boolean> SQL_OPTIMIZER_PREDICATE_PUSHDOWN_ENABLED =
 			key("sql.optimizer.predicate-pushdown.enabled")
 					.defaultValue(true)
 					.withDescription("If it is true, enable predicate pushdown to the FilterableTableSource. " +
 			"Default value is true.");
 
+	@Documentation.TableMeta(execMode = Documentation.ExecMode.BATCH_STREAMING)
 	public static final ConfigOption<Boolean> SQL_OPTIMIZER_JOIN_REORDER_ENABLED =
 			key("sql.optimizer.join-reorder.enabled")
 					.defaultValue(false)

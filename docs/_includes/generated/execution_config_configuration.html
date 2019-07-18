@@ -1,0 +1,123 @@
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th class="text-left" style="width: 20%">Key</th>
+            <th class="text-left" style="width: 15%">Default</th>
+            <th class="text-left" style="width: 65%">Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><h5>sql.exec.disabled-operators</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>Mainly for testing. A comma-separated list of name of the OperatorType, each name means a kind of disabled operator. Its default value is empty that means no operators are disabled. If the configure's value is "NestedLoopJoin, ShuffleHashJoin", NestedLoopJoin and ShuffleHashJoin are disabled. If configure's value is "HashJoin", ShuffleHashJoin and BroadcastHashJoin are disabled.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.lookup.async.buffer-capacity</h5><br> <span class="label label-primary">BATCH</span> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">100</td>
+            <td>The max number of async i/o operation that the async lookup join can trigger.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.lookup.async.timeout</h5><br> <span class="label label-primary">BATCH</span> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">"3 min"</td>
+            <td>The async timeout for the asynchronous operation to complete.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.mini-batch.allow-latency</h5><br> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">"-1 ms"</td>
+            <td>The maximum latency can be used for MiniBatch to buffer input records. MiniBatch is an optimization to buffer input records to reduce state access. MiniBatch is triggered with the allowed latency interval and when the maximum number of buffered records reached. NOTE: If sql.exec.mini-batch.enabled is set true, its value must be greater than zero.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.mini-batch.enabled</h5><br> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Specifies whether to enable MiniBatch optimization. MiniBatch is an optimization to buffer input records to reduce state access. This is disabled by default. To enable this, users should set this config to true.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.mini-batch.size</h5><br> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">-1</td>
+            <td>The maximum number of input records can be buffered for MiniBatch. MiniBatch is an optimization to buffer input records to reduce state access. MiniBatch is triggered with the allowed latency interval and when the maximum number of buffered records reached. NOTE: MiniBatch only works for non-windowed aggregations currently. If sql.exec.mini-batch.enabled is set true, its value must be positive.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.shuffle-mode</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">"batch"</td>
+            <td>Sets exec shuffle mode. Only batch or pipeline can be set.
+batch: the job will run stage by stage. 
+pipeline: the job will run in streaming mode, but it may cause resource deadlock that receiver waits for resource to start when the sender holds resource to wait to send data to the receiver.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.sort.async-merge.enabled</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">true</td>
+            <td>Whether to asynchronously merge sorted spill files.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.sort.default.limit</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">200</td>
+            <td>Default limit when user don't set a limit after order by. </td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.sort.file-handles.num.max</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">128</td>
+            <td>The maximal fan-in for external merge sort. It limits the number of file handles per operator. If it is too small, may cause intermediate merging. But if it is too large, it will cause too many files opened at the same time, consume memory and lead to random reading.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.source.idle.timeout</h5><br> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">"-1 ms"</td>
+            <td>When a source do not receive any elements for the timeout time, it will be marked as temporarily idle. This allows downstream tasks to advance their watermarks without the need to wait for watermarks from this source while it is idle.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.spill.compression.block-size</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">65536</td>
+            <td>The buffer is to compress. The larger the buffer, the better the compression ratio, but the more memory consumption.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.spill.compression.codec</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">"lz4"</td>
+            <td>Use that compression codec to compress spilled file. Now we only support lz4.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.spill.compression.enabled</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">true</td>
+            <td>Whether to compress spilled data. (Now include sort and hash agg and hash join)</td>
+        </tr>
+        <tr>
+            <td><h5>sql.exec.window-agg.buffer-size.limit</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">100000</td>
+            <td>Sets the window elements buffer size limit used in group window agg operator.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.default.parallelism</h5><br> <span class="label label-primary">BATCH</span> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">-1</td>
+            <td>Default parallelism of job operators. If it is &lt;= 0, use parallelism of StreamExecutionEnvironment(its default value is the num of cpu cores in the client host).</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.external-buffer.memory.mb</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">10</td>
+            <td>Sets the externalBuffer memory size that is used in sortMergeJoin and overWindow.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.hash-agg.table.memory.mb</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">128</td>
+            <td>Sets the table memory size of hashAgg operator.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.hash-join.table.memory.mb</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">128</td>
+            <td>Sets the HashTable reserved memory for hashJoin operator. It defines the lower limit.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.sink.parallelism</h5><br> <span class="label label-primary">BATCH</span> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">-1</td>
+            <td>Sets sink parallelism, if it is &lt;= 0, use sql.resource.default.parallelism to set sink parallelism.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.sort.buffer.memory.mb</h5><br> <span class="label label-primary">BATCH</span></td>
+            <td style="word-wrap: break-word;">128</td>
+            <td>Sets the buffer memory size for sort.</td>
+        </tr>
+        <tr>
+            <td><h5>sql.resource.source.parallelism</h5><br> <span class="label label-primary">BATCH</span> <span class="label label-primary">STREAMING</span></td>
+            <td style="word-wrap: break-word;">-1</td>
+            <td>Sets source parallelism, if it is &lt;= 0, use sql.resource.default.parallelism to set source parallelism.</td>
+        </tr>
+    </tbody>
+</table>
