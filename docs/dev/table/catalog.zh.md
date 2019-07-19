@@ -2,7 +2,7 @@
 title: "Catalog"
 is_beta: true
 nav-parent_id: tableapi
-nav-pos: 100
+nav-pos: 60
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
