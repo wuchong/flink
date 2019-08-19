@@ -33,7 +33,7 @@ from pyflink.dataset import ExecutionEnvironment
 from pyflink.datastream import StreamExecutionEnvironment
 
 from pyflink.find_flink_home import _find_flink_home
-from pyflink.table import BatchTableEnvironment, StreamTableEnvironment
+from pyflink.table import BatchTableEnvironment, StreamTableEnvironment, EnvironmentSettings
 from pyflink.java_gateway import get_gateway
 
 if sys.version_info[0] >= 3:
@@ -141,6 +141,9 @@ class PyFlinkBatchTableTestCase(PyFlinkTestCase):
         self.env = ExecutionEnvironment.get_execution_environment()
         self.env.set_parallelism(1)
         self.t_env = BatchTableEnvironment.create(self.env)
+
+        setting = EnvironmentSettings.new_instance().use_blink_planner().in_batch_mode().build()
+        self.bt_env = BatchTableEnvironment.create(environment_settings=setting)
 
     def collect(self, table):
         j_table = table._j_table
