@@ -20,11 +20,13 @@ package org.apache.flink.sql.parser.ddl;
 
 import org.apache.flink.sql.parser.ExtendedSqlNode;
 import org.apache.flink.sql.parser.error.SqlParseException;
+import org.apache.flink.sql.parser.type.SqlRowType;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCharStringLiteral;
 import org.apache.calcite.sql.SqlCreate;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -38,6 +40,7 @@ import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -63,6 +66,8 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 
 	private final SqlNodeList partitionKeyList;
 
+	private final SqlWatermark watermark;
+
 	private final SqlCharStringLiteral comment;
 
 	public SqlCreateTable(
@@ -73,6 +78,7 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 			List<SqlNodeList> uniqueKeysList,
 			SqlNodeList propertyList,
 			SqlNodeList partitionKeyList,
+			SqlWatermark watermark,
 			SqlCharStringLiteral comment) {
 		super(OPERATOR, pos, false, false);
 		this.tableName = requireNonNull(tableName, "Table name is missing");
@@ -81,6 +87,7 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 		this.uniqueKeysList = uniqueKeysList;
 		this.propertyList = propertyList;
 		this.partitionKeyList = partitionKeyList;
+		this.watermark = watermark;
 		this.comment = comment;
 	}
 
@@ -92,7 +99,7 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 	@Override
 	public List<SqlNode> getOperandList() {
 		return ImmutableNullableList.of(tableName, columnList, primaryKeyList,
-			propertyList, partitionKeyList, comment);
+			propertyList, partitionKeyList, watermark, comment);
 	}
 
 	public SqlIdentifier getTableName() {
@@ -119,6 +126,10 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 		return uniqueKeysList;
 	}
 
+	public SqlWatermark getWatermark() {
+		return watermark;
+	}
+
 	public SqlCharStringLiteral getComment() {
 		return comment;
 	}
@@ -135,6 +146,7 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 				if (column instanceof SqlTableColumn) {
 					SqlTableColumn tableColumn = (SqlTableColumn) column;
 					columnName = tableColumn.getName().getSimple();
+					validateColumnType(tableColumn.getType(), columnNames, Collections.singletonList(columnName));
 				} else if (column instanceof SqlBasicCall) {
 					SqlBasicCall tableColumn = (SqlBasicCall) column;
 					columnName = tableColumn.getOperands()[1].toString();
@@ -174,6 +186,16 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 			}
 		}
 
+		if (this.watermark != null) {
+			String rowtimeField = watermark.getColumnName().toString();
+			if (!columnNames.contains(rowtimeField)) {
+				throw new SqlParseException(
+					watermark.getColumnName().getParserPosition(),
+					"The rowtime attribute field \"" + rowtimeField + "\" is not defined in columns, at " +
+						watermark.getColumnName().getParserPosition());
+			}
+		}
+
 		if (this.partitionKeyList != null) {
 			for (SqlNode partitionKeyNode : this.partitionKeyList.getList()) {
 				String partitionKey = ((SqlIdentifier) partitionKeyNode).getSimple();
@@ -186,6 +208,28 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 			}
 		}
 
+	}
+
+	private void validateColumnType(SqlDataTypeSpec type, Set<String> allColumnNames, List<String> parentNames) throws SqlParseException {
+		SqlIdentifier typeName = type.getTypeName();
+		// validate composite type
+		if (typeName instanceof SqlRowType) {
+			SqlRowType rowType = (SqlRowType) typeName;
+			for (int i = 0; i < rowType.getArity(); i++) {
+				SqlIdentifier fieldName = rowType.getFieldName(i);
+				List<String> compoundNames = new ArrayList<>(parentNames);
+				compoundNames.add(fieldName.getSimple());
+				String fullName = String.join(".", compoundNames);
+				if (!allColumnNames.add(fullName)) {
+					throw new SqlParseException(
+						fieldName.getParserPosition(),
+						"Duplicate column name [" + fieldName.getSimple() + "], at " +
+							fieldName.getParserPosition());
+				}
+				SqlDataTypeSpec fieldType = rowType.getFieldType(i);
+				validateColumnType(fieldType, allColumnNames, compoundNames);
+			}
+		}
 	}
 
 	public boolean containsComputedColumn() {
@@ -270,6 +314,10 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 				writer.endList(keyFrame);
 			}
 		}
+		if (watermark != null) {
+			printIndent(writer);
+			watermark.unparse(writer, leftPrec, rightPrec);
+		}
 
 		writer.newlineAndIndent();
 		writer.endList(frame);
@@ -314,6 +362,7 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
 		public List<SqlNode> columnList = new ArrayList<>();
 		public SqlNodeList primaryKeyList;
 		public List<SqlNodeList> uniqueKeysList = new ArrayList<>();
+		public SqlWatermark watermark;
 	}
 
 	public String[] fullTableName() {

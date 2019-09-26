@@ -41,7 +41,28 @@ void TableColumn(TableCreationContext context) :
         UniqueKey(context.uniqueKeysList)
     |
         ComputedColumn(context)
+    |
+        Watermark(context)
     )
+}
+
+void Watermark(TableCreationContext context) :
+{
+    SqlIdentifier columnName;
+    SqlParserPos pos;
+    SqlNode watermarkStrategy;
+}
+{
+    <WATERMARK> <FOR>
+    columnName = CompoundIdentifier() {pos = getPos();}
+    <AS>
+    watermarkStrategy = Expression(ExprContext.ACCEPT_SUB_QUERY) {
+        if (context.watermark != null) {
+            throw new ParseException("Multiple WATERMARK statements is not supported yet.");
+        } else {
+            context.watermark = new SqlWatermark(columnName, watermarkStrategy, pos);
+        }
+    }
 }
 
 void ComputedColumn(TableCreationContext context) :
@@ -161,6 +182,7 @@ SqlCreate SqlCreateTable(Span s, boolean replace) :
     SqlIdentifier tableName;
     SqlNodeList primaryKeyList = null;
     List<SqlNodeList> uniqueKeysList = null;
+    SqlWatermark watermark = null;
     SqlNodeList columnList = SqlNodeList.EMPTY;
 	SqlCharStringLiteral comment = null;
 
@@ -183,6 +205,7 @@ SqlCreate SqlCreateTable(Span s, boolean replace) :
             columnList = new SqlNodeList(ctx.columnList, pos);
             primaryKeyList = ctx.primaryKeyList;
             uniqueKeysList = ctx.uniqueKeysList;
+            watermark = ctx.watermark;
         }
         <RPAREN>
     ]
@@ -206,6 +229,7 @@ SqlCreate SqlCreateTable(Span s, boolean replace) :
                 uniqueKeysList,
                 propertyList,
                 partitionColumns,
+                watermark,
                 comment);
     }
 }

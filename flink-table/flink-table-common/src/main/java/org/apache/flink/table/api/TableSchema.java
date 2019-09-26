@@ -21,24 +21,27 @@ package org.apache.flink.table.api;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.CompositeType;
+import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.FieldsDataType;
 import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.api.DataTypes.Field;
 import static org.apache.flink.table.api.DataTypes.ROW;
+import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
 import static org.apache.flink.table.types.utils.TypeConversions.fromDataTypeToLegacyInfo;
 import static org.apache.flink.table.types.utils.TypeConversions.fromLegacyInfoToDataType;
 
@@ -54,44 +57,61 @@ public class TableSchema {
 
 	private final DataType[] fieldDataTypes;
 
-	private final Map<String, Integer> fieldNameToIndex;
+	/** Mapping from compound field name to (nested) field type. */
+	private final Map<String, DataType> typesByName;
 
-	private TableSchema(String[] fieldNames, DataType[] fieldDataTypes) {
+	@Nullable
+	private final String rowtimeAttribute;
+
+	@Nullable
+	private final Expression watermarkStrategy;
+
+	private TableSchema(String[] fieldNames, DataType[] fieldDataTypes, @Nullable String rowtimeAttribute, @Nullable Expression watermarkStrategy) {
 		this.fieldNames = Preconditions.checkNotNull(fieldNames);
 		this.fieldDataTypes = Preconditions.checkNotNull(fieldDataTypes);
 
 		if (fieldNames.length != fieldDataTypes.length) {
-			throw new TableException(
+			throw new ValidationException(
 				"Number of field names and field data types must be equal.\n" +
 					"Number of names is " + fieldNames.length + ", number of data types is " + fieldDataTypes.length + ".\n" +
 					"List of field names: " + Arrays.toString(fieldNames) + "\n" +
 					"List of field data types: " + Arrays.toString(fieldDataTypes));
 		}
 
-		// validate and create name to index mapping
-		fieldNameToIndex = new HashMap<>();
-		final Set<String> duplicateNames = new HashSet<>();
-		final Set<String> uniqueNames = new HashSet<>();
+		// validate and create name to type mapping
+		typesByName = new HashMap<>();
 		for (int i = 0; i < fieldNames.length; i++) {
 			// check for null
-			Preconditions.checkNotNull(fieldDataTypes[i]);
-			final String fieldName = Preconditions.checkNotNull(fieldNames[i]);
-
-			// collect indices
-			fieldNameToIndex.put(fieldName, i);
-
-			// check uniqueness of field names
-			if (uniqueNames.contains(fieldName)) {
-				duplicateNames.add(fieldName);
-			} else {
-				uniqueNames.add(fieldName);
-			}
+			DataType fieldType = Preconditions.checkNotNull(fieldDataTypes[i]);
+			String fieldName = Preconditions.checkNotNull(fieldNames[i]);
+			validateAndCreateNameTypeMapping(fieldName, fieldType, Collections.emptyList());
 		}
-		if (!duplicateNames.isEmpty()) {
-			throw new TableException(
-				"Field names must be unique.\n" +
-					"List of duplicate fields: " + duplicateNames.toString() + "\n" +
-					"List of all fields: " + Arrays.toString(fieldNames));
+
+		// validate rowtime attribute
+		DataType rowtimeType = getFieldDataType(rowtimeAttribute)
+			.orElseThrow(() -> new ValidationException(String.format(
+				"Rowtime attribute '%s' is not defined in schema.", rowtimeAttribute)));
+		if (rowtimeType.getLogicalType().getTypeRoot() != TIMESTAMP_WITHOUT_TIME_ZONE) {
+			throw new ValidationException(String.format(
+				"Rowtime attribute '%s' must be of type TIMESTAMP but is of type %s.",
+				rowtimeAttribute, rowtimeType));
+		}
+
+		this.rowtimeAttribute = rowtimeAttribute;
+		this.watermarkStrategy = watermarkStrategy;
+	}
+
+	private void validateAndCreateNameTypeMapping(String fieldName, DataType fieldType, List<String> parentNames) {
+		List<String> compoundNames = new ArrayList<>(parentNames);
+		compoundNames.add(fieldName);
+		String fullFieldName = String.join(".", compoundNames);
+		DataType oldValue = typesByName.put(fullFieldName, fieldType);
+		if (oldValue != null) {
+			throw new ValidationException("Field names must be unique. Duplicate filed: " + fullFieldName);
+		}
+		if (fieldType instanceof FieldsDataType) {
+			Map<String, DataType> fieldDataTypes = ((FieldsDataType) fieldType).getFieldDataTypes();
+			fieldDataTypes.forEach((key, value) -> validateAndCreateNameTypeMapping(key, value, compoundNames));
 		}
 	}
 
@@ -100,14 +120,14 @@ public class TableSchema {
 	 */
 	@Deprecated
 	public TableSchema(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
-		this(fieldNames, fromLegacyInfoToDataType(fieldTypes));
+		this(fieldNames, fromLegacyInfoToDataType(fieldTypes), null, null);
 	}
 
 	/**
 	 * Returns a deep copy of the table schema.
 	 */
 	public TableSchema copy() {
-		return new TableSchema(fieldNames.clone(), fieldDataTypes.clone());
+		return new TableSchema(fieldNames.clone(), fieldDataTypes.clone(), rowtimeAttribute, watermarkStrategy);
 	}
 
 	/**
@@ -157,11 +177,11 @@ public class TableSchema {
 	/**
 	 * Returns the specified data type for the given field name.
 	 *
-	 * @param fieldName the name of the field
+	 * @param fieldName the name of the field, the field name can be a qualified name, e.g. "f0.q1"
 	 */
 	public Optional<DataType> getFieldDataType(String fieldName) {
-		if (fieldNameToIndex.containsKey(fieldName)) {
-			return Optional.of(fieldDataTypes[fieldNameToIndex.get(fieldName)]);
+		if (typesByName.containsKey(fieldName)) {
+			return Optional.of(typesByName.get(fieldName));
 		}
 		return Optional.empty();
 	}
@@ -222,6 +242,20 @@ public class TableSchema {
 	@SuppressWarnings("unchecked")
 	public TypeInformation<Row> toRowType() {
 		return (TypeInformation<Row>) fromDataTypeToLegacyInfo(toRowDataType());
+	}
+
+	/**
+	 * Returns the rowtime attribute which can be a nested field using "." separator.
+	 */
+	public Optional<String> getRowtimeAttribute() {
+		return Optional.ofNullable(rowtimeAttribute);
+	}
+
+	/**
+	 * Returns the watermark strategy expression.
+	 */
+	public Optional<Expression> getWatermarkStrategy() {
+		return Optional.ofNullable(watermarkStrategy);
 	}
 
 	@Override
@@ -299,6 +333,10 @@ public class TableSchema {
 
 		private List<DataType> fieldDataTypes;
 
+		private String rowtimeAttribute;
+
+		private Expression watermark;
+
 		public Builder() {
 			fieldNames = new ArrayList<>();
 			fieldDataTypes = new ArrayList<>();
@@ -344,12 +382,26 @@ public class TableSchema {
 		}
 
 		/**
+		 * Specifies the previously defined field as an event-time attribute and specifies the watermark strategy.
+		 *
+		 * @param rowtimeAttribute the field name as a rowtime attribute, can be a nested field using dot separator.
+		 * @param watermarkStrategy the watermark strategy expression
+		 */
+		public Builder watermark(String rowtimeAttribute, Expression watermarkStrategy) {
+			this.rowtimeAttribute = rowtimeAttribute;
+			this.watermark = watermarkStrategy;
+			return this;
+		}
+
+		/**
 		 * Returns a {@link TableSchema} instance.
 		 */
 		public TableSchema build() {
 			return new TableSchema(
 				fieldNames.toArray(new String[0]),
-				fieldDataTypes.toArray(new DataType[0]));
+				fieldDataTypes.toArray(new DataType[0]),
+				rowtimeAttribute,
+				watermark);
 		}
 	}
 }
