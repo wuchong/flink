@@ -20,7 +20,6 @@ package org.apache.flink.table.planner.calcite;
 
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
 
 /**
  * Flink extension of {@link RelOptTable.ToRelContext} which contains the
@@ -32,5 +31,5 @@ public interface FlinkToRelContext extends RelOptTable.ToRelContext {
 	/**
 	 * Creates a new instance of {@link SqlToRexConverter} to convert SQL expression to RexNode.
 	 */
-	SqlToRelConverter createSqlToRexConverter(RelDataType tableRowType);
+	SqlToRexConverter createSqlToRexConverter(RelDataType tableRowType);
 }

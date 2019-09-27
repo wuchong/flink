@@ -112,7 +112,7 @@ class BatchExecOverAggregate(
       inputType.getFieldNames ++ constants.indices.map(i => "TMP" + i)
     val inputTypesWithConstants = inputType.getChildren ++ constantTypes
     cluster.getTypeFactory.asInstanceOf[FlinkTypeFactory]
-        .buildRelNodeRowType(inputTypeNamesWithConstants, inputTypesWithConstants)
+        .buildRelNodeRowType(inputTypeNamesWithConstants.toArray, inputTypesWithConstants.toArray)
   }
 
   lazy val aggregateCalls: Seq[AggregateCall] =

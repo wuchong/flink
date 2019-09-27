@@ -153,7 +153,7 @@ class FlinkPlannerImpl(
   /**
     * Creates a new instance of [[SqlToRexConverter]] to convert SQL expression to RexNode.
     */
-  def createSqlToRexConverter(tableRowType: RelDataType): SqlToRexConverter = {
+  override def createSqlToRexConverter(tableRowType: RelDataType): SqlToRexConverter = {
     new SqlToRexConverterImpl(
       config,
       typeFactory,

@@ -25,6 +25,7 @@ import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.expressions.SqlExpression;
 import org.apache.flink.table.utils.EncodingUtils;
 import org.apache.flink.table.utils.TypeStringUtils;
@@ -199,10 +200,18 @@ public class DescriptorProperties {
 			Arrays.asList(TABLE_SCHEMA_NAME, TABLE_SCHEMA_TYPE),
 			values);
 
-		schema.getWatermarkSpec().ifPresent(w -> {
-			put(key + "." + WATERMARK_ROWTIME, w.getRowtimeAttribute());
-			put(key + "." + WATERMARK_EXPRESSION, w.getWatermarkStrategy().asSerializableString());
-		});
+		if (!schema.getWatermarkSpecs().isEmpty()) {
+			final List<List<String>> watermarkValues = new ArrayList<>();
+			for (WatermarkSpec spec : schema.getWatermarkSpecs()) {
+				watermarkValues.add(Arrays.asList(
+					spec.getRowtimeAttribute(),
+					spec.getWatermarkStrategy().asSerializableString()));
+			}
+			putIndexedFixedProperties(
+				key,
+				Arrays.asList(WATERMARK_ROWTIME, WATERMARK_EXPRESSION),
+				watermarkValues);
+		}
 	}
 
 	/**
@@ -531,12 +540,21 @@ public class DescriptorProperties {
 		}
 
 		// extract watermark information
-		final Optional<String> rowtime = optionalGet(key + "." + WATERMARK_ROWTIME);
-		if (rowtime.isPresent()) {
-			final String expressionKey =  key + "." + WATERMARK_EXPRESSION;
-			String expression = optionalGet(expressionKey).orElseThrow(exceptionSupplier(expressionKey));
-			// TODO
-			schemaBuilder.watermark(rowtime.get(), new SqlExpression(expression, null));
+
+		// filter for number of fields
+		final int watermarkCount = properties.keySet().stream()
+			.filter((k) -> k.startsWith(key) && k.endsWith('.' + WATERMARK_ROWTIME))
+			.mapToInt((k) -> 1)
+			.sum();
+		if (watermarkCount > 0) {
+			for (int i = 0; i < watermarkCount; i++) {
+				final String rowtimeKey = key + '.' + i + '.' + WATERMARK_ROWTIME;
+				final String exprKey = key + '.' + i + '.' + WATERMARK_EXPRESSION;
+				final String rowtime = optionalGet(rowtimeKey).orElseThrow(exceptionSupplier(rowtimeKey));
+				final String expression = optionalGet(exprKey).orElseThrow(exceptionSupplier(exprKey));
+				// TODO
+				schemaBuilder.watermark(rowtime, new SqlExpression(expression, null));
+			}
 		}
 
 		return Optional.of(schemaBuilder.build());

@@ -35,11 +35,10 @@ import org.apache.flink.table.planner.plan.utils.ScanUtil
 import org.apache.flink.table.planner.sources.TableSourceUtil
 import org.apache.flink.table.runtime.operators.AbstractProcessStreamOperator
 import org.apache.flink.table.runtime.types.TypeInfoDataTypeConverter
-import org.apache.flink.table.sources.wmstrategies.{PeriodicWatermarkAssigner, PreserveWatermarks, PunctuatedWatermarkAssigner}
+import org.apache.flink.table.sources.wmstrategies.{AscendingTimestamps, BoundedOutOfOrderTimestamps, PeriodicWatermarkAssigner, PreserveWatermarks, PunctuatedWatermarkAssigner}
 import org.apache.flink.table.sources.{RowtimeAttributeDescriptor, StreamTableSource}
 import org.apache.flink.table.types.{DataType, FieldsDataType}
 import org.apache.flink.types.Row
-
 import org.apache.calcite.plan._
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.metadata.RelMetadataQuery
@@ -149,29 +148,39 @@ class StreamExecTableSourceScan(
 
     val ingestedTable = new DataStream(planner.getExecEnv, streamTransformation)
 
-    // generate watermarks for rowtime indicator
-    val rowtimeDesc: Option[RowtimeAttributeDescriptor] =
-      TableSourceUtil.getRowtimeAttributeDescriptor(tableSource, tableSourceTable.selectedFields)
-
-    val withWatermarks = if (rowtimeDesc.isDefined) {
-      val rowtimeFieldIdx = getRowType.getFieldNames.indexOf(rowtimeDesc.get.getAttributeName)
-      val watermarkStrategy = rowtimeDesc.get.getWatermarkStrategy
-      watermarkStrategy match {
-        case p: PeriodicWatermarkAssigner =>
-          val watermarkGenerator = new PeriodicWatermarkAssignerWrapper(rowtimeFieldIdx, p)
-          ingestedTable.assignTimestampsAndWatermarks(watermarkGenerator)
-        case p: PunctuatedWatermarkAssigner =>
-          val watermarkGenerator =
-            new PunctuatedWatermarkAssignerWrapper(rowtimeFieldIdx, p, producedDataType)
-          ingestedTable.assignTimestampsAndWatermarks(watermarkGenerator)
-        case _: PreserveWatermarks =>
-          // The watermarks have already been provided by the underlying DataStream.
-          ingestedTable
-      }
+    val withWatermarks = if (tableSourceTable.watermarkSpec.isDefined) {
+      // generate watermarks for rowtime indicator from WatermarkSpec
+      val watermarkSpec = tableSourceTable.watermarkSpec.get
+      val rowtimeFieldIndex = getRowType.getFieldNames.indexOf(watermarkSpec.getRowtimeAttribute)
+      val watermarkStrategy = new AscendingTimestamps()
+      val watermarkGenerator = new PeriodicWatermarkAssignerWrapper(rowtimeFieldIndex, watermarkStrategy)
+      ingestedTable.assignTimestampsAndWatermarks(watermarkGenerator)
     } else {
-      // No need to generate watermarks if no rowtime attribute is specified.
-      ingestedTable
+      // generate watermarks for rowtime indicator from DefinedRowtimeAttributes
+      val rowtimeDesc: Option[RowtimeAttributeDescriptor] =
+        TableSourceUtil.getRowtimeAttributeDescriptor(tableSource, tableSourceTable.selectedFields)
+
+      if (rowtimeDesc.isDefined) {
+        val rowtimeFieldIdx = getRowType.getFieldNames.indexOf(rowtimeDesc.get.getAttributeName)
+        val watermarkStrategy = rowtimeDesc.get.getWatermarkStrategy
+        watermarkStrategy match {
+          case p: PeriodicWatermarkAssigner =>
+            val watermarkGenerator = new PeriodicWatermarkAssignerWrapper(rowtimeFieldIdx, p)
+            ingestedTable.assignTimestampsAndWatermarks(watermarkGenerator)
+          case p: PunctuatedWatermarkAssigner =>
+            val watermarkGenerator =
+              new PunctuatedWatermarkAssignerWrapper(rowtimeFieldIdx, p, producedDataType)
+            ingestedTable.assignTimestampsAndWatermarks(watermarkGenerator)
+          case _: PreserveWatermarks =>
+            // The watermarks have already been provided by the underlying DataStream.
+            ingestedTable
+        }
+      } else {
+        // No need to generate watermarks if no rowtime attribute is specified.
+        ingestedTable
+      }
     }
+
     withWatermarks.getTransformation
   }
 

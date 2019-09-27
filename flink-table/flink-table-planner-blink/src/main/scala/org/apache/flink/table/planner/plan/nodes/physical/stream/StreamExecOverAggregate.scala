@@ -220,8 +220,8 @@ class StreamExecOverAggregate(
     val outRowType = FlinkTypeFactory.toLogicalRowType(outputRowType)
 
     val aggInputType = planner.getTypeFactory.buildRelNodeRowType(
-      fieldNames ++ constants.indices.map(i => "TMP" + i),
-      fieldTypes ++ constantTypes)
+      (fieldNames ++ constants.indices.map(i => "TMP" + i)).toArray,
+      (fieldTypes ++ constantTypes).toArray)
 
     val overProcessFunction = if (overWindow.lowerBound.isPreceding
       && overWindow.lowerBound.isUnbounded

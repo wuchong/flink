@@ -59,7 +59,7 @@ class BatchExecOverAggregateRule
     val inputTypesWithConstants = inputRowType.getFieldList
       .map(i => FlinkTypeFactory.toLogicalType(i.getType)) ++ constantTypes
     val inputTypeWithConstants = typeFactory.buildRelNodeRowType(
-      inputNamesWithConstants, inputTypesWithConstants)
+      inputNamesWithConstants.toArray, inputTypesWithConstants.toArray)
 
     var overWindowAgg: BatchExecOverAggregate = null
 

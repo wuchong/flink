@@ -63,8 +63,8 @@ public class QueryOperationCatalogViewTable extends FlinkTable implements Transl
 			List<LogicalType> fieldTypes = Arrays.stream(tableSchema.getFieldDataTypes()).map(
 					LogicalTypeDataTypeConverter::fromDataTypeToLogicalType).collect(Collectors.toList());
 			return ((FlinkTypeFactory) typeFactory).buildRelNodeRowType(
-					JavaScalaConversionUtil.toScala(fieldNames),
-					JavaScalaConversionUtil.toScala(fieldTypes));
+					fieldNames.toArray(new String[0]),
+					fieldTypes.toArray(new LogicalType[0]));
 		}, FlinkStatistic.UNKNOWN()); // TODO supports statistic
 	}
 

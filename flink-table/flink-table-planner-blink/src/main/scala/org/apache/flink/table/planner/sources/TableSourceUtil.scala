@@ -20,7 +20,7 @@ package org.apache.flink.table.planner.sources
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.CompositeType
-import org.apache.flink.table.api.{DataTypes, ValidationException}
+import org.apache.flink.table.api.{DataTypes, ValidationException, WatermarkSpec}
 import org.apache.flink.table.expressions.ResolvedFieldReference
 import org.apache.flink.table.expressions.utils.ApiExpressionUtils.{typeLiteral, unresolvedCall, valueLiteral}
 import org.apache.flink.table.functions.BuiltInFunctionDefinitions
@@ -33,7 +33,6 @@ import org.apache.flink.table.runtime.types.TypeInfoLogicalTypeConverter.fromTyp
 import org.apache.flink.table.sources.{DefinedFieldMapping, DefinedProctimeAttribute, DefinedRowtimeAttributes, RowtimeAttributeDescriptor, TableSource}
 import org.apache.flink.table.types.logical.{LogicalType, TimestampKind, TimestampType, TinyIntType}
 import org.apache.flink.table.typeutils.TimeIndicatorTypeInfo
-
 import com.google.common.collect.ImmutableList
 import org.apache.calcite.plan.RelOptCluster
 import org.apache.calcite.rel.RelNode
@@ -139,6 +138,7 @@ object TableSourceUtil {
     *
     * @param tableSource The [[TableSource]] for which the Calcite schema is generated.
     * @param selectedFields The indices of all selected fields. None, if all fields are selected.
+    * @param watermarkSpec The watermark information (passed in from DDL)
     * @param streaming Flag to determine whether the schema of a stream or batch table is created.
     * @param typeFactory The type factory to create the schema.
     * @return The Calcite schema for the selected fields of the given [[TableSource]].
@@ -146,6 +146,7 @@ object TableSourceUtil {
   def getRelDataType(
       tableSource: TableSource[_],
       selectedFields: Option[Array[Int]],
+      watermarkSpec: Option[WatermarkSpec],
       streaming: Boolean,
       typeFactory: FlinkTypeFactory): RelDataType = {
 
@@ -153,7 +154,8 @@ object TableSourceUtil {
     var fieldTypes = tableSource.getTableSchema.getFieldDataTypes
       .map(LogicalTypeDataTypeConverter.fromDataTypeToLogicalType)
 
-    if (streaming) {
+    // watermarkSpec should override the time indicator defined in TableSource
+    if (streaming && watermarkSpec.isEmpty) {
       // adjust the type of time attributes for streaming tables
       val rowtimeAttributes = getRowtimeAttributes(tableSource)
       val proctimeAttributes = getProctimeAttribute(tableSource)
@@ -173,16 +175,24 @@ object TableSourceUtil {
         fieldTypes = fieldTypes.patch(idx, Seq(proctimeType), 1)
       }
     }
-    val (selectedFieldNames, selectedFieldTypes) =
+    var (selectedFieldNames, selectedFieldTypes) =
       if (selectedFields.isDefined) {
         // filter field names and types by selected fields
-        (
-          selectedFields.get.map(fieldNames(_)),
-          selectedFields.get.map(fieldTypes(_))
-        )
+        (selectedFields.get.map(fieldNames(_)), selectedFields.get.map(fieldTypes(_)))
       } else {
         (fieldNames, fieldTypes)
       }
+
+    // patch rowtime field according to WatermarkSpec
+    if (watermarkSpec.isDefined) {
+      val idx = selectedFieldNames.indexOf(watermarkSpec.get.getRowtimeAttribute)
+      val originalType = selectedFieldTypes(idx).asInstanceOf[TimestampType]
+      val rowtimeType = new TimestampType(
+        originalType.isNullable,
+        TimestampKind.ROWTIME,
+        originalType.getPrecision)
+      selectedFieldTypes = selectedFieldTypes.patch(idx, Seq(rowtimeType), 1)
+    }
     typeFactory.buildRelNodeRowType(selectedFieldNames, selectedFieldTypes)
   }
 
@@ -258,8 +268,8 @@ object TableSourceUtil {
       val (physicalFields, physicalTypes) = (0 to maxIdx)
         .map(i => idxMap.getOrElse(i, ("", new TinyIntType()))).unzip
       val physicalSchema: RelDataType = typeFactory.buildRelNodeRowType(
-        physicalFields,
-        physicalTypes)
+        physicalFields.toArray,
+        physicalTypes.toArray)
       LogicalValues.create(
         cluster,
         physicalSchema,

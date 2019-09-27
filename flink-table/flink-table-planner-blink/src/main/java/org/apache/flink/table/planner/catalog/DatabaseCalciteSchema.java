@@ -19,6 +19,7 @@
 package org.apache.flink.table.planner.catalog;
 
 import org.apache.flink.table.api.TableException;
+import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.CatalogTable;
@@ -49,6 +50,7 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.Table;
+import scala.Option;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -177,10 +179,17 @@ class DatabaseCalciteSchema extends FlinkSchema {
 			throw new TableException("Catalog tables support only StreamTableSource and InputFormatTableSource");
 		}
 
+		WatermarkSpec watermarkSpec = null;
+		if (!table.getSchema().getWatermarkSpecs().isEmpty()) {
+			watermarkSpec = table.getSchema().getWatermarkSpecs().get(0);
+		}
+
 		return new TableSourceTable<>(
 			tableSource,
 			!((StreamTableSource<?>) tableSource).isBounded(),
-			FlinkStatistic.UNKNOWN()
+			FlinkStatistic.UNKNOWN(),
+			Option.empty(),
+			Option.apply(watermarkSpec)
 		);
 	}
 

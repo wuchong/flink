@@ -21,7 +21,6 @@ package org.apache.flink.table.api;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.CompositeType;
-import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.FieldsDataType;
@@ -29,14 +28,12 @@ import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -62,15 +59,12 @@ public class TableSchema {
 	/** Mapping from compound field name to (nested) field type. */
 	private final Map<String, DataType> typesByName;
 
-	@Nullable
-	private final String rowtimeAttribute;
+	private final List<WatermarkSpec> watermarkSpecs;
 
-	@Nullable
-	private final ResolvedExpression watermarkStrategy;
-
-	private TableSchema(String[] fieldNames, DataType[] fieldDataTypes, @Nullable String rowtimeAttribute, @Nullable ResolvedExpression watermarkStrategy) {
+	private TableSchema(String[] fieldNames, DataType[] fieldDataTypes, List<WatermarkSpec> watermarkSpecs) {
 		this.fieldNames = Preconditions.checkNotNull(fieldNames);
 		this.fieldDataTypes = Preconditions.checkNotNull(fieldDataTypes);
+		this.watermarkSpecs = Preconditions.checkNotNull(watermarkSpecs);
 
 		if (fieldNames.length != fieldDataTypes.length) {
 			throw new ValidationException(
@@ -90,17 +84,17 @@ public class TableSchema {
 		}
 
 		// validate rowtime attribute
-		DataType rowtimeType = getFieldDataType(rowtimeAttribute)
-			.orElseThrow(() -> new ValidationException(String.format(
-				"Rowtime attribute '%s' is not defined in schema.", rowtimeAttribute)));
-		if (rowtimeType.getLogicalType().getTypeRoot() != TIMESTAMP_WITHOUT_TIME_ZONE) {
-			throw new ValidationException(String.format(
-				"Rowtime attribute '%s' must be of type TIMESTAMP but is of type %s.",
-				rowtimeAttribute, rowtimeType));
+		for (WatermarkSpec watermark : watermarkSpecs) {
+			String rowtimeAttribute = watermark.getRowtimeAttribute();
+			DataType rowtimeType = getFieldDataType(rowtimeAttribute)
+				.orElseThrow(() -> new ValidationException(String.format(
+					"Rowtime attribute '%s' is not defined in schema.", rowtimeAttribute)));
+			if (rowtimeType.getLogicalType().getTypeRoot() != TIMESTAMP_WITHOUT_TIME_ZONE) {
+				throw new ValidationException(String.format(
+					"Rowtime attribute '%s' must be of type TIMESTAMP but is of type %s.",
+					rowtimeAttribute, rowtimeType));
+			}
 		}
-
-		this.rowtimeAttribute = rowtimeAttribute;
-		this.watermarkStrategy = watermarkStrategy;
 	}
 
 	private void validateAndCreateNameTypeMapping(String fieldName, DataType fieldType, List<String> parentNames) {
@@ -122,14 +116,14 @@ public class TableSchema {
 	 */
 	@Deprecated
 	public TableSchema(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
-		this(fieldNames, fromLegacyInfoToDataType(fieldTypes), null, null);
+		this(fieldNames, fromLegacyInfoToDataType(fieldTypes), Collections.emptyList());
 	}
 
 	/**
 	 * Returns a deep copy of the table schema.
 	 */
 	public TableSchema copy() {
-		return new TableSchema(fieldNames.clone(), fieldDataTypes.clone(), rowtimeAttribute, watermarkStrategy);
+		return new TableSchema(fieldNames.clone(), fieldDataTypes.clone(), watermarkSpecs);
 	}
 
 	/**
@@ -247,26 +241,14 @@ public class TableSchema {
 	}
 
 	/**
-	 * Returns the rowtime attribute which can be a nested field using "." separator.
-	 */
-	public Optional<String> getRowtimeAttribute() {
-		return Optional.ofNullable(rowtimeAttribute);
-	}
-
-	/**
-	 * Returns the watermark strategy expression.
-	 */
-	public Optional<Expression> getWatermarkStrategy() {
-		return Optional.ofNullable(watermarkStrategy);
-	}
-
-	/**
 	 * Returns an optional of the watermark specification which contains rowtime attribute
 	 * and watermark strategy expression.
+	 *
+	 * NOTE: Currently, the size of List of WatermarkSpec should be one, because we don't support
+	 * multiple watermark definition yet.
 	 */
-	public Optional<WatermarkSpec> getWatermarkSpec() {
-		return watermarkStrategy == null ?
-			Optional.empty() : Optional.of(new WatermarkSpec(rowtimeAttribute, watermarkStrategy));
+	public List<WatermarkSpec> getWatermarkSpecs() {
+		return watermarkSpecs;
 	}
 
 	@Override
@@ -276,9 +258,13 @@ public class TableSchema {
 		for (int i = 0; i < fieldNames.length; i++) {
 			sb.append(" |-- ").append(fieldNames[i]).append(": ").append(fieldDataTypes[i]).append('\n');
 		}
-		if (watermarkStrategy != null) {
-			sb.append("watermark\n");
-			sb.append(" |-- ").append("WATERMARK FOR ").append(rowtimeAttribute).append(" AS ").append(watermarkStrategy.asSerializableString());
+		if (!watermarkSpecs.isEmpty()) {
+			sb.append("watermarks\n");
+			for (WatermarkSpec watermark : watermarkSpecs) {
+				sb.append(" |-- ").append("WATERMARK FOR ")
+					.append(watermark.getRowtimeAttribute()).append(" AS ")
+					.append(watermark.getWatermarkStrategy().asSerializableString());
+			}
 		}
 		return sb.toString();
 	}
@@ -294,15 +280,14 @@ public class TableSchema {
 		TableSchema schema = (TableSchema) o;
 		return Arrays.equals(fieldNames, schema.fieldNames) &&
 			Arrays.equals(fieldDataTypes, schema.fieldDataTypes) &&
-			Objects.equals(watermarkStrategy, schema.watermarkStrategy) &&
-			Objects.equals(rowtimeAttribute, schema.rowtimeAttribute);
+			watermarkSpecs.equals(schema.getWatermarkSpecs());
 	}
 
 	@Override
 	public int hashCode() {
 		int result = Arrays.hashCode(fieldNames);
 		result = 31 * result + Arrays.hashCode(fieldDataTypes);
-		result = 31 * result + Objects.hash(rowtimeAttribute, watermarkStrategy);
+		result = 31 * result + watermarkSpecs.hashCode();
 		return result;
 	}
 
@@ -347,17 +332,16 @@ public class TableSchema {
 	 */
 	public static class Builder {
 
-		private List<String> fieldNames;
+		private final List<String> fieldNames;
 
-		private List<DataType> fieldDataTypes;
+		private final List<DataType> fieldDataTypes;
 
-		private String rowtimeAttribute;
-
-		private ResolvedExpression watermark;
+		private final List<WatermarkSpec> watermarkSpecs;
 
 		public Builder() {
 			fieldNames = new ArrayList<>();
 			fieldDataTypes = new ArrayList<>();
+			watermarkSpecs = new ArrayList<>();
 		}
 
 		/**
@@ -408,11 +392,10 @@ public class TableSchema {
 		public Builder watermark(String rowtimeAttribute, ResolvedExpression watermarkStrategy) {
 			Preconditions.checkNotNull(rowtimeAttribute);
 			Preconditions.checkNotNull(watermarkStrategy);
-			if (this.rowtimeAttribute != null) {
+			if (!this.watermarkSpecs.isEmpty()) {
 				throw new IllegalStateException("Multiple watermark definition is not supported yet.");
 			}
-			this.rowtimeAttribute = rowtimeAttribute;
-			this.watermark = watermarkStrategy;
+			this.watermarkSpecs.add(new WatermarkSpec(rowtimeAttribute, watermarkStrategy));
 			return this;
 		}
 
@@ -423,8 +406,7 @@ public class TableSchema {
 			return new TableSchema(
 				fieldNames.toArray(new String[0]),
 				fieldDataTypes.toArray(new DataType[0]),
-				rowtimeAttribute,
-				watermark);
+				watermarkSpecs);
 		}
 	}
 }

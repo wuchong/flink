@@ -88,7 +88,8 @@ class PushProjectIntoTableSourceScanRule extends RelOptRule(
       newTableSource,
       tableSourceTable.isStreamingMode,
       tableSourceTable.statistic,
-      Option(usedFields))
+      Option(usedFields),
+      tableSourceTable.watermarkSpec)
     // row type is changed after project push down
     val newRowType = newTableSourceTable.getRowType(scan.getCluster.getTypeFactory)
     val newRelOptTable = relOptTable.copy(newTableSourceTable, newRowType)

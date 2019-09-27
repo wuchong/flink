@@ -22,8 +22,8 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.stats.FlinkStatistic
 import org.apache.flink.table.planner.sources.TableSourceUtil
 import org.apache.flink.table.sources.TableSource
-
 import org.apache.calcite.rel.`type`.{RelDataType, RelDataTypeFactory}
+import org.apache.flink.table.api.WatermarkSpec
 
 /**
   * Abstract class which define the interfaces required to convert a [[TableSource]] to
@@ -37,11 +37,12 @@ class TableSourceTable[T](
     val tableSource: TableSource[T],
     val isStreamingMode: Boolean,
     val statistic: FlinkStatistic,
-    val selectedFields: Option[Array[Int]])
+    val selectedFields: Option[Array[Int]],
+    val watermarkSpec: Option[WatermarkSpec])
   extends FlinkTable {
 
   def this(tableSource: TableSource[T], isStreamingMode: Boolean, statistic: FlinkStatistic) {
-    this(tableSource, isStreamingMode, statistic, None)
+    this(tableSource, isStreamingMode, statistic, None, None)
   }
 
   // TODO implements this
@@ -51,6 +52,7 @@ class TableSourceTable[T](
     TableSourceUtil.getRelDataType(
       tableSource,
       selectedFields,
+      watermarkSpec,
       streaming = isStreamingMode,
       typeFactory.asInstanceOf[FlinkTypeFactory])
   }
@@ -69,14 +71,4 @@ class TableSourceTable[T](
     * Returns statistics of current table.
     */
   override def getStatistic: FlinkStatistic = statistic
-
-  /**
-    * Replaces table source with the given one, and create a new table source table.
-    *
-    * @param tableSource tableSource to replace.
-    * @return new TableSourceTable
-    */
-  def replaceTableSource(tableSource: TableSource[T]): TableSourceTable[T] = {
-    new TableSourceTable[T](tableSource, isStreamingMode, statistic)
-  }
 }
