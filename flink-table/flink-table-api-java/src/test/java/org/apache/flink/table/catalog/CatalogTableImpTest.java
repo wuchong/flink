@@ -23,8 +23,11 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.Schema;
 
+import org.apache.flink.table.expressions.SqlExpression;
+import org.apache.flink.table.expressions.utils.ApiExpressionUtils;
 import org.junit.Test;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -51,8 +54,8 @@ public class CatalogTableImpTest {
 
 		DescriptorProperties descriptorProperties = new DescriptorProperties();
 		descriptorProperties.putProperties(table.toProperties());
-
-		assertEquals(schema, descriptorProperties.getTableSchema(Schema.SCHEMA));
+		TableSchema schema2 = descriptorProperties.getTableSchema(Schema.SCHEMA);
+		assertEquals(schema, schema2);
 	}
 
 	private static Map<String, String> createProperties() {
@@ -66,6 +69,8 @@ public class CatalogTableImpTest {
 			.field("first", DataTypes.STRING())
 			.field("second", DataTypes.INT())
 			.field("third", DataTypes.DOUBLE())
+			.field("fourth", DataTypes.TIMESTAMP(3))
+			.watermark("fourth", new SqlExpression("to_timestamp(fourth)", null))
 			.build();
 	}
 

@@ -19,13 +19,16 @@
 package org.apache.flink.sql.parser.ddl;
 
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
+import org.apache.calcite.sql.dialect.AnsiSqlDialect;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
@@ -75,5 +78,15 @@ public class SqlWatermark extends SqlCall {
 
 	public SqlNode getWatermarkStrategy() {
 		return watermarkStrategy;
+	}
+
+	public String getStrategyString() {
+		SqlPrettyWriter writer = new SqlPrettyWriter(AnsiSqlDialect.DEFAULT);
+		writer.setAlwaysUseParentheses(true);
+		writer.setSelectListItemsOnSeparateLines(false);
+		writer.setIndentation(0);
+		writer.startList("", "");
+		watermarkStrategy.unparse(writer, 0, 0);
+		return writer.toString();
 	}
 }

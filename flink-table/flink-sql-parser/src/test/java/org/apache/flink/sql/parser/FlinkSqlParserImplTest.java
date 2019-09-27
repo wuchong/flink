@@ -175,15 +175,16 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 
 	@Test
 	public void testCreateTableWithWatermark() {
-		check("CREATE TABLE tbl1 (\n" +
-				"  ts timestamp(3),\n" +
-				"  id varchar, \n" +
-				"  watermark FOR ts AS ts - interval '3' second\n" +
-				")\n" +
-				"  with (\n" +
-				"    'connector' = 'kafka', \n" +
-				"    'kafka.topic' = 'log.test'\n" +
-				")\n",
+		String sql = "CREATE TABLE tbl1 (\n" +
+			"  ts timestamp(3),\n" +
+			"  id varchar, \n" +
+			"  watermark FOR ts AS ts - interval '3' second\n" +
+			")\n" +
+			"  with (\n" +
+			"    'connector' = 'kafka', \n" +
+			"    'kafka.topic' = 'log.test'\n" +
+			")\n";
+		check(sql,
 			"CREATE TABLE `TBL1` (\n" +
 				"  `TS`  TIMESTAMP(3),\n" +
 				"  `ID`  VARCHAR,\n" +
@@ -192,19 +193,23 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 				"  'connector' = 'kafka',\n" +
 				"  'kafka.topic' = 'log.test'\n" +
 				")");
+
+		String expected = "(`TS` - INTERVAL '3' SECOND)";
+		sql(sql).node(new ValidationMatcher().expectWatermarkSql(expected));
 	}
 
 	@Test
 	public void testCreateTableWithWatermarkOnComputedColumn() {
-		check("CREATE TABLE tbl1 (\n" +
-				"  log_ts varchar,\n" +
-				"  ts as to_timestamp(log_ts), \n" +
-				"  WATERMARK FOR ts AS ts + interval '1' second\n" +
-				")\n" +
-				"  with (\n" +
-				"    'connector' = 'kafka', \n" +
-				"    'kafka.topic' = 'log.test'\n" +
-				")\n",
+		String sql = "CREATE TABLE tbl1 (\n" +
+			"  log_ts varchar,\n" +
+			"  ts as to_timestamp(log_ts), \n" +
+			"  WATERMARK FOR ts AS ts + interval '1' second\n" +
+			")\n" +
+			"  with (\n" +
+			"    'connector' = 'kafka', \n" +
+			"    'kafka.topic' = 'log.test'\n" +
+			")\n";
+		check(sql,
 			"CREATE TABLE `TBL1` (\n" +
 				"  `LOG_TS`  VARCHAR,\n" +
 				"  `TS` AS `TO_TIMESTAMP`(`LOG_TS`),\n" +
@@ -213,6 +218,9 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 				"  'connector' = 'kafka',\n" +
 				"  'kafka.topic' = 'log.test'\n" +
 				")");
+
+		String expected = "(`TS` + INTERVAL '1' SECOND)";
+		sql(sql).node(new ValidationMatcher().expectWatermarkSql(expected));
 	}
 
 	@Test
@@ -247,6 +255,21 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 		sql(sql).node(new ValidationMatcher()
 			.fails("The rowtime attribute field \"F1.Q0\" is not defined in columns, at line 3, column 17"));
 
+	}
+
+	@Test
+	public void testCreateTableWithMultipleWatermark() {
+		String sql = "CREATE TABLE tbl1 (\n" +
+			"  f1 row<q1 bigint, q2 varchar, q3 boolean>,\n" +
+			"  WATERMARK FOR f1.q1 AS NOW(),\n" +
+			"  WATERMARK FOR f1.q2 AS NOW()\n" +
+			")\n" +
+			"  with (\n" +
+			"    'connector' = 'kafka', \n" +
+			"    'kafka.topic' = 'log.test'\n" +
+			")\n";
+		final String errMsg = "Multiple WATERMARK statements is not supported yet.";
+		checkFails(sql, errMsg);
 	}
 
 	@Test
@@ -555,9 +578,15 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 	private static class ValidationMatcher extends BaseMatcher<SqlNode> {
 		private String expectedColumnSql;
 		private String failMsg;
+		private String expectedWatermarkSql;
 
 		public ValidationMatcher expectColumnSql(String s) {
 			this.expectedColumnSql =  s;
+			return this;
+		}
+
+		public ValidationMatcher expectWatermarkSql(String s) {
+			this.expectedWatermarkSql = s;
 			return this;
 		}
 
@@ -583,6 +612,11 @@ public class FlinkSqlParserImplTest extends SqlParserTest {
 				if (expectedColumnSql != null && item instanceof SqlCreateTable) {
 					assertEquals(expectedColumnSql,
 						((SqlCreateTable) createTable).getColumnSqlString());
+				}
+				if (expectedWatermarkSql != null && item instanceof SqlCreateTable) {
+					assertEquals(
+						expectedWatermarkSql,
+						((SqlCreateTable) createTable).getWatermark().getStrategyString());
 				}
 				return true;
 			} else {

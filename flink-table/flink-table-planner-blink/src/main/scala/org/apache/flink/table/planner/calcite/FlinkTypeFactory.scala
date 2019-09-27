@@ -182,8 +182,8 @@ class FlinkTypeFactory(typeSystem: RelDataTypeSystem) extends JavaTypeFactoryImp
     * @return a table row type with the input fieldNames, input fieldTypes.
     */
   def buildRelNodeRowType(
-      fieldNames: Seq[String],
-      fieldTypes: Seq[LogicalType]): RelDataType = {
+      fieldNames: Array[String],
+      fieldTypes: Array[LogicalType]): RelDataType = {
     buildStructType(fieldNames, fieldTypes, StructKind.FULLY_QUALIFIED)
   }
 

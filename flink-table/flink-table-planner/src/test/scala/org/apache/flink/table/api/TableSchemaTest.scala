@@ -134,4 +134,18 @@ class TableSchemaTest extends TableTestBase {
       .watermark("f1.q0", WATERMARK_STRATEGY)
       .build()
   }
+
+  @Test
+  def testSchemaWithMultipleWatermark(): Unit = {
+    thrown.expectMessage("Multiple watermark definition is not supported yet.")
+
+    TableSchema.builder()
+      .field("f0", DataTypes.TIMESTAMP())
+      .field("f1", DataTypes.ROW(
+        DataTypes.FIELD("q1", DataTypes.STRING()),
+        DataTypes.FIELD("q2", DataTypes.TIMESTAMP(3))))
+      .watermark("f1.q2", WATERMARK_STRATEGY)
+      .watermark("f0", WATERMARK_STRATEGY)
+      .build()
+  }
 }

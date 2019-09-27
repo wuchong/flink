@@ -25,6 +25,7 @@ import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.expressions.SqlExpression;
 import org.apache.flink.table.utils.EncodingUtils;
 import org.apache.flink.table.utils.TypeStringUtils;
 import org.apache.flink.util.InstantiationUtil;
@@ -71,6 +72,10 @@ public class DescriptorProperties {
 	public static final String TABLE_SCHEMA_NAME = "name";
 
 	public static final String TABLE_SCHEMA_TYPE = "type";
+
+	public static final String WATERMARK_ROWTIME = "watermark.rowtime";
+
+	public static final String WATERMARK_EXPRESSION = "watermark.expression";
 
 	private static final Consumer<String> EMPTY_CONSUMER = (value) -> {};
 
@@ -193,6 +198,11 @@ public class DescriptorProperties {
 			key,
 			Arrays.asList(TABLE_SCHEMA_NAME, TABLE_SCHEMA_TYPE),
 			values);
+
+		schema.getWatermarkSpec().ifPresent(w -> {
+			put(key + "." + WATERMARK_ROWTIME, w.getRowtimeAttribute());
+			put(key + "." + WATERMARK_EXPRESSION, w.getWatermarkStrategy().asSerializableString());
+		});
 	}
 
 	/**
@@ -519,6 +529,16 @@ public class DescriptorProperties {
 
 			schemaBuilder.field(name, type);
 		}
+
+		// extract watermark information
+		final Optional<String> rowtime = optionalGet(key + "." + WATERMARK_ROWTIME);
+		if (rowtime.isPresent()) {
+			final String expressionKey =  key + "." + WATERMARK_EXPRESSION;
+			String expression = optionalGet(expressionKey).orElseThrow(exceptionSupplier(expressionKey));
+			// TODO
+			schemaBuilder.watermark(rowtime.get(), new SqlExpression(expression, null));
+		}
+
 		return Optional.of(schemaBuilder.build());
 	}
 

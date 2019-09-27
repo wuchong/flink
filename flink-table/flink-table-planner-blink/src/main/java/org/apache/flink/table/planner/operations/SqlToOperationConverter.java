@@ -18,15 +18,19 @@
 
 package org.apache.flink.table.planner.operations;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.flink.sql.parser.ddl.SqlCreateTable;
 import org.apache.flink.sql.parser.ddl.SqlDropTable;
 import org.apache.flink.sql.parser.ddl.SqlTableColumn;
 import org.apache.flink.sql.parser.ddl.SqlTableOption;
+import org.apache.flink.sql.parser.ddl.SqlWatermark;
 import org.apache.flink.sql.parser.dml.RichSqlInsert;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.CatalogTableImpl;
+import org.apache.flink.table.expressions.SqlExpression;
 import org.apache.flink.table.operations.CatalogSinkModifyOperation;
 import org.apache.flink.table.operations.Operation;
 import org.apache.flink.table.operations.ddl.CreateTableOperation;
@@ -34,6 +38,8 @@ import org.apache.flink.table.operations.ddl.DropTableOperation;
 import org.apache.flink.table.planner.calcite.FlinkPlannerImpl;
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory;
 import org.apache.flink.table.planner.calcite.FlinkTypeSystem;
+import org.apache.flink.table.planner.calcite.SqlToRexConverter;
+import org.apache.flink.table.planner.calcite.SqlToRexConverterImpl;
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter;
 
 import org.apache.calcite.rel.RelRoot;
@@ -42,8 +48,12 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.utils.TypeConversions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +175,7 @@ public class SqlToOperationConverter {
 
 	/**
 	 * Create a table schema from {@link SqlCreateTable}. This schema contains computed column
-	 * fields, say, we have a create table DDL statement:
+	 * fields and watermark information, say, we have a create table DDL statement:
 	 * <blockquote><pre>
 	 *   create table t(
 	 *     a int,
@@ -182,29 +192,63 @@ public class SqlToOperationConverter {
 	 * @param factory        FlinkTypeFactory instance.
 	 * @return TableSchema
 	 */
-	private TableSchema createTableSchema(SqlCreateTable sqlCreateTable,
+	private TableSchema createTableSchema(
+			SqlCreateTable sqlCreateTable,
 			FlinkTypeFactory factory) {
 		// setup table columns
 		SqlNodeList columnList = sqlCreateTable.getColumnList();
-		TableSchema physicalSchema = null;
 		TableSchema.Builder builder = new TableSchema.Builder();
 		// collect the physical table schema first.
 		final List<SqlNode> physicalColumns = columnList.getList().stream()
-			.filter(n -> n instanceof SqlTableColumn).collect(Collectors.toList());
+			.filter(n -> n instanceof SqlTableColumn)
+			.collect(Collectors.toList());
+		List<String> fieldNames = new ArrayList<>();
+		List<DataType> fieldTypes = new ArrayList<>();
 		for (SqlNode node : physicalColumns) {
 			SqlTableColumn column = (SqlTableColumn) node;
-			final RelDataType relType = column.getType().deriveType(factory,
+			final RelDataType relType = column.getType().deriveType(
+				factory,
 				column.getType().getNullable());
-			builder.field(column.getName().getSimple(),
-				LogicalTypeDataTypeConverter.fromLogicalTypeToDataType(
-					FlinkTypeFactory.toLogicalType(relType)));
-			physicalSchema = builder.build();
+			fieldNames.add(column.getName().getSimple());
+			fieldTypes.add(TypeConversions.fromLogicalToDataType(
+				FlinkTypeFactory.toLogicalType(relType)));
 		}
-		assert physicalSchema != null;
+		builder.fields(fieldNames.toArray(new String[0]), fieldTypes.toArray(new DataType[0]));
 		if (sqlCreateTable.containsComputedColumn()) {
 			throw new SqlConversionException("Computed columns for DDL is not supported yet!");
 		}
-		return physicalSchema;
+
+		// prepare sql to rex converter
+		LogicalType[] physicalTypes = fieldTypes.stream()
+			.map(DataType::getLogicalType)
+			.toArray(LogicalType[]::new);
+		RelDataType rowType = factory.buildRelNodeRowType(
+			fieldNames.toArray(new String[0]),
+			physicalTypes);
+		SqlToRexConverter converter = flinkPlanner.createSqlToRexConverter(rowType);
+
+		// put watermark information into TableSchema
+		SqlWatermark watermark = sqlCreateTable.getWatermark();
+		if (watermark != null) {
+			String rowtimeAttribute = watermark.getColumnName().toString();
+			String expression = watermark.getStrategyString();
+
+			// validate watermark expression, we have to do the validation here,
+			// because this is the first place we can convert SQL to RexNode.
+			RexNode rex = converter.convertToRexNode(expression);
+			LogicalType type = FlinkTypeFactory.toLogicalType(rex.getType());
+			switch (type.getTypeRoot()) {
+				case BIGINT:
+				case TIMESTAMP_WITHOUT_TIME_ZONE:
+					break;
+				default:
+					throw new ValidationException("Watermark strategy expression only accepts BIGINT and TIMESTAMP as result type.");
+			}
+			builder.watermark(
+				rowtimeAttribute,
+				new SqlExpression(expression, TypeConversions.fromLogicalToDataType(type)));
+		}
+		return builder.build();
 	}
 
 	private PlannerQueryOperation toQueryOperation(FlinkPlannerImpl planner, SqlNode validated) {
