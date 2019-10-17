@@ -31,13 +31,13 @@ import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter.fromLog
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical.LogicalTypeRoot._
 import org.apache.flink.util.Preconditions
-
 import org.apache.calcite.plan.RelOptUtil
 import org.apache.calcite.rex._
 import org.apache.calcite.sql.fun.{SqlStdOperatorTable, SqlTrimFunction}
 import org.apache.calcite.sql.{SqlFunction, SqlPostfixOperator}
 import org.apache.calcite.util.Util
 
+import java.time.Duration
 import java.util.{TimeZone, List => JList}
 
 import scala.collection.JavaConversions._
@@ -322,6 +322,7 @@ class RexNodeToExpressionConverter(
     }
 
     val literalType = FlinkTypeFactory.toLogicalType(literal.getType)
+    var dataType = fromLogicalTypeToDataType(literalType)
 
     val literalValue = literalType.getTypeRoot match {
 
@@ -377,12 +378,21 @@ class RexNodeToExpressionConverter(
         // convert to BigDecimal
         literal.getValueAs(classOf[java.math.BigDecimal])
 
+      case INTERVAL_DAY_TIME =>
+        // convert to Long
+        dataType = dataType.bridgedTo(classOf[java.lang.Long])
+        literal.getValueAs(classOf[java.lang.Long])
+
+      case INTERVAL_YEAR_MONTH =>
+        // convert to Integer
+        dataType = dataType.bridgedTo(classOf[java.lang.Integer])
+        literal.getValueAs(classOf[java.lang.Integer])
+
       case _ =>
         literal.getValue
     }
 
-    Some(valueLiteral(literalValue,
-      fromLogicalTypeToDataType(literalType)))
+    Some(valueLiteral(literalValue, dataType))
   }
 
   override def visitCall(rexCall: RexCall): Option[ResolvedExpression] = {
