@@ -32,7 +32,6 @@ import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.table.api.Types
 import org.apache.flink.table.dataformat.{BaseRow, DataFormatConverters, GenericRow}
 import org.apache.flink.table.planner.utils.BaseRowTestUtil
-import org.apache.flink.table.runtime.types.TypeInfoLogicalTypeConverter
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
 import org.apache.flink.table.sinks._
 import org.apache.flink.table.types.utils.TypeConversions
@@ -250,10 +249,10 @@ final class TestingUpsertSink(keys: Array[Int], tz: TimeZone)
 
 final class TestingUpsertTableSink(val keys: Array[Int], val tz: TimeZone)
   extends UpsertStreamTableSink[BaseRow] {
-  var fNames: Array[String] = _
-  var fTypes: Array[TypeInformation[_]] = _
-  var sink = new TestingUpsertSink(keys, tz)
-  var expectedKeys: Option[Array[String]] = None
+  private var fNames: Array[String] = _
+  private var fTypes: Array[TypeInformation[_]] = _
+  private var sink = new TestingUpsertSink(keys, tz)
+  private var expectedKeys: Option[Array[String]] = None
   var expectedIsAppendOnly: Option[Boolean] = None
 
   def this(keys: Array[Int]) {
@@ -261,16 +260,25 @@ final class TestingUpsertTableSink(val keys: Array[Int], val tz: TimeZone)
   }
 
   override def setKeyFields(keys: Array[String]): Unit = {
-    if (expectedKeys.isDefined && keys == null) {
-      throw new AssertionError("Provided key fields should not be null.")
-    } else if (expectedKeys.isEmpty) {
+    if (expectedIsAppendOnly.contains(true)) {
+      // check nothing if is append mode
       return
     }
-    val expectedStr = expectedKeys.get.sorted.mkString(",")
-    val keysStr = keys.sorted.mkString(",")
-    if (!expectedStr.equals(keysStr)) {
-      throw new AssertionError(
-        s"Provided key fields($keysStr) do not match expected keys($expectedStr)")
+    expectedKeys match {
+      case Some(_) if keys == null =>
+        throw new AssertionError("Provided key fields should not be null.")
+      case Some(expected) =>
+        val expectedStr = expected.sorted.mkString(",")
+        val keysStr = keys.sorted.mkString(",")
+        if (!expectedStr.equals(keysStr)) {
+          throw new AssertionError(
+            s"Provided key fields($keysStr) do not match expected keys($expectedStr)")
+        }
+        // pass
+      case None if keys != null =>
+        throw new AssertionError("Expected key fields should not be null.")
+      case None =>
+        // pass
     }
   }
 
@@ -323,6 +331,12 @@ final class TestingUpsertTableSink(val keys: Array[Int], val tz: TimeZone)
     copy.fTypes = fieldTypes
     sink.configureTypes(fieldTypes)
     copy.sink = sink
+    copy.expectedKeys = if (keys.isEmpty) {
+      None
+    }  else {
+      Some(keys.map(fieldNames))
+    }
+    copy.expectedIsAppendOnly = expectedIsAppendOnly
     copy
   }
 
