@@ -356,7 +356,7 @@ class LookupJoinTest extends TableTestBase with Serializable {
   }
 
   @Test
-  def testJoinTemporalTableWithUDFANDConstantCondition(): Unit = {
+  def testJoinTemporalTableWithFunctionAndConstantCondition(): Unit = {
 
     val sql =
       """
@@ -369,7 +369,7 @@ class LookupJoinTest extends TableTestBase with Serializable {
   }
 
   @Test
-  def testJoinTemporalTableWithMultiUDFANDConstantCondition(): Unit = {
+  def testJoinTemporalTableWithMultiFunctionAndConstantCondition(): Unit = {
 
     val sql =
       """
@@ -381,14 +381,14 @@ class LookupJoinTest extends TableTestBase with Serializable {
     streamUtil.verifyPlan(sql)
   }
 
-
   @Test
-  def testJoinTemporalTableWithUDFANDRReferenceCondition(): Unit = {
+  def testJoinTemporalTableWithFunctionAndReferenceCondition(): Unit = {
     val sql =
       """
         |SELECT * FROM MyTable AS T
         |JOIN temporalTest FOR SYSTEM_TIME AS OF T.proctime AS D
         |ON T.a = D.id AND T.b = concat(D.name, '!')
+        |WHERE D.name LIKE 'Jack%'
       """.stripMargin
 
     streamUtil.verifyPlan(sql)
