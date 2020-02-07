@@ -16,36 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.factories;
 
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public interface ConnectorFactory extends TableFactory {
 
-	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
-	 */
-	void open(Connection connection) throws SQLException;
+	String CONNECTOR_TYPE = "connector.type";
+	String CONNECTOR_VERSION = "connector.version";
 
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
+	String connectorType();
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
+	Optional<String> connectorVersion();
 
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+	@Override
+	default Map<String, String> requiredContext() {
+		Map<String, String> context = new HashMap<>();
+		context.put(CONNECTOR_TYPE, connectorType());
+		connectorVersion().ifPresent(v -> context.put(CONNECTOR_VERSION, v));
+		return context;
+	}
 }

@@ -16,36 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.sources.v2;
 
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public class SourceFunctionProvider implements DataReaderProvider<SourceFunction<?>> {
 
-	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
-	 */
-	void open(Connection connection) throws SQLException;
+	private final SourceFunction<?> sourceFunction;
 
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
+	private SourceFunctionProvider(SourceFunction<?> sourceFunction) {
+		this.sourceFunction = sourceFunction;
+	}
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
+	@Override
+	public SourceFunction<?> getReader() {
+		return null;
+	}
 
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+	public static SourceFunctionProvider of(SourceFunction<?> sourceFunction) {
+		return new SourceFunctionProvider(sourceFunction);
+	}
 }

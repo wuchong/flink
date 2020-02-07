@@ -16,36 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.sources.v2;
 
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.apache.flink.table.types.DataType;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public interface TableSourceV2 {
+
+	DynamicTableType getDynamicTableType();
 
 	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
+	 * The boundedness of the source: "BOUNDED" and "UNBOUNDED".
 	 */
-	void open(Connection connection) throws SQLException;
+	boolean isBounded();
 
 	/**
-	 * Add record to writer, the writer may cache the data.
+	 * Returns the {@link DataType} for the produced data of the {@link TableSourceV2}.
+	 *
+	 * @return The data type of the returned {@code DataSet} or {@code DataStream}.
 	 */
-	void addRecord(ChangeRow record) throws SQLException;
+	DataType getProduceDataType();
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
+	UpdateMode getUpdateMode();
 
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+	DataReaderProvider<?> createDataReaderProvider();
 }

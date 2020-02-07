@@ -20,6 +20,7 @@ package org.apache.flink.table.types.logical;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.dataformat.ChangeRow;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
@@ -56,6 +57,7 @@ public final class RowType extends LogicalType {
 
 	private static final Set<String> INPUT_OUTPUT_CONVERSION = conversionSet(
 		Row.class.getName(),
+		ChangeRow.class.getName(),
 		"org.apache.flink.table.dataformat.BaseRow");
 
 	private static final Class<?> DEFAULT_CONVERSION = Row.class;

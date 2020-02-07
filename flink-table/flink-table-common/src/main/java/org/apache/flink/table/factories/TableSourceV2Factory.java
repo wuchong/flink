@@ -16,36 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.factories;
 
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.table.catalog.CatalogTable;
+import org.apache.flink.table.catalog.ObjectIdentifier;
+import org.apache.flink.table.sources.v2.TableSourceV2;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public interface TableSourceV2Factory extends ConnectorFactory {
+
+	TableSourceV2 createTableSource(Context context);
 
 	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
+	 * .
 	 */
-	void open(Connection connection) throws SQLException;
+	interface Context {
+		/**
+		 * @return full identifier of the given {@link CatalogTable}.
+		 */
+		ObjectIdentifier getObjectIdentifier();
 
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
+		/**
+		 * @return table {@link CatalogTable} instance.
+		 */
+		CatalogTable getTable();
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
-
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+		/**
+		 * @return readable config of this table environment.
+		 */
+		ReadableConfig getConfiguration();
+	}
 }

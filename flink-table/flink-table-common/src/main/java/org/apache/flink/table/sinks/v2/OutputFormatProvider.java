@@ -16,36 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.sinks.v2;
 
-import org.apache.flink.table.dataformat.ChangeRow;
+import org.apache.flink.api.common.io.OutputFormat;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public class OutputFormatProvider implements DataWriterProvider<OutputFormat<?>> {
 
-	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
-	 */
-	void open(Connection connection) throws SQLException;
+	private final OutputFormat<?> outputFormat;
 
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
+	private OutputFormatProvider(OutputFormat<?> outputFormat) {
+		this.outputFormat = checkNotNull(outputFormat);
+	}
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
+	@Override
+	public OutputFormat<?> getWriter() {
+		return outputFormat;
+	}
 
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+	public static OutputFormatProvider of(OutputFormat<?> outputFormat) {
+		return new OutputFormatProvider(outputFormat);
+	}
 }
