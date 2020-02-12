@@ -29,7 +29,6 @@ import org.apache.flink.table.sources.v2.DataReaderProvider;
 import org.apache.flink.table.sources.v2.DynamicTableType;
 import org.apache.flink.table.sources.v2.SourceFunctionProvider;
 import org.apache.flink.table.sources.v2.TableSourceV2;
-import org.apache.flink.table.sources.v2.UpdateMode;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.typeutils.ChangeRowTypeInfo;
 
