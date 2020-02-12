@@ -38,6 +38,13 @@ public interface ScanTableReader extends TableReader {
 	 */
 	boolean isBounded();
 
+	/**
+	 * Returns what kind of changes are produced by this reader.
+	 *
+	 * @see ChangelogRow.Kind
+	 */
+	ChangeMode getChangeMode();
+
 	// future work...
 	// boolean isVectorized();
 
@@ -102,6 +109,12 @@ public interface ScanTableReader extends TableReader {
 		 * can be safely casted in a {@link ChangelogRow}.
 		 */
 		@Nullable Object toInternal(@Nullable Object externalFormat);
+
+		/**
+		 * Converts the given object into an internal row data format with a corresponding kind of
+		 * change. It assumes that the configured data type of this converter is a row type.
+		 */
+		@Nullable ChangelogRow toInternalRow(ChangelogRow.Kind kind, @Nullable Object externalFormat);
 	}
 
 	interface RowProducer extends Serializable {
@@ -111,6 +124,8 @@ public interface ScanTableReader extends TableReader {
 		 * of a runtime class.
 		 */
 		void init(RuntimeContext context);
+
+		void setKind(ChangelogRow.Kind kind);
 
 		void setField(int fieldPos, @Nullable Object externalFormat);
 

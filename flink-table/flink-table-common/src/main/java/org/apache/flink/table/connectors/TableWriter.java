@@ -37,21 +37,15 @@ public interface TableWriter {
 	String asSummaryString();
 
 	/**
-	 * Returns the {@link UpdateMode} that this writer requires. The runtime can make suggestions but
-	 * the writer has the final decision. If the runtime does not support this mode, it will throw an
-	 * error.
+	 * Returns the {@link ChangeMode} that this writer consumes. The runtime can make suggestions but
+	 * the writer has the final decision what it requires. If the runtime does not support this mode,
+	 * it will throw an error.
 	 */
-	UpdateMode getRequiredMode(UpdateMode requestedMode);
+	ChangeMode getChangeMode(ChangeMode requestedMode);
 
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
-
-	enum UpdateMode {
-		INSERT,
-		RETRACT,
-		UPSERT
-	}
 
 	interface Context {
 
