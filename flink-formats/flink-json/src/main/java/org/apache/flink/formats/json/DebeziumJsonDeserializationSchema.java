@@ -51,9 +51,10 @@ public class DebeziumJsonDeserializationSchema implements DeserializationSchema<
 		Row before = (Row) row.getField(0);
 		Row after = (Row) row.getField(1);
 		String op = (String) row.getField(2);
-		ChangeType changeType;
-		if (OP_CREATE.equals(op) || OP_UPDATE.equals(op)) {
-			return new ChangeRow(ChangeType.UPSERT, after);
+		if (OP_CREATE.equals(op)){
+			return new ChangeRow(ChangeType.INSERT, after);
+		} if (OP_UPDATE.equals(op)) {
+			return new ChangeRow(ChangeType.UPDATE_NEW, after);
 		} else if (OP_DELETE.equals(op)) {
 			return new ChangeRow(ChangeType.DELETE, before);
 		} else {

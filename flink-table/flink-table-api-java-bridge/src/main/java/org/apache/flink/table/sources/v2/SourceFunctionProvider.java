@@ -33,7 +33,7 @@ public class SourceFunctionProvider implements DataReaderProvider<SourceFunction
 
 	@Override
 	public SourceFunction<?> getReader() {
-		return null;
+		return sourceFunction;
 	}
 
 	public static SourceFunctionProvider of(SourceFunction<?> sourceFunction) {

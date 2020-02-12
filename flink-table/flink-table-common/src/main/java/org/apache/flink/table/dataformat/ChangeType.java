@@ -22,30 +22,8 @@ package org.apache.flink.table.dataformat;
  * .
  */
 public enum ChangeType {
-	INSERT(1),
-	UPSERT(2),
-	DELETE(3);
-
-	private final int value;
-
-	ChangeType(int value) {
-		this.value = value;
-	}
-
-	public int getValue() {
-		return value;
-	}
-
-	public static ChangeType forNumber(int value) {
-		switch(value) {
-			case 1:
-				return INSERT;
-			case 2:
-				return UPSERT;
-			case 3:
-				return DELETE;
-			default:
-				return null;
-		}
-	}
+	INSERT,
+	DELETE,
+	UPDATE_OLD,
+	UPDATE_NEW
 }

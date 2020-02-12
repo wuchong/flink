@@ -22,6 +22,22 @@ package org.apache.flink.table.sources.v2;
  * .
  */
 public enum DynamicTableType {
-	STREAM,
-	TABLE
+	/**
+	 * The Table representation of dynamic table. Table representation is a sequence of tables that
+	 * change over time. Until there is no further improvement, Flink, like a database,
+	 * temporarily only supports the ability to access the full amount of data of a certain
+	 * version of the table, such as always accessing the current version of the table.
+	 * And when accessing a snapshot of a table, Flink assumes that the data is always bounded.
+	 * Typical scenarios include database tables, tables in warehouses, file systems
+	 * with various formats.
+	 */
+	TABLE,
+
+	/**
+	 * The Stream representation of dynamic table. Stream representation is a sequence of messages.
+	 * The messages here may include INSERT and UPDATE and DELETE messages. We generally consider
+	 * streams to be unbounded, with bounded data as a special case. Typical usage scenarios
+	 * include: database binlog, message queue, etc.
+	 */
+	STREAM
 }

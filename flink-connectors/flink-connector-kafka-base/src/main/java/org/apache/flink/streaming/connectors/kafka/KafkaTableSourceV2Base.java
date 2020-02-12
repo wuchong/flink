@@ -24,6 +24,7 @@ import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.dataformat.ChangeRow;
+import org.apache.flink.table.sources.v2.ChangeMode;
 import org.apache.flink.table.sources.v2.DataReaderProvider;
 import org.apache.flink.table.sources.v2.DynamicTableType;
 import org.apache.flink.table.sources.v2.SourceFunctionProvider;
@@ -108,11 +109,11 @@ public abstract class KafkaTableSourceV2Base implements TableSourceV2 {
 	}
 
 	@Override
-	public UpdateMode getUpdateMode() {
+	public ChangeMode getChangeMode() {
 		if (isAppendOnly) {
-			return UpdateMode.APPEND;
+			return ChangeMode.INSERT_ONLY;
 		} else {
-			return UpdateMode.UPSERT;
+			return ChangeMode.IGNORE_UPDATE_OLD;
 		}
 	}
 

@@ -25,12 +25,29 @@ import org.apache.flink.table.types.DataType;
  */
 public interface TableSourceV2 {
 
+	/**
+	 * Returns the DynamicTableType of the source, it can either be {@code Table}
+	 * representation or {@code Stream} representation.
+	 */
 	DynamicTableType getDynamicTableType();
 
 	/**
-	 * The boundedness of the source: "BOUNDED" and "UNBOUNDED".
+	 * Returns true if this is a bounded source, false if this is an unbounded source.
+	 *
+	 * Note: If {@link DynamicTableType} of the source is {@link DynamicTableType#TABLE},
+	 * it must be bounded.
 	 */
 	boolean isBounded();
+
+	/**
+	 * Returns the {@link ChangeMode} that the source works in. The {@link ChangeMode} defines
+	 * what messages with different {@link org.apache.flink.table.dataformat.ChangeType} can appear
+	 * in the produced stream.
+	 *
+	 * Note: If {@link DynamicTableType} of the source is {@link DynamicTableType#TABLE},
+	 * it must be {@link ChangeMode#INSERT_ONLY}
+	 */
+	ChangeMode getChangeMode();
 
 	/**
 	 * Returns the {@link DataType} for the produced data of the {@link TableSourceV2}.
@@ -38,8 +55,6 @@ public interface TableSourceV2 {
 	 * @return The data type of the returned {@code DataSet} or {@code DataStream}.
 	 */
 	DataType getProduceDataType();
-
-	UpdateMode getUpdateMode();
 
 	DataReaderProvider<?> createDataReaderProvider();
 }

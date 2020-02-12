@@ -29,7 +29,7 @@ import org.apache.flink.table.dataformat.ChangeRow;
 import org.apache.flink.table.sinks.v2.DataWriterProvider;
 import org.apache.flink.table.sinks.v2.SinkFunctionProvider;
 import org.apache.flink.table.sinks.v2.TableSinkV2;
-import org.apache.flink.table.sources.v2.UpdateMode;
+import org.apache.flink.table.sources.v2.ChangeMode;
 import org.apache.flink.table.types.DataType;
 
 import java.util.Arrays;
@@ -51,7 +51,7 @@ public class JDBCTableSink implements TableSinkV2 {
 	private final int maxRetryTime;
 	private final String[] keyFields;
 
-	private boolean isAppendOnly;
+	private boolean isInsertOnly;
 
 	public JDBCTableSink(TableSchema schema, JDBCOptions options, int flushMaxSize, long flushIntervalMills, int maxRetryTime, String[] keyFields) {
 		this.schema = schema;
@@ -68,12 +68,12 @@ public class JDBCTableSink implements TableSinkV2 {
 	}
 
 	@Override
-	public UpdateMode getUpdateMode(boolean isAppendOnly) {
-		this.isAppendOnly = isAppendOnly;
-		if (isAppendOnly) {
-			return UpdateMode.APPEND;
+	public ChangeMode getChangeMode(boolean isInsertOnly) {
+		this.isInsertOnly = isInsertOnly;
+		if (this.isInsertOnly) {
+			return ChangeMode.INSERT_ONLY;
 		} else {
-			return UpdateMode.UPSERT;
+			return ChangeMode.IGNORE_UPDATE_OLD;
 		}
 	}
 
@@ -83,7 +83,7 @@ public class JDBCTableSink implements TableSinkV2 {
 	}
 
 	private JDBCUpsertOutputFormat newFormat() {
-		if (!isAppendOnly && (keyFields == null || keyFields.length == 0)) {
+		if (!isInsertOnly && (keyFields == null || keyFields.length == 0)) {
 			throw new UnsupportedOperationException("Upsert mode JDBC sink requires to define a primary key on the table.");
 		}
 

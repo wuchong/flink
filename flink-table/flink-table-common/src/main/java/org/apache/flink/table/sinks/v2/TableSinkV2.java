@@ -19,7 +19,7 @@
 package org.apache.flink.table.sinks.v2;
 
 import org.apache.flink.table.sinks.TableSink;
-import org.apache.flink.table.sources.v2.UpdateMode;
+import org.apache.flink.table.sources.v2.ChangeMode;
 import org.apache.flink.table.types.DataType;
 
 /**
@@ -34,7 +34,16 @@ public interface TableSinkV2 {
 	 */
 	DataType getConsumedDataType();
 
-	UpdateMode getUpdateMode(boolean isAppendOnly);
+	/**
+	 * Returns the {@link ChangeMode} of the input stream can be consumed by the sink.
+	 * The {@link ChangeMode} defines what messages with different {@link org.apache.flink.table.dataformat.ChangeType}
+	 * can appear in the consumed stream.
+	 *
+	 * Returns {@link ChangeMode#INSERT_ONLY} if the sink can only accepts insert message.
+	 *
+	 * @param isInsertOnly whether the input stream contains only insert messages.
+	 */
+	ChangeMode getChangeMode(boolean isInsertOnly);
 
 	DataWriterProvider<?> createDataWriterProvider();
 }
