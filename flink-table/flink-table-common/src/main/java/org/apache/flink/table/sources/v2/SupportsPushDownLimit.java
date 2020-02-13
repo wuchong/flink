@@ -18,7 +18,13 @@
 
 package org.apache.flink.table.sources.v2;
 
-public enum Boundedness {
-	BOUNDED,
-	UNBOUNDED
+/**
+ * .
+ */
+public interface SupportsPushDownLimit {
+
+	/**
+	 * @param limit the value which limit the number of records.
+	 */
+	TableSourceV2 pushLimit(long limit);
 }

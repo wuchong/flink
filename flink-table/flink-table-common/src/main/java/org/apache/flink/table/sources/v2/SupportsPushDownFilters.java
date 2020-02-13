@@ -25,6 +25,6 @@ import java.util.List;
 /**
  * .
  */
-public interface SupportsPushDownFilters extends TableSourceV2 {
+public interface SupportsPushDownFilters {
 	TableSourceV2 pushFilters(List<Expression> filters);
 }

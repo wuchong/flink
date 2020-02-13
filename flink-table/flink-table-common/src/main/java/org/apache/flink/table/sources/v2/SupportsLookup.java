@@ -24,7 +24,7 @@ import org.apache.flink.table.functions.TableFunction;
 /**
  * .
  */
-public interface SupportsLookup extends TableSourceV2 {
+public interface SupportsLookup {
 
 	/**
 	 * Gets the {@link TableFunction} which supports lookup one key at a time.

@@ -25,5 +25,5 @@ import org.apache.flink.table.api.TableSchema;
  */
 public interface SupportsPruneColumns {
 
-	TableSourceV2 pruneColumns(TableSchema schema);
+	TableSourceV2 pruneColumns(TableSchema requiredSchema);
 }

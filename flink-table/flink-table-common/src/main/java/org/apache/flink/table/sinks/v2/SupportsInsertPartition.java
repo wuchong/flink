@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.sources.v2;
+package org.apache.flink.table.sinks.v2;
 
-import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
+import java.util.Map;
 
 /**
  * .
  */
-public interface SupportsPushDownWatermarkAssigner {
+public interface SupportsInsertPartition {
 
-	/**
-	 * TODO: I guess we will have a unified watermark assigner interface in the future.
-	 *  Here we use {@link AssignerWithPeriodicWatermarks} as a placeholder.
-	 */
-	TableSourceV2 pushWatermarkAssigner(AssignerWithPeriodicWatermarks assigner);
+	void setStaticPartition(Map<String, String> partitions);
 
+	default boolean configurePartitionGrouping(boolean supportsGrouping) {
+		return false;
+	}
 }

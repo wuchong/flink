@@ -18,17 +18,29 @@
 
 package org.apache.flink.table.sources.v2;
 
-import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
+import java.util.List;
+import java.util.Map;
 
 /**
  * .
  */
-public interface SupportsPushDownWatermarkAssigner {
+public interface SupportsPrunePartitions {
 
 	/**
-	 * TODO: I guess we will have a unified watermark assigner interface in the future.
-	 *  Here we use {@link AssignerWithPeriodicWatermarks} as a placeholder.
+	 * Returns all the partitions of this {@link TableSourceV2}.
 	 */
-	TableSourceV2 pushWatermarkAssigner(AssignerWithPeriodicWatermarks assigner);
+	List<Map<String, String>> getPartitions();
+
+	/**
+	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
+	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
+	 *
+	 * <p>After trying to apply partition pruning, we should return a new {@link TableSourceV2}
+	 * instance which holds all pruned-partitions.
+	 *
+	 * @param remainingPartitions Remaining partitions after partition pruning applied.
+	 * @return A new cloned instance of {@link TableSourceV2} holds all pruned-partitions.
+	 */
+	TableSourceV2 applyPartitionPruning(List<Map<String, String>> remainingPartitions);
 
 }

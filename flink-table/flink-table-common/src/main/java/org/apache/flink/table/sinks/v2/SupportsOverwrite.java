@@ -16,19 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.sources.v2;
-
-import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
+package org.apache.flink.table.sinks.v2;
 
 /**
  * .
  */
-public interface SupportsPushDownWatermarkAssigner {
+public interface SupportsOverwrite {
 
 	/**
-	 * TODO: I guess we will have a unified watermark assigner interface in the future.
-	 *  Here we use {@link AssignerWithPeriodicWatermarks} as a placeholder.
+	 * Returns a new cloned instance of {@link TableSinkV2} that
+	 * overwrite existing data before writing new data.
 	 */
-	TableSourceV2 pushWatermarkAssigner(AssignerWithPeriodicWatermarks assigner);
-
+	TableSinkV2 overwrite();
 }
