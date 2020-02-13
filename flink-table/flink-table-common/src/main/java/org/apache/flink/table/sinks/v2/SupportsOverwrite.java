@@ -16,36 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
-
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+package org.apache.flink.table.sinks.v2;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public interface SupportsOverwrite {
 
 	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
+	 * Returns a new cloned instance of {@link TableSinkV2} that
+	 * overwrite existing data before writing new data.
 	 */
-	void open(Connection connection) throws SQLException;
-
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
-
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
-
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+	TableSinkV2 overwrite();
 }

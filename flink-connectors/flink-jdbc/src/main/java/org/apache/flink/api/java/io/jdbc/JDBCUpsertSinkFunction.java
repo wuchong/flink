@@ -19,18 +19,20 @@
 package org.apache.flink.api.java.io.jdbc;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
-import org.apache.flink.types.Row;
+import org.apache.flink.table.dataformat.ChangeRow;
 
-class JDBCUpsertSinkFunction extends RichSinkFunction<Tuple2<Boolean, Row>> implements CheckpointedFunction {
+/**
+ * .
+ */
+public class JDBCUpsertSinkFunction extends RichSinkFunction<ChangeRow> implements CheckpointedFunction {
 	private final JDBCUpsertOutputFormat outputFormat;
 
-	JDBCUpsertSinkFunction(JDBCUpsertOutputFormat outputFormat) {
+	public JDBCUpsertSinkFunction(JDBCUpsertOutputFormat outputFormat) {
 		this.outputFormat = outputFormat;
 	}
 
@@ -43,7 +45,7 @@ class JDBCUpsertSinkFunction extends RichSinkFunction<Tuple2<Boolean, Row>> impl
 	}
 
 	@Override
-	public void invoke(Tuple2<Boolean, Row> value, Context context) throws Exception {
+	public void invoke(ChangeRow value, Context context) throws Exception {
 		outputFormat.writeRecord(value);
 	}
 

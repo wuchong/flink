@@ -45,7 +45,7 @@ import static org.apache.flink.api.common.typeinfo.BasicTypeInfo.SHORT_TYPE_INFO
 import static org.apache.flink.api.common.typeinfo.BasicTypeInfo.STRING_TYPE_INFO;
 import static org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo.BYTE_PRIMITIVE_ARRAY_TYPE_INFO;
 
-class JDBCTypeUtil {
+public class JDBCTypeUtil {
 	private static final Map<TypeInformation<?>, Integer> TYPE_MAPPING;
 	private static final Map<Integer, String> SQL_TYPE_NAMES;
 
@@ -87,7 +87,7 @@ class JDBCTypeUtil {
 	private JDBCTypeUtil() {
 	}
 
-	static int typeInformationToSqlType(TypeInformation<?> type) {
+	public static int typeInformationToSqlType(TypeInformation<?> type) {
 
 		if (TYPE_MAPPING.containsKey(type)) {
 			return TYPE_MAPPING.get(type);
@@ -112,7 +112,7 @@ class JDBCTypeUtil {
 	 * as the conversion classes, however, JDBC connector uses Timestamp/Date/Time classes. So that
 	 * we bridge them to the expected conversion classes.
 	 */
-	static TableSchema normalizeTableSchema(TableSchema schema) {
+	public static TableSchema normalizeTableSchema(TableSchema schema) {
 		TableSchema.Builder physicalSchemaBuilder = TableSchema.builder();
 		schema.getTableColumns()
 			.forEach(c -> {

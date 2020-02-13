@@ -19,7 +19,8 @@
 package org.apache.flink.api.java.io.jdbc.writer;
 
 import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialect;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.table.dataformat.ChangeRow;
+import org.apache.flink.table.dataformat.ChangeType;
 import org.apache.flink.types.Row;
 
 import java.sql.Connection;
@@ -77,7 +78,7 @@ public abstract class UpsertWriter implements JDBCWriter {
 	private final String deleteSQL;
 	private final boolean objectReuse;
 
-	private transient Map<Row, Tuple2<Boolean, Row>> keyToRows;
+	private transient Map<Row, ChangeRow> keyToRows;
 	private transient PreparedStatement deleteStatement;
 
 	private UpsertWriter(int[] fieldTypes, int[] pkFields, int[] pkTypes, String deleteSQL, boolean objectReuse) {
@@ -94,21 +95,21 @@ public abstract class UpsertWriter implements JDBCWriter {
 		this.deleteStatement = connection.prepareStatement(deleteSQL);
 	}
 
-	public void addRecord(Tuple2<Boolean, Row> record) throws SQLException {
+	public void addRecord(ChangeRow record) throws SQLException {
 		// we don't need perform a deep copy, because jdbc field are immutable object.
-		Tuple2<Boolean, Row> tuple2 = objectReuse ? new Tuple2<>(record.f0, Row.copy(record.f1)) : record;
+		ChangeRow changeRow = objectReuse ? new ChangeRow(record.getChangeType(), Row.copy(record.getRow())) : record;
 		// add records to buffer
-		keyToRows.put(getPrimaryKey(tuple2.f1), tuple2);
+		keyToRows.put(getPrimaryKey(changeRow.getRow()), changeRow);
 	}
 
 	@Override
 	public void executeBatch() throws SQLException {
 		if (keyToRows.size() > 0) {
-			for (Map.Entry<Row, Tuple2<Boolean, Row>> entry : keyToRows.entrySet()) {
+			for (Map.Entry<Row, ChangeRow> entry : keyToRows.entrySet()) {
 				Row pk = entry.getKey();
-				Tuple2<Boolean, Row> tuple = entry.getValue();
-				if (tuple.f0) {
-					processOneRowInBatch(pk, tuple.f1);
+				ChangeRow changeRow = entry.getValue();
+				if (changeRow.getChangeType() == ChangeType.UPSERT) {
+					processOneRowInBatch(pk, changeRow.getRow());
 				} else {
 					setRecordToStatement(deleteStatement, pkTypes, pk);
 					deleteStatement.addBatch();

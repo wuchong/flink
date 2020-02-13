@@ -16,36 +16,31 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.sources.v2;
 
-import org.apache.flink.table.dataformat.ChangeRow;
-
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
+public interface SupportsPrunePartitions {
 
 	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
+	 * Returns all the partitions of this {@link TableSourceV2}.
 	 */
-	void open(Connection connection) throws SQLException;
+	List<Map<String, String>> getPartitions();
 
 	/**
-	 * Add record to writer, the writer may cache the data.
+	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
+	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
+	 *
+	 * <p>After trying to apply partition pruning, we should return a new {@link TableSourceV2}
+	 * instance which holds all pruned-partitions.
+	 *
+	 * @param remainingPartitions Remaining partitions after partition pruning applied.
+	 * @return A new cloned instance of {@link TableSourceV2} holds all pruned-partitions.
 	 */
-	void addRecord(ChangeRow record) throws SQLException;
+	TableSourceV2 applyPartitionPruning(List<Map<String, String>> remainingPartitions);
 
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
-
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
 }

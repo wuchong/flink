@@ -16,36 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.writer;
+package org.apache.flink.table.sources.v2;
 
-import org.apache.flink.table.dataformat.ChangeRow;
+import org.apache.flink.table.expressions.Expression;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.List;
 
 /**
- * JDBCWriter used to execute statements (e.g. INSERT, UPSERT, DELETE).
+ * .
  */
-public interface JDBCWriter extends Serializable {
-
-	/**
-	 * Open the writer by JDBC Connection. It can create Statement from Connection.
-	 */
-	void open(Connection connection) throws SQLException;
-
-	/**
-	 * Add record to writer, the writer may cache the data.
-	 */
-	void addRecord(ChangeRow record) throws SQLException;
-
-	/**
-	 * Submits a batch of commands to the database for execution.
-	 */
-	void executeBatch() throws SQLException;
-
-	/**
-	 * Close JDBC related statements and other classes.
-	 */
-	void close() throws SQLException;
+public interface SupportsPushDownFilters {
+	TableSourceV2 pushFilters(List<Expression> filters);
 }

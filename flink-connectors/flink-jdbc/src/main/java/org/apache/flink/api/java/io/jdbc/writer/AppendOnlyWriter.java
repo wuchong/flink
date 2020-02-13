@@ -18,15 +18,14 @@
 
 package org.apache.flink.api.java.io.jdbc.writer;
 
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.types.Row;
+import org.apache.flink.table.dataformat.ChangeRow;
+import org.apache.flink.table.dataformat.ChangeType;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static org.apache.flink.api.java.io.jdbc.JDBCUtils.setRecordToStatement;
-import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
  * Just append record to jdbc, can not receive retract/delete message.
@@ -51,9 +50,11 @@ public class AppendOnlyWriter implements JDBCWriter {
 	}
 
 	@Override
-	public void addRecord(Tuple2<Boolean, Row> record) throws SQLException {
-		checkArgument(record.f0, "Append mode can not receive retract/delete message.");
-		setRecordToStatement(statement, fieldTypes, record.f1);
+	public void addRecord(ChangeRow changeRow) throws SQLException {
+		if (changeRow.getChangeType() != ChangeType.INSERT) {
+			throw new IllegalArgumentException("Append mode can not receive upsert/delete message.");
+		}
+		setRecordToStatement(statement, fieldTypes, changeRow.getRow());
 		statement.addBatch();
 	}
 

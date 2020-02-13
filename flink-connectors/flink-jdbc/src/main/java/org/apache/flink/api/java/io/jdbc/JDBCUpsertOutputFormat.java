@@ -22,9 +22,8 @@ import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialect;
 import org.apache.flink.api.java.io.jdbc.writer.AppendOnlyWriter;
 import org.apache.flink.api.java.io.jdbc.writer.JDBCWriter;
 import org.apache.flink.api.java.io.jdbc.writer.UpsertWriter;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.runtime.util.ExecutorThreadFactory;
-import org.apache.flink.types.Row;
+import org.apache.flink.table.dataformat.ChangeRow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /**
  * An upsert OutputFormat for JDBC.
  */
-public class JDBCUpsertOutputFormat extends AbstractJDBCOutputFormat<Tuple2<Boolean, Row>> {
+public class JDBCUpsertOutputFormat extends AbstractJDBCOutputFormat<ChangeRow> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -137,11 +136,11 @@ public class JDBCUpsertOutputFormat extends AbstractJDBCOutputFormat<Tuple2<Bool
 	}
 
 	@Override
-	public synchronized void writeRecord(Tuple2<Boolean, Row> tuple2) throws IOException {
+	public synchronized void writeRecord(ChangeRow changeRow) throws IOException {
 		checkFlushException();
 
 		try {
-			jdbcWriter.addRecord(tuple2);
+			jdbcWriter.addRecord(changeRow);
 			batchCount++;
 			if (batchCount >= flushMaxSize) {
 				flush();
