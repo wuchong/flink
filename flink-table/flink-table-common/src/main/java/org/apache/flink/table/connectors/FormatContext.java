@@ -18,37 +18,4 @@
 
 package org.apache.flink.table.connectors;
 
-/**
- * Minimal abstraction for all kind of rows.
- *
- * <p>Note: This abstraction does not have concrete accessor methods. Use provided converters instead.
- */
-public interface ChangelogRow {
 
-	Kind getKind();
-
-	int getArity();
-
-	enum Kind {
-
-		/**
-		 * Insertion operation.
-		 */
-		INSERT,
-
-		/**
-		 * Previous content of an updated row.
-		 */
-		UPDATE_BEFORE,
-
-		/**
-		 * New content of an updated row.
-		 */
-		UPDATE_AFTER,
-
-		/**
-		 * Deletion operation.
-		 */
-		DELETE
-	}
-}

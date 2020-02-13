@@ -25,8 +25,10 @@ import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -58,6 +60,14 @@ public final class FieldsDataType extends DataType {
 
 	public Map<String, DataType> getFieldDataTypes() {
 		return fieldDataTypes;
+	}
+
+	public List<DataType> getFieldDataTypesNew() {
+		return new ArrayList<>(fieldDataTypes.values());
+	}
+
+	public List<String> getFieldNames() {
+		return new ArrayList<>(fieldDataTypes.keySet());
 	}
 
 	@Override

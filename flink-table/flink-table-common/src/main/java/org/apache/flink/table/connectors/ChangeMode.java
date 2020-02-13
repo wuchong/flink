@@ -18,16 +18,42 @@
 
 package org.apache.flink.table.connectors;
 
+import org.apache.flink.table.connectors.ChangelogRow.Kind;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * The set of changes a {@link ScanTableReader} produces and {@link TableWriter} consumes.
  */
 public enum ChangeMode {
 
-	INSERT,
+	INSERT_ONLY(
+		Kind.INSERT),
 
-	RETRACT,
+	UPSERT(
+		Kind.INSERT,
+		Kind.UPDATE_AFTER,
+		Kind.DELETE),
 
-	UPSERT
+	ALL(
+		Kind.INSERT,
+		Kind.UPDATE_BEFORE,
+		Kind.UPDATE_AFTER,
+		Kind.DELETE);
 
-	// TODO update list
+	private final Set<Kind> kinds;
+
+	ChangeMode(Kind firstKind, Kind... otherKinds) {
+		this.kinds = Collections.unmodifiableSet(EnumSet.of(firstKind, otherKinds));
+	}
+
+	public Set<Kind> getSupportedKinds() {
+		return kinds;
+	}
+
+	public boolean supportsKind(Kind kind) {
+		return kinds.contains(kind);
+	}
 }

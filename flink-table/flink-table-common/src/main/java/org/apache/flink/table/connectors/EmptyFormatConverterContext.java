@@ -19,36 +19,11 @@
 package org.apache.flink.table.connectors;
 
 /**
- * Minimal abstraction for all kind of rows.
- *
- * <p>Note: This abstraction does not have concrete accessor methods. Use provided converters instead.
+ * Empty {@link FormatConverter.Context} that is unconnected from the runtime.
  */
-public interface ChangelogRow {
+final class EmptyFormatConverterContext implements FormatConverter.Context {
 
-	Kind getKind();
-
-	int getArity();
-
-	enum Kind {
-
-		/**
-		 * Insertion operation.
-		 */
-		INSERT,
-
-		/**
-		 * Previous content of an updated row.
-		 */
-		UPDATE_BEFORE,
-
-		/**
-		 * New content of an updated row.
-		 */
-		UPDATE_AFTER,
-
-		/**
-		 * Deletion operation.
-		 */
-		DELETE
+	EmptyFormatConverterContext() {
+		// nothing to do
 	}
 }

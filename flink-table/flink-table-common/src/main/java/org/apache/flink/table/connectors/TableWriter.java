@@ -56,7 +56,7 @@ public interface TableWriter {
 		DataFormatConverter createDataFormatConverter(DataType consumedDataType);
 	}
 
-	interface DataFormatConverter extends Serializable {
+	interface DataFormatConverter extends FormatConverter, Serializable {
 
 		/**
 		 * Converts the given object into an external data format.
