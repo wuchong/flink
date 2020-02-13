@@ -18,7 +18,6 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.types.DataType;
 
@@ -57,7 +56,12 @@ public interface ScanTableReader extends TableReader {
 		/**
 		 * Creates type information describing the internal format of the given {@link DataType}.
 		 */
-		TypeInformation<?> createTypeInformation(DataType producedDataType);
+		TypeInformation<Object> createTypeInformation(DataType producedDataType);
+
+		/**
+		 * Creates type information describing the internal format of the given ROW {@link DataType}.
+		 */
+		TypeInformation<ChangelogRow> createRowTypeInformation(DataType producedRowDataType);
 
 		/**
 		 * Creates a runtime data format converter that converts data of the given {@link DataType}
@@ -72,7 +76,7 @@ public interface ScanTableReader extends TableReader {
 		 * <p>Note: This is low-level API. For most of the cases, {@link #createDataFormatConverter(DataType)}
 		 * should be sufficient.
 		 */
-		RowProducer createRowProducer(DataType producedDataType);
+		RowFormatProducer createRowFormatProducer(DataType producedDataType);
 
 		/**
 		 * Creates a runtime array producer. Useful in cases where additional logic is required within
@@ -81,7 +85,7 @@ public interface ScanTableReader extends TableReader {
 		 * <p>Note: This is low-level API. For most of the cases, {@link #createDataFormatConverter(DataType)}
 		 * should be sufficient.
 		 */
-		ArrayProducer createArrayProducer(DataType producedDataType);
+		ArrayFormatProducer createArrayFormatProducer(DataType producedDataType);
 
 		/**
 		 * Creates a runtime map producer. Useful in cases where additional logic is required within
@@ -90,19 +94,13 @@ public interface ScanTableReader extends TableReader {
 		 * <p>Note: This is low-level API. For most of the cases, {@link #createDataFormatConverter(DataType)}
 		 * should be sufficient.
 		 */
-		MapProducer createMapProducer(ArrayProducer keyArrayProducer, ArrayProducer valueArrayProducer);
+		MapFormatProducer createMapFormatProducer(ArrayFormatProducer keyArrayProducer, ArrayFormatProducer valueArrayProducer);
 
 		// future work...
 		// VectorizedRowProducer createVectorizedRowProducer(...);
 	}
 
-	interface DataFormatConverter extends Serializable {
-
-		/**
-		 * Initializes the converter during runtime. This should be called in the {@code open()} method
-		 * of a runtime class.
-		 */
-		void init(RuntimeContext context);
+	interface DataFormatConverter extends FormatConverter, Serializable {
 
 		/**
 		 * Converts the given object into an internal data format. If this is the top-level row, it
@@ -117,17 +115,11 @@ public interface ScanTableReader extends TableReader {
 		@Nullable ChangelogRow toInternalRow(ChangelogRow.Kind kind, @Nullable Object externalFormat);
 	}
 
-	interface RowProducer extends Serializable {
-
-		/**
-		 * Initializes the producer during runtime. This should be called in the {@code open()} method
-		 * of a runtime class.
-		 */
-		void init(RuntimeContext context);
+	interface RowFormatProducer extends FormatConverter, Serializable {
 
 		void setKind(ChangelogRow.Kind kind);
 
-		void setField(int fieldPos, @Nullable Object externalFormat);
+		void setField(int fieldPos, @Nullable Object internalFormat);
 
 		void setField(int fieldPos, boolean value);
 
@@ -149,13 +141,7 @@ public interface ScanTableReader extends TableReader {
 		ChangelogRow toInternal();
 	}
 
-	interface ArrayProducer extends Serializable {
-
-		/**
-		 * Initializes the producer during runtime. This should be called in the {@code open()} method
-		 * of a runtime class.
-		 */
-		void init(RuntimeContext context);
+	interface ArrayFormatProducer extends FormatConverter, Serializable {
 
 		/**
 		 * Allocates a new array with the given length.
@@ -164,7 +150,7 @@ public interface ScanTableReader extends TableReader {
 		 */
 		void allocate(int length);
 
-		void setElement(int elementPos, @Nullable Object externalFormat);
+		void setElement(int elementPos, @Nullable Object internalFormat);
 
 		void setElement(int elementPos, boolean value);
 
@@ -186,15 +172,14 @@ public interface ScanTableReader extends TableReader {
 		Object toInternal();
 	}
 
-	interface MapProducer extends Serializable {
+	interface MapFormatProducer extends FormatConverter, Serializable {
 
 		/**
-		 * Initializes the producer during runtime. This should be called in the {@code open()} method
-		 * of a runtime class.
+		 * {@inheritDoc}
 		 *
 		 * <p>Forwards the call to underlying array producers.
 		 */
-		void init(RuntimeContext context);
+		void init(Context context);
 
 		/**
 		 * Finalizes and builds the map using an internal data format.

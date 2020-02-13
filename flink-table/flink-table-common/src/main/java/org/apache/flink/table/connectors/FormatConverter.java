@@ -19,36 +19,25 @@
 package org.apache.flink.table.connectors;
 
 /**
- * Minimal abstraction for all kind of rows.
- *
- * <p>Note: This abstraction does not have concrete accessor methods. Use provided converters instead.
+ * Converts between the internal formats of the Table & SQL API and external produced/consumed formats.
  */
-public interface ChangelogRow {
+public interface FormatConverter {
 
-	Kind getKind();
+	/**
+	 * Initializes the producer during runtime. This should be called in the {@code open()} method
+	 * of a runtime class.
+	 */
+	void open(Context context);
 
-	int getArity();
+	/**
+	 * Context for format conversions in {@link ScanTableReader} and {@link TableWriter}.
+	 */
+	interface Context {
 
-	enum Kind {
+		// empty for now until we have an understanding what is needed
 
-		/**
-		 * Insertion operation.
-		 */
-		INSERT,
-
-		/**
-		 * Previous content of an updated row.
-		 */
-		UPDATE_BEFORE,
-
-		/**
-		 * New content of an updated row.
-		 */
-		UPDATE_AFTER,
-
-		/**
-		 * Deletion operation.
-		 */
-		DELETE
+		static Context empty() {
+			return new EmptyFormatConverterContext();
+		}
 	}
 }
