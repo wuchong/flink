@@ -214,6 +214,31 @@ public class JsonRowDeserializationSchemaTest {
 	}
 
 	/**
+	 * Tests deserialization with invalid json string.
+	 */
+	@Test
+	public void testInvalidJson() {
+		byte[] invalidSerializedJson = "DDD".getBytes();
+
+		TypeInformation<Row> rowTypeInformation = Types.ROW();
+
+		JsonRowDeserializationSchema deserializationSchema =
+			new JsonRowDeserializationSchema.Builder(rowTypeInformation)
+				.ignoreParseErrors()
+				.build();
+
+		assertThat(invalidSerializedJson,
+			whenDeserializedWith(deserializationSchema).equalsTo(null));
+
+		deserializationSchema = new JsonRowDeserializationSchema.Builder(rowTypeInformation)
+			.build();
+
+		assertThat(invalidSerializedJson,
+			whenDeserializedWith(deserializationSchema)
+				.failsWithException(hasCause(instanceOf(JsonRowDeserializationSchema.ParseErrorException.class))));
+	}
+
+	/**
 	 * Tests that number of field names and types has to match.
 	 */
 	@Test

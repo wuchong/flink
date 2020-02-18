@@ -28,7 +28,7 @@ import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.typeutils.ObjectArrayTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.WrappingRuntimeException;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
@@ -88,14 +88,19 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 
 	private DeserializationRuntimeConverter runtimeConverter;
 
+	/** Flag indicating whether to ignore invalid fields/rows (default: throw an exception). */
+	private final boolean ignoreParseErrors;
+
 	private JsonRowDeserializationSchema(
 			TypeInformation<Row> typeInfo,
-			boolean failOnMissingField) {
+			boolean failOnMissingField,
+			boolean ignoreParseErrors) {
 		checkNotNull(typeInfo, "Type information");
 		checkArgument(typeInfo instanceof RowTypeInfo, "Only RowTypeInfo is supported");
 		this.typeInfo = (RowTypeInfo) typeInfo;
 		this.failOnMissingField = failOnMissingField;
 		this.runtimeConverter = createConverter(this.typeInfo);
+		this.ignoreParseErrors = ignoreParseErrors;
 	}
 
 	/**
@@ -103,7 +108,7 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 	 */
 	@Deprecated
 	public JsonRowDeserializationSchema(TypeInformation<Row> typeInfo) {
-		this(typeInfo, false);
+		this(typeInfo, false, false);
 	}
 
 	/**
@@ -111,7 +116,7 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 	 */
 	@Deprecated
 	public JsonRowDeserializationSchema(String jsonSchema) {
-		this(JsonRowSchemaConverter.convert(checkNotNull(jsonSchema)), false);
+		this(JsonRowSchemaConverter.convert(checkNotNull(jsonSchema)), false, false);
 	}
 
 	/**
@@ -127,7 +132,12 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 	@Override
 	public Row deserialize(byte[] message) throws IOException {
 		try {
-			final JsonNode root = objectMapper.readTree(message);
+			final JsonNode root;
+			try {
+				root = objectMapper.readTree(message);
+			} catch (IOException e) {
+				return (Row) nullOrThrowParseException("Unable to parse JsonNode from message.", e);
+			}
 			return (Row) runtimeConverter.convert(objectMapper, root);
 		} catch (Throwable t) {
 			throw new IOException("Failed to deserialize JSON object.", t);
@@ -151,6 +161,7 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 
 		private final RowTypeInfo typeInfo;
 		private boolean failOnMissingField = false;
+		private boolean ignoreParseErrors = false;
 
 		/**
 		 * Creates a JSON deserialization schema for the given type information.
@@ -184,8 +195,18 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 			return this;
 		}
 
+		/**
+		 * Configures schema to fail when parsing json failed.
+		 *
+		 * <p>By default, an exception will be thrown when parsing json fails.
+		 */
+		public Builder ignoreParseErrors() {
+			this.ignoreParseErrors = true;
+			return this;
+		}
+
 		public JsonRowDeserializationSchema build() {
-			return new JsonRowDeserializationSchema(typeInfo, failOnMissingField);
+			return new JsonRowDeserializationSchema(typeInfo, failOnMissingField, ignoreParseErrors);
 		}
 	}
 
@@ -232,7 +253,6 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 			if (jsonNode.isNull()) {
 				return null;
 			}
-
 			return converter.convert(mapper, jsonNode);
 		};
 	}
@@ -257,17 +277,20 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 	private DeserializationRuntimeConverter createMapConverter(TypeInformation keyType, TypeInformation valueType) {
 		DeserializationRuntimeConverter valueConverter = createConverter(valueType);
 		DeserializationRuntimeConverter keyConverter = createConverter(keyType);
-
 		return (mapper, jsonNode) -> {
-			Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
-			Map<Object, Object> result = new HashMap<>();
-			while (fields.hasNext()) {
-				Map.Entry<String, JsonNode> entry = fields.next();
-				Object key = keyConverter.convert(mapper, TextNode.valueOf(entry.getKey()));
-				Object value = valueConverter.convert(mapper, entry.getValue());
-				result.put(key, value);
+			try {
+				Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+				Map<Object, Object> result = new HashMap<>();
+				while (fields.hasNext()) {
+					Map.Entry<String, JsonNode> entry = fields.next();
+					Object key = keyConverter.convert(mapper, TextNode.valueOf(entry.getKey()));
+					Object value = valueConverter.convert(mapper, entry.getValue());
+					result.put(key, value);
+				}
+				return result;
+			}  catch (RuntimeException e) {
+				return nullOrThrowParseException("Unable to deserialize map.", e);
 			}
-			return result;
 		};
 	}
 
@@ -276,7 +299,7 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 			try {
 				return jsonNode.binaryValue();
 			} catch (IOException e) {
-				throw new WrappingRuntimeException("Unable to deserialize byte array.", e);
+				return nullOrThrowParseException("Unable to deserialize byte array.", e);
 			}
 		};
 	}
@@ -306,7 +329,7 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 			try {
 				return mapper.treeToValue(jsonNode, valueType);
 			} catch (JsonProcessingException e) {
-				throw new WrappingRuntimeException(format("Could not convert node: %s", jsonNode), e);
+				return nullOrThrowParseException(format("Could not convert node: %s", jsonNode), e);
 			}
 		};
 	}
@@ -325,11 +348,11 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 		} else if (simpleTypeInfo == Types.DOUBLE) {
 			return Optional.of((mapper, jsonNode) -> jsonNode.asDouble());
 		} else if (simpleTypeInfo == Types.FLOAT) {
-			return Optional.of((mapper, jsonNode) -> Float.parseFloat(jsonNode.asText().trim()));
+			return Optional.of(this::convertToFloat);
 		} else if (simpleTypeInfo == Types.SHORT) {
-			return Optional.of((mapper, jsonNode) -> Short.parseShort(jsonNode.asText().trim()));
+			return Optional.of(this::convertToShot);
 		} else if (simpleTypeInfo == Types.BYTE) {
-			return Optional.of((mapper, jsonNode) -> Byte.parseByte(jsonNode.asText().trim()));
+			return Optional.of(this::convertToByte);
 		} else if (simpleTypeInfo == Types.BIG_DEC) {
 			return Optional.of((mapper, jsonNode) -> jsonNode.decimalValue());
 		} else if (simpleTypeInfo == Types.BIG_INT) {
@@ -351,75 +374,130 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 		}
 	}
 
+	private Float convertToFloat(ObjectMapper mapper, JsonNode jsonNode) {
+		try {
+			return Float.parseFloat(jsonNode.asText().trim());
+		} catch (NumberFormatException e) {
+			return (Float) nullOrThrowParseException("Unable to deserialize float.", e);
+		}
+	}
+
+	private Short convertToShot(ObjectMapper mapper, JsonNode jsonNode) {
+		try {
+			return Short.parseShort(jsonNode.asText().trim());
+		} catch (NumberFormatException e) {
+			return (Short) nullOrThrowParseException("Unable to deserialize short.", e);
+		}
+	}
+
+	private Byte convertToByte(ObjectMapper mapper, JsonNode jsonNode) {
+		try {
+			return Byte.parseByte(jsonNode.asText().trim());
+		} catch (NumberFormatException e) {
+			return (Byte) nullOrThrowParseException("Unable to deserialize byte.", e);
+		}
+	}
+
 	private LocalDate convertToLocalDate(ObjectMapper mapper, JsonNode jsonNode) {
-		return ISO_LOCAL_DATE.parse(jsonNode.asText()).query(TemporalQueries.localDate());
+		try {
+			return ISO_LOCAL_DATE.parse(jsonNode.asText()).query(TemporalQueries.localDate());
+		} catch (RuntimeException e) {
+			return (LocalDate) nullOrThrowParseException("Unable to deserialize local date.", e);
+		}
 	}
 
 	private Date convertToDate(ObjectMapper mapper, JsonNode jsonNode) {
-		return Date.valueOf(convertToLocalDate(mapper, jsonNode));
+		try {
+			return Date.valueOf(convertToLocalDate(mapper, jsonNode));
+		} catch (RuntimeException e) {
+			return (Date) nullOrThrowParseException("Unable to deserialize date.", e);
+		}
 	}
 
 	private LocalDateTime convertToLocalDateTime(ObjectMapper mapper, JsonNode jsonNode) {
 		// according to RFC 3339 every date-time must have a timezone;
 		// until we have full timezone support, we only support UTC;
 		// users can parse their time as string as a workaround
-		TemporalAccessor parsedTimestamp = RFC3339_TIMESTAMP_FORMAT.parse(jsonNode.asText());
+		try {
+			TemporalAccessor parsedTimestamp = RFC3339_TIMESTAMP_FORMAT.parse(jsonNode.asText());
 
-		ZoneOffset zoneOffset = parsedTimestamp.query(TemporalQueries.offset());
+			ZoneOffset zoneOffset = parsedTimestamp.query(TemporalQueries.offset());
 
-		if (zoneOffset != null && zoneOffset.getTotalSeconds() != 0) {
-			throw new IllegalStateException(
-				"Invalid timestamp format. Only a timestamp in UTC timezone is supported yet. " +
-					"Format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			if (zoneOffset != null && zoneOffset.getTotalSeconds() != 0) {
+				throw new IllegalStateException(
+					"Invalid timestamp format. Only a timestamp in UTC timezone is supported yet. " +
+						"Format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			}
+
+			LocalTime localTime = parsedTimestamp.query(TemporalQueries.localTime());
+			LocalDate localDate = parsedTimestamp.query(TemporalQueries.localDate());
+
+			return LocalDateTime.of(localDate, localTime);
+		} catch (RuntimeException e) {
+			return (LocalDateTime) nullOrThrowParseException("Unable to deserialize local date time.", e);
 		}
-
-		LocalTime localTime = parsedTimestamp.query(TemporalQueries.localTime());
-		LocalDate localDate = parsedTimestamp.query(TemporalQueries.localDate());
-
-		return LocalDateTime.of(localDate, localTime);
 	}
 
 	private Timestamp convertToTimestamp(ObjectMapper mapper, JsonNode jsonNode) {
-		return Timestamp.valueOf(convertToLocalDateTime(mapper, jsonNode));
+		try {
+			return Timestamp.valueOf(convertToLocalDateTime(mapper, jsonNode));
+		} catch (RuntimeException e) {
+			return (Timestamp) nullOrThrowParseException("Unable to deserialize timestamp.", e);
+		}
 	}
 
 	private LocalTime convertToLocalTime(ObjectMapper mapper, JsonNode jsonNode) {
 		// according to RFC 3339 every full-time must have a timezone;
 		// until we have full timezone support, we only support UTC;
 		// users can parse their time as string as a workaround
-		TemporalAccessor parsedTime = RFC3339_TIME_FORMAT.parse(jsonNode.asText());
 
-		ZoneOffset zoneOffset = parsedTime.query(TemporalQueries.offset());
-		LocalTime localTime = parsedTime.query(TemporalQueries.localTime());
+		try {
+			TemporalAccessor parsedTime = RFC3339_TIME_FORMAT.parse(jsonNode.asText());
 
-		if (zoneOffset != null && zoneOffset.getTotalSeconds() != 0 || localTime.getNano() != 0) {
-			throw new IllegalStateException(
-				"Invalid time format. Only a time in UTC timezone without milliseconds is supported yet.");
+			ZoneOffset zoneOffset = parsedTime.query(TemporalQueries.offset());
+			LocalTime localTime = parsedTime.query(TemporalQueries.localTime());
+
+			if (zoneOffset != null && zoneOffset.getTotalSeconds() != 0 || localTime.getNano() != 0) {
+				throw new IllegalStateException(
+					"Invalid time format. Only a time in UTC timezone without milliseconds is supported yet.");
+			}
+
+			return localTime;
+		} catch (RuntimeException e) {
+			return (LocalTime) nullOrThrowParseException("Unable to deserialize local time.", e);
 		}
-
-		return localTime;
 	}
 
 	private Time convertToTime(ObjectMapper mapper, JsonNode jsonNode) {
-		return Time.valueOf(convertToLocalTime(mapper, jsonNode));
+		try {
+			return Time.valueOf(convertToLocalTime(mapper, jsonNode));
+		} catch (RuntimeException e) {
+			return (Time) nullOrThrowParseException("Unable to deserialize time.", e);
+		}
 	}
 
 	private DeserializationRuntimeConverter assembleRowConverter(
 		String[] fieldNames,
 		List<DeserializationRuntimeConverter> fieldConverters) {
 		return (mapper, jsonNode) -> {
-			ObjectNode node = (ObjectNode) jsonNode;
+			try {
+				ObjectNode node = (ObjectNode) jsonNode;
+				int arity = fieldNames.length;
+				Row row = new Row(arity);
+				for (int i = 0; i < arity; i++) {
+					String fieldName = fieldNames[i];
+					JsonNode field = node.get(fieldName);
+					Object convertField = convertField(mapper, fieldConverters.get(i), fieldName, field);
+					row.setField(i, convertField);
+				}
 
-			int arity = fieldNames.length;
-			Row row = new Row(arity);
-			for (int i = 0; i < arity; i++) {
-				String fieldName = fieldNames[i];
-				JsonNode field = node.get(fieldName);
-				Object convertField = convertField(mapper, fieldConverters.get(i), fieldName, field);
-				row.setField(i, convertField);
+				return row;
+			} catch (RuntimeException e) {
+				if (e instanceof IllegalStateException) {
+					throw e;
+				}
+				return nullOrThrowParseException("Unable to deserialize row.", e);
 			}
-
-			return row;
 		};
 	}
 
@@ -436,25 +514,51 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 				return null;
 			}
 		} else {
-			return fieldConverter.convert(mapper, field);
+			try {
+				return fieldConverter.convert(mapper, field);
+			} catch (RuntimeException e) {
+				return nullOrThrowParseException("Unable to deserialize field.", e);
+			}
 		}
 	}
 
 	private DeserializationRuntimeConverter assembleArrayConverter(
 		TypeInformation<?> elementType,
 		DeserializationRuntimeConverter elementConverter) {
-
 		final Class<?> elementClass = elementType.getTypeClass();
 
 		return (mapper, jsonNode) -> {
-			final ArrayNode node = (ArrayNode) jsonNode;
-			final Object[] array = (Object[]) Array.newInstance(elementClass, node.size());
-			for (int i = 0; i < node.size(); i++) {
-				final JsonNode innerNode = node.get(i);
-				array[i] = elementConverter.convert(mapper, innerNode);
-			}
+			try {
+				final ArrayNode node = (ArrayNode) jsonNode;
+				final Object[] array = (Object[]) Array.newInstance(elementClass, node.size());
+				for (int i = 0; i < node.size(); i++) {
+					final JsonNode innerNode = node.get(i);
+					array[i] = elementConverter.convert(mapper, innerNode);
+				}
 
-			return array;
+				return array;
+			} catch (RuntimeException e) {
+				return nullOrThrowParseException("Unable to deserialize array.", e);
+			}
 		};
+	}
+
+	private Object nullOrThrowParseException(String msg, Exception e) {
+		if (ignoreParseErrors) {
+			return null;
+		}
+		if (e instanceof ParseErrorException) {
+			throw (ParseErrorException) e;
+		}
+		throw new ParseErrorException(msg, e);
+	}
+
+	/**
+	 * Exception which refers to parse errors in converters.
+	 * */
+	class ParseErrorException extends FlinkRuntimeException {
+		ParseErrorException(String message, Throwable cause) {
+			super(message, cause);
+		}
 	}
 }
