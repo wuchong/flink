@@ -19,11 +19,22 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+
+import java.util.List;
 
 /**
- * Entity that specifies how to write a {@link DynamicTableSource}.
+ * A {@link ReadingAbility} that looks up rows of an external storage system by one or more keys.
  */
 @PublicEvolving
-public interface TableWriter {
-	// marker interface
+public interface SupportsLookupReading extends ReadingAbility {
+
+	/**
+	 * Returns the actual implementation for reading the data.
+	 */
+	LookupReader getLookupReader(List<FieldReferenceExpression> fields);
+
+	interface LookupReader {
+		// marker interface
+	}
 }

@@ -21,10 +21,9 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 
 /**
- * A {@link TableReader} that looks up rows of an external storage system by one or more keys.
+ * Entity that specifies how to write a {@link DynamicTableSource}.
  */
 @PublicEvolving
-public interface LookupTableReader extends TableReader {
-
-	boolean isAsynchronous();
+public interface WritingAbility {
+	// marker interface
 }

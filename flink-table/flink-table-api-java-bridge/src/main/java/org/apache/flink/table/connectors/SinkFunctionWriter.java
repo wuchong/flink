@@ -18,12 +18,12 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 /**
- * A {@link ChangelogTableReader} that uses a {@link SourceFunction} as runtime implementation.
+ * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.
  */
-interface SourceFunctionTableReader extends ChangelogTableReader {
+public interface SinkFunctionWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	SourceFunction<ChangelogRow> createSourceFunction(Context context);
+	SinkFunction<ChangelogRow> createSinkFunction();
 }

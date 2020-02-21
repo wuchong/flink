@@ -23,7 +23,7 @@ import org.apache.flink.annotation.PublicEvolving;
 /**
  * Source of a dynamic table from an external storage system.
  *
- * <p>Use {@link TableReader}s to specify how to read the table.
+ * <p>Use {@link ReadingAbility}s to specify how to read the table.
  */
 @PublicEvolving
 public interface DynamicTableSource {

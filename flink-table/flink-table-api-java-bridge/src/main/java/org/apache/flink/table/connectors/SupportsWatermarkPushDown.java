@@ -27,10 +27,10 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
- * Allows to push down watermarks into a {@link ChangelogTableReader}.
+ * Allows to push down watermarks into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
  */
 @PublicEvolving
-public interface SupportsWatermarkPushDown extends ChangelogTableReader {
+public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
 	boolean supportsWatermarkPushDown();
 

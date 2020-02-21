@@ -22,10 +22,10 @@ import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 
 /**
- * A {@link ChangelogTableReader} that uses a {@link InputFormat} for scanning the data. Please note that
+ * A {@link SupportsChangelogReading} that uses a {@link InputFormat} for scanning the data. Please note that
  * the input format must implement {@link ResultTypeQueryable}.
  */
-public interface InputFormatTableReader extends ChangelogTableReader {
+public interface InputFormatTableReader extends SupportsChangelogReading {
 
 	InputFormat<ChangelogRow, ?> createInputFormat(Context context);
 }

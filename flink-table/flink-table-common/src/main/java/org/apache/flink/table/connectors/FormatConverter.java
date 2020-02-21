@@ -32,7 +32,7 @@ public interface FormatConverter extends Serializable {
 	void open(Context context);
 
 	/**
-	 * Context for format conversions in {@link ChangelogTableReader} and {@link ChangelogTableWriter}.
+	 * Context for format conversions in {@link SupportsChangelogReading} and {@link SupportsChangelogWriting}.
 	 */
 	interface Context {
 

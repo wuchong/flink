@@ -21,9 +21,8 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * Runtime implementation
  */
 @PublicEvolving
 public interface TableReader {
-	// marker interface
 }

@@ -25,10 +25,10 @@ import org.apache.flink.table.types.DataType;
 import javax.annotation.Nullable;
 
 /**
- * A {@link TableWriter} that writes a changelog of rows to an external storage system.
+ * A {@link WritingAbility} that writes a changelog of rows to an external storage system.
  */
 @PublicEvolving
-public interface ChangelogTableWriter extends TableWriter {
+public interface SupportsChangelogWriting extends WritingAbility {
 
 	/**
 	 * Returns the {@link ChangelogMode} that this writer consumes.
@@ -38,6 +38,11 @@ public interface ChangelogTableWriter extends TableWriter {
 	 */
 	ChangelogMode getChangelogMode(ChangelogMode requestedMode);
 
+	/**
+	 * Returns the actual implementation for writing the data.
+	 */
+	ChangelogWriter getChangelogWriter(Context context);
+
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
@@ -45,9 +50,16 @@ public interface ChangelogTableWriter extends TableWriter {
 	interface Context {
 
 		/**
+		 * Creates a consumer that accesses instances of {@link ChangelogRow} during runtime.
+		 *
+		 * <p>Removes computed columns if necessary.
+		 */
+		ChangelogRowConsumer createChangelogRowConsumer(TableSchema schema);
+
+		/**
 		 * Creates the consumed data type of the given schema.
 		 *
-		 * <p>Ignores non-persisted computed columns.
+		 * <p>Ignores non-persisted computed columns if necessary.
 		 */
 		DataType createConsumedDataType(TableSchema schema);
 
@@ -58,16 +70,25 @@ public interface ChangelogTableWriter extends TableWriter {
 		DataFormatConverter createDataFormatConverter(DataType consumedDataType);
 	}
 
+	interface ChangelogRowConsumer extends FormatConverter {
+
+		/**
+		 * Unwraps the columns of a row in internal format from a changelog row.
+		 *
+		 * <p>Removes computed columns if necessary.
+		 */
+		Object unwrapInternalRow(ChangelogRow row);
+	}
+
 	interface DataFormatConverter extends FormatConverter {
 
 		/**
 		 * Converts the given object into an external data format.
 		 */
 		@Nullable Object toExternal(@Nullable Object internalFormat);
+	}
 
-		/**
-		 * Converts an individual field of a row.
-		 */
-		@Nullable Object toExternal(ChangelogRow row, int fieldPos);
+	interface ChangelogWriter {
+		// marker interface
 	}
 }
