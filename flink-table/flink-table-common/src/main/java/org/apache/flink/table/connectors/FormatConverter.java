@@ -18,10 +18,12 @@
 
 package org.apache.flink.table.connectors;
 
+import java.io.Serializable;
+
 /**
  * Converts between the internal formats of the Table & SQL API and external produced/consumed formats.
  */
-public interface FormatConverter {
+public interface FormatConverter extends Serializable {
 
 	/**
 	 * Initializes the producer during runtime. This should be called in the {@code open()} method
@@ -30,7 +32,7 @@ public interface FormatConverter {
 	void open(Context context);
 
 	/**
-	 * Context for format conversions in {@link ScanTableReader} and {@link TableWriter}.
+	 * Context for format conversions in {@link ChangelogTableReader} and {@link ChangelogTableWriter}.
 	 */
 	interface Context {
 

@@ -18,60 +18,12 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
-import javax.annotation.Nullable;
-
-import java.util.Optional;
-
 /**
- * A {@link ScanTableReader} that uses a {@link SourceFunction} for scanning data.
+ * A {@link ChangelogTableReader} that uses a {@link SourceFunction} as runtime implementation.
  */
-interface SourceFunctionTableReader extends ScanTableReader {
+interface SourceFunctionTableReader extends ChangelogTableReader {
 
-	SourceFunction<ChangelogRow> createSourceFunction(Context context, WatermarkAssigner assigner);
-
-	// ---------------------------------------------------------------------------------------------
-	// Helper classes
-	// ---------------------------------------------------------------------------------------------
-
-	final class WatermarkAssigner {
-
-		private @Nullable AssignerWithPeriodicWatermarks<ChangelogRow> periodicAssigner;
-
-		private @Nullable AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedAssigner;
-
-		private WatermarkAssigner(
-				@Nullable AssignerWithPeriodicWatermarks<ChangelogRow> periodicAssigner,
-				@Nullable AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedAssigner) {
-			this.periodicAssigner = periodicAssigner;
-			this.punctuatedAssigner = punctuatedAssigner;
-		}
-
-		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<ChangelogRow> periodicWatermarks) {
-			return new WatermarkAssigner(periodicWatermarks, null);
-		}
-
-		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedWatermarks) {
-			return new WatermarkAssigner(null, punctuatedWatermarks);
-		}
-
-		public static WatermarkAssigner undefined() {
-			return new WatermarkAssigner(null, null);
-		}
-
-		public boolean isUndefined() {
-			return periodicAssigner == null && punctuatedAssigner == null;
-		}
-
-		public Optional<AssignerWithPeriodicWatermarks<ChangelogRow>> getPeriodicAssigner() {
-			return Optional.ofNullable(periodicAssigner);
-		}
-
-		public Optional<AssignerWithPunctuatedWatermarks<ChangelogRow>> getPunctuatedAssigner() {
-			return Optional.ofNullable(punctuatedAssigner);
-		}
-	}
+	SourceFunction<ChangelogRow> createSourceFunction(Context context);
 }

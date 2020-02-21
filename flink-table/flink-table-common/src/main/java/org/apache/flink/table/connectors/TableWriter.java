@@ -19,53 +19,11 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.types.DataType;
-
-import javax.annotation.Nullable;
-
-import java.io.Serializable;
 
 /**
- * General interface for an entity that can provide runtime implementation for writing to a table.
+ * Entity that specifies how to write a {@link DynamicTableSource}.
  */
 @PublicEvolving
 public interface TableWriter {
-
-	/**
-	 * Returns a string that summarizes this writer for printing to a console or log.
-	 */
-	String asSummaryString();
-
-	/**
-	 * Returns the {@link ChangeMode} that this writer consumes. The runtime can make suggestions but
-	 * the writer has the final decision what it requires. If the runtime does not support this mode,
-	 * it will throw an error.
-	 */
-	ChangeMode getChangeMode(ChangeMode requestedMode);
-
-	// --------------------------------------------------------------------------------------------
-	// Helper Interfaces
-	// --------------------------------------------------------------------------------------------
-
-	interface Context {
-
-		/**
-		 * Creates a runtime data format converter that converts Flink's internal data structures to
-		 * data of the given {@link DataType}.
-		 */
-		DataFormatConverter createDataFormatConverter(DataType consumedDataType);
-	}
-
-	interface DataFormatConverter extends FormatConverter, Serializable {
-
-		/**
-		 * Converts the given object into an external data format.
-		 */
-		@Nullable Object toExternal(@Nullable Object internalFormat);
-
-		/**
-		 * Convert individual fields of a row.
-		 */
-		@Nullable Object toExternal(ChangelogRow row, int fieldPos);
-	}
+	// marker interface
 }

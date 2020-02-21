@@ -18,12 +18,15 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+import org.apache.flink.table.functions.TableFunction;
+
+import java.util.List;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * A {@link LookupTableReader} that uses a {@link TableFunction} as runtime implementation.
  */
-@PublicEvolving
-public interface TableReader {
-	// marker interface
+public interface TableFunctionReader<T> extends LookupTableReader {
+
+	TableFunction<T> createLookupFunction(List<FieldReferenceExpression> fields);
 }

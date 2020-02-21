@@ -67,8 +67,8 @@ public class KafkaTableReader implements SourceFunctionTableReader {
 	}
 
 	@Override
-	public ChangeMode getChangeMode() {
-		return ChangeMode.INSERT_ONLY;
+	public ChangelogMode getChangelogMode() {
+		return ChangelogMode.INSERT_ONLY;
 	}
 
 	@Override
