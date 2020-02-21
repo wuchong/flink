@@ -21,9 +21,9 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 /**
- * A {@link TableWriter} that uses a {@link SinkFunction} for storing data.
+ * A {@link ChangelogTableWriter} that uses a {@link SinkFunction} as runtime implementation.
  */
-public interface SinkFunctionTableWriter extends TableWriter {
+public interface SinkFunctionTableWriter extends ChangelogTableWriter {
 
 	SinkFunction<ChangelogRow> createSinkFunction(Context context);
 }

@@ -18,4 +18,15 @@
 
 package org.apache.flink.table.connectors;
 
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+import org.apache.flink.table.functions.AsyncTableFunction;
 
+import java.util.List;
+
+/**
+ * A {@link LookupTableReader} that uses a {@link AsyncTableFunction} as runtime implementation.
+ */
+public interface AsyncTableFunctionReader<T> extends LookupTableReader {
+
+	AsyncTableFunction<T> createAsyncLookupFunction(List<FieldReferenceExpression> fields);
+}

@@ -19,11 +19,17 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.expressions.ResolvedExpression;
+
+import java.util.List;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * Allows to push down filters into a {@link ChangelogTableReader}.
  */
 @PublicEvolving
-public interface TableReader {
-	// marker interface
+public interface SupportsFilterPushDown extends ChangelogTableReader {
+
+	boolean supportsFilterPushDown();
+
+	DynamicTableSource applyFilter(List<ResolvedExpression> predicates);
 }

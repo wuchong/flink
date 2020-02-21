@@ -21,9 +21,10 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * Allows to push down computed columns into a {@link ChangelogTableReader}.
  */
 @PublicEvolving
-public interface TableReader {
-	// marker interface
+public interface SupportsComputedColumnPushDown extends ChangelogTableReader {
+
+	boolean supportsComputedColumnPushDown();
 }

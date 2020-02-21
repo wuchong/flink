@@ -19,23 +19,12 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.expressions.FieldReferenceExpression;
-import org.apache.flink.table.functions.AsyncTableFunction;
-import org.apache.flink.table.functions.TableFunction;
-
-import java.util.List;
 
 /**
  * A {@link TableReader} that looks up rows of an external storage system by one or more keys.
- *
- * <p>Runtime implementation is provided via {@link TableFunction} or {@link AsyncTableFunction}.
  */
 @PublicEvolving
-public interface LookupTableReader<T> extends TableReader {
+public interface LookupTableReader extends TableReader {
 
 	boolean isAsynchronous();
-
-	TableFunction<T> createLookupFunction(List<FieldReferenceExpression> fields);
-
-	AsyncTableFunction<T> createAsyncLookupFunction(List<FieldReferenceExpression> fields);
 }

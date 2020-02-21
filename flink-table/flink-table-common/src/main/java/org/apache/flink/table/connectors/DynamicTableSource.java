@@ -21,9 +21,15 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * Source of a dynamic table from an external storage system.
+ *
+ * <p>Use {@link TableReader}s to specify how to read the table.
  */
 @PublicEvolving
-public interface TableReader {
-	// marker interface
+public interface DynamicTableSource {
+
+	/**
+	 * Returns a string that summarizes this source for printing to a console or log.
+	 */
+	String asSummaryString();
 }

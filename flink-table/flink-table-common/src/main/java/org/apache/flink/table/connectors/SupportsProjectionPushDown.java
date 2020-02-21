@@ -18,42 +18,16 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.table.connectors.ChangelogRow.Kind;
-
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.api.TableSchema;
 
 /**
- * The set of changes a {@link ScanTableReader} produces and {@link TableWriter} consumes.
+ * Allows to push down (possibly nested) projections into a {@link ChangelogTableReader}.
  */
-public enum ChangeMode {
+@PublicEvolving
+public interface SupportsProjectionPushDown extends ChangelogTableReader {
 
-	INSERT_ONLY(
-		Kind.INSERT),
+	boolean supportsProjectionPushDown();
 
-	UPSERT(
-		Kind.INSERT,
-		Kind.UPDATE_AFTER,
-		Kind.DELETE),
-
-	ALL(
-		Kind.INSERT,
-		Kind.UPDATE_BEFORE,
-		Kind.UPDATE_AFTER,
-		Kind.DELETE);
-
-	private final Set<Kind> kinds;
-
-	ChangeMode(Kind firstKind, Kind... otherKinds) {
-		this.kinds = Collections.unmodifiableSet(EnumSet.of(firstKind, otherKinds));
-	}
-
-	public Set<Kind> getSupportedKinds() {
-		return kinds;
-	}
-
-	public boolean supportsKind(Kind kind) {
-		return kinds.contains(kind);
-	}
+	DynamicTableSource applyProjection(TableSchema schema);
 }
