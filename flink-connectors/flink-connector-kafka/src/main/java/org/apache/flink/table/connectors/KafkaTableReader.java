@@ -28,7 +28,7 @@ import org.apache.flink.types.Row;
 import java.io.IOException;
 import java.util.Properties;
 
-public class KafkaTableReader implements SourceFunctionTableReader {
+public class KafkaTableReader implements SourceFunctionReader {
 
 	private final Properties properties;
 

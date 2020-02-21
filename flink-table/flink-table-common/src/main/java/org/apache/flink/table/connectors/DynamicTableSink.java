@@ -23,7 +23,7 @@ import org.apache.flink.annotation.PublicEvolving;
 /**
  * Sink of a dynamic table to an external storage system.
  *
- * <p>Use {@link TableWriter}s to specify how to write the table.
+ * <p>Use {@link WritingAbility}s to specify how to write the table.
  */
 @PublicEvolving
 public interface DynamicTableSink {

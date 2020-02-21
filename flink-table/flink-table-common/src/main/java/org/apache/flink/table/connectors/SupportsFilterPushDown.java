@@ -24,10 +24,10 @@ import org.apache.flink.table.expressions.ResolvedExpression;
 import java.util.List;
 
 /**
- * Allows to push down filters into a {@link ChangelogTableReader}.
+ * Allows to push down filters into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
  */
 @PublicEvolving
-public interface SupportsFilterPushDown extends ChangelogTableReader {
+public interface SupportsFilterPushDown extends SupportsChangelogReading {
 
 	boolean supportsFilterPushDown();
 

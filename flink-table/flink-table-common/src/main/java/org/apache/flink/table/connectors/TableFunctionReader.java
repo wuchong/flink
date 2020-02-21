@@ -18,15 +18,12 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.table.expressions.FieldReferenceExpression;
 import org.apache.flink.table.functions.TableFunction;
 
-import java.util.List;
-
 /**
- * A {@link LookupTableReader} that uses a {@link TableFunction} as runtime implementation.
+ * {@link SupportsLookupReading} by using a {@link TableFunction} during runtime.
  */
-public interface TableFunctionReader<T> extends LookupTableReader {
+public interface TableFunctionReader<T> extends SupportsLookupReading.LookupReader {
 
-	TableFunction<T> createLookupFunction(List<FieldReferenceExpression> fields);
+	TableFunction<T> createTableFunction();
 }
