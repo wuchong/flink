@@ -242,6 +242,20 @@ public class TableSchema {
 	}
 
 	/**
+	 * Returns the schema of the table without computed columns for producing data (in a source).
+	 */
+	public DataType toProducedRowDataType() {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Returns the schema of the table without computed columns for consuming data (in a sink).
+	 */
+	public DataType toConsumedRowDataType() {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
 	 * @deprecated Use {@link #toRowDataType()} instead.
 	 */
 	@Deprecated
