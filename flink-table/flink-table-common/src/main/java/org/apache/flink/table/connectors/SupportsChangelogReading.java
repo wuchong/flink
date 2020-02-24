@@ -60,6 +60,11 @@ public interface SupportsChangelogReading extends ReadingAbility {
 	interface Context {
 
 		/**
+		 * Returns the user code class loader.
+		 */
+		ClassLoader getUserClassLoader();
+
+		/**
 		 * Creates the type information describing the internal format of produced {@link ChangelogRow}s.
 		 *
 		 * <p>Considers computed columns as part of the schema if necessary.
@@ -72,13 +77,6 @@ public interface SupportsChangelogReading extends ReadingAbility {
 		 * <p>Generates and adds computed columns if necessary.
 		 */
 		ChangelogRowProducer createChangelogRowProducer();
-
-		/**
-		 * Creates the produced data type of the given schema.
-		 *
-		 * <p>Ignores non-persisted computed columns if necessary.
-		 */
-		DataType createProducedDataType();
 
 		/**
 		 * Creates a runtime data format converter that converts data of the given {@link DataType}

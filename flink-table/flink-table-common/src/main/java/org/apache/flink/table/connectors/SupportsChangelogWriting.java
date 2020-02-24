@@ -19,7 +19,6 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.types.DataType;
 
 import javax.annotation.Nullable;
@@ -43,6 +42,17 @@ public interface SupportsChangelogWriting extends WritingAbility {
 	 */
 	ChangelogWriter getChangelogWriter(Context context);
 
+	/**
+	 * Returns whether computed columns can be pushed into the {@link SupportsChangelogWriting.ChangelogWriter}
+	 * or if they need to be removed in a preceding projection before the sink.
+	 *
+	 * <p>Disabling the computed column push down is only valid for implementations that don't use the
+	 * recommended {@link SupportsChangelogWriting.ChangelogRowConsumer}.
+	 */
+	default boolean supportsComputedColumnPushDown() {
+		return true;
+	}
+
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
@@ -50,18 +60,16 @@ public interface SupportsChangelogWriting extends WritingAbility {
 	interface Context {
 
 		/**
+		 * Returns the user code class loader.
+		 */
+		ClassLoader getUserClassLoader();
+
+		/**
 		 * Creates a consumer that accesses instances of {@link ChangelogRow} during runtime.
 		 *
 		 * <p>Removes computed columns if necessary.
 		 */
-		ChangelogRowConsumer createChangelogRowConsumer(TableSchema schema);
-
-		/**
-		 * Creates the consumed data type of the given schema.
-		 *
-		 * <p>Ignores non-persisted computed columns if necessary.
-		 */
-		DataType createConsumedDataType(TableSchema schema);
+		ChangelogRowConsumer createChangelogRowConsumer();
 
 		/**
 		 * Creates a runtime data format converter that converts Flink's internal data structures to
