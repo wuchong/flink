@@ -26,4 +26,8 @@ import org.apache.flink.table.functions.TableFunction;
 public interface TableFunctionReader<T> extends SupportsLookupReading.LookupReader {
 
 	TableFunction<T> createTableFunction();
+
+	static <T> TableFunctionReader<T> of(TableFunction<T> tableFunction) {
+		return () -> tableFunction;
+	}
 }

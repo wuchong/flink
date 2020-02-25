@@ -42,17 +42,6 @@ public interface SupportsChangelogReading extends ReadingAbility {
 	 */
 	ChangelogReader getChangelogReader(Context context);
 
-	/**
-	 * Returns whether computed columns can be pushed into the {@link ChangelogReader} or if they
-	 * need to be added in a subsequent projection after the source.
-	 *
-	 * <p>Disabling the computed column push down is only valid for implementations that don't use the
-	 * recommended {@link ChangelogRowProducer}.
-	 */
-	default boolean supportsComputedColumnPushDown() {
-		return true;
-	}
-
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
@@ -65,18 +54,9 @@ public interface SupportsChangelogReading extends ReadingAbility {
 		ClassLoader getUserClassLoader();
 
 		/**
-		 * Creates the type information describing the internal format of produced {@link ChangelogRow}s.
-		 *
-		 * <p>Considers computed columns as part of the schema if necessary.
+		 * Creates type information describing the internal format of the given {@link DataType}.
 		 */
-		TypeInformation<ChangelogRow> createChangelogRowTypeInfo();
-
-		/**
-		 * Creates a producer that generates instances of {@link ChangelogRow} during runtime.
-		 *
-		 * <p>Generates and adds computed columns if necessary.
-		 */
-		ChangelogRowProducer createChangelogRowProducer();
+		TypeInformation<Object> createTypeInformation(DataType producedDataType);
 
 		/**
 		 * Creates a runtime data format converter that converts data of the given {@link DataType}
@@ -85,22 +65,18 @@ public interface SupportsChangelogReading extends ReadingAbility {
 		DataFormatConverter createDataFormatConverter(DataType producedDataType);
 	}
 
-	interface ChangelogRowProducer extends FormatConverter {
-
-		/**
-		 * Wraps the columns of the given row in internal format into a changelog row of a given kind.
-		 *
-		 * <p>Generates and adds computed columns if necessary.
-		 */
-		ChangelogRow wrapInternalRow(ChangelogRow.Kind kind, Object internalRowFormat);
-	}
-
 	interface DataFormatConverter extends FormatConverter {
 
 		/**
 		 * Converts the given object into an internal data format.
 		 */
 		@Nullable Object toInternal(@Nullable Object externalFormat);
+
+		/**
+		 * Converts the given object into an internal row data format with a corresponding kind of
+		 * change. It assumes that the configured data type of this converter is a row type.
+		 */
+		@Nullable ChangelogRow toInternalRow(ChangelogRow.Kind kind, @Nullable Object externalFormat);
 	}
 
 	interface ChangelogReader {
