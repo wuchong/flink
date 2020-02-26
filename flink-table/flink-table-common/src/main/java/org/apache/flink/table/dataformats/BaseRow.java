@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformat;
+package org.apache.flink.table.dataformats;
 
 import java.io.Serializable;
 
@@ -28,7 +28,7 @@ import java.io.Serializable;
  *
  * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
  */
-public interface BaseRow extends TypeGetterSetters, Serializable {
+public interface BaseRow extends TypedGetterSetters, Serializable {
 
 	/**
 	 * Get the number of fields in the BaseRow.
@@ -36,15 +36,4 @@ public interface BaseRow extends TypeGetterSetters, Serializable {
 	 * @return The number of fields in the BaseRow.
 	 */
 	int getArity();
-
-	/**
-	 * The header represents the type of this Row. Now just used in streaming.
-	 * Now there are two message: ACCUMULATE_MSG and RETRACT_MSG.
-	 */
-	byte getHeader();
-
-	/**
-	 * Set the byte header.
-	 */
-	void setHeader(byte header);
 }
