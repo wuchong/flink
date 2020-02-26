@@ -17,6 +17,8 @@
 
 package org.apache.flink.table.dataformat;
 
+import java.io.Serializable;
+
 /**
  * An interface for row used internally in Flink Table/SQL.
  *
@@ -26,7 +28,7 @@ package org.apache.flink.table.dataformat;
  *
  * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
  */
-public interface BaseRow extends TypeGetterSetters {
+public interface BaseRow extends TypeGetterSetters, Serializable {
 
 	/**
 	 * Get the number of fields in the BaseRow.
