@@ -31,5 +31,5 @@ public interface SupportsFilterPushDown extends SupportsChangelogReading {
 
 	boolean supportsFilterPushDown();
 
-	DynamicTableSource applyFilter(List<ResolvedExpression> predicates);
+	void applyFilter(List<ResolvedExpression> predicates);
 }

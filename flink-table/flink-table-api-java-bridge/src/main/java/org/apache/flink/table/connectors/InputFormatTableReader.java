@@ -19,13 +19,25 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.api.common.io.InputFormat;
-import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 
 /**
- * A {@link SupportsChangelogReading} that uses a {@link InputFormat} for scanning the data. Please note that
- * the input format must implement {@link ResultTypeQueryable}.
+ * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
  */
-public interface InputFormatTableReader extends SupportsChangelogReading {
+public interface InputFormatTableReader extends SupportsChangelogReading.ChangelogReader {
 
-	InputFormat<ChangelogRow, ?> createInputFormat(Context context);
+	InputFormat<ChangelogRow, ?> createInputFormat();
+
+	static InputFormatTableReader of(InputFormat<ChangelogRow, ?> inputFormat) {
+		return new InputFormatTableReader() {
+			@Override
+			public InputFormat<ChangelogRow, ?> createInputFormat() {
+				return inputFormat;
+			}
+
+			@Override
+			public boolean isBounded() {
+				return true;
+			}
+		};
+	}
 }

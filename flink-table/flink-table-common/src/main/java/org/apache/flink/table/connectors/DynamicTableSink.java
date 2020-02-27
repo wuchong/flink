@@ -23,6 +23,10 @@ import org.apache.flink.annotation.PublicEvolving;
 /**
  * Sink of a dynamic table to an external storage system.
  *
+ * <p>A dynamic table sink can be seen as a factory that produces concrete runtime implementation. Depending
+ * on the specified {@link WritingAbility}, the planner might apply changes to instances of this class and thus
+ * mutates the produced runtime implementation.
+ *
  * <p>Use {@link WritingAbility}s to specify how to write the table.
  */
 @PublicEvolving

@@ -23,6 +23,10 @@ import org.apache.flink.annotation.PublicEvolving;
 /**
  * Source of a dynamic table from an external storage system.
  *
+ * <p>A dynamic table source can be seen as a factory that produces concrete runtime implementation. Depending
+ * on the specified {@link ReadingAbility}, the planner might apply changes to instances of this class and thus
+ * mutates the produced runtime implementation.
+ *
  * <p>Use {@link ReadingAbility}s to specify how to read the table.
  */
 @PublicEvolving

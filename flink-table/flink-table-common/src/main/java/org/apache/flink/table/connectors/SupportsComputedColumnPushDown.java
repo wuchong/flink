@@ -18,34 +18,37 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.table.api.TableSchema;
 
-public interface SupportsComputedColumnPushDown extends ReadingAbility {
+/**
+ * Allows to push down computed columns into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
+ */
+@PublicEvolving
+public interface SupportsComputedColumnPushDown extends SupportsChangelogReading {
 
-	default boolean supportsComputedColumnPushDown() {
-		return true;
-	}
-
-	DynamicTableSource applyComputedColumn(ChangelogRowConverter converter);
+	boolean supportsComputedColumnPushDown();
 
 	/**
-	 * The converter that converts the produced ChangelogRow of the physical fields of the source
-	 * into a new ChangelogRow with the additional push-downed computed columns.
+	 * Provides a converter that converts the produced {@link ChangelogRow} containing the physical
+	 * fields of the external system into a new {@link ChangelogRow} with push-downed computed columns.
 	 *
-	 * <p>The {@link #getProducedType()} contains the computed columns as part of the schema.
-	 *1
-	 * <p>For example, if we have a table defined as
-	 * CREATE TABLE t1 (str STRING, ts AS TO_TIMESTAMP(str), cnt INT, cnt2 AS cnt +1).
-	 * Then this converter can help to convert a ChangelogRow(str, cnt) into ChangelogRow(str, ts, cnt, cnt2).
-	 * The {@link #getProducedType()} of this converter is {@code ChangelogRow<STRING, TIMESTAMP, INT, INT>}
-	 * which contains the computed column as part of the schema.
+	 * <p>For example, in case of {@code CREATE TABLE t (s STRING, ts AS TO_TIMESTAMP(str), i INT, i2 AS i + 1)},
+	 * the converter will convert a {@code ChangelogRow(s, i)} to {@code ChangelogRow(s, ts, i, i2)}.
+	 *
+	 * <p>Note: Use {@link TableSchema#toRowDataType()} instead of {@link TableSchema#toProducedRowDataType()}
+	 * for describing the final output data type when create a {@link TypeInformation}.
 	 */
-	interface ChangelogRowConverter extends FormatConverter, ResultTypeQueryable<ChangelogRow> {
+	void applyComputedColumn(ComputedColumnConverter converter);
+
+	/**
+	 * Generates and adds computed columns to a {@link ChangelogRow} if necessary.
+	 */
+	interface ComputedColumnConverter extends FormatConverter {
 
 		/**
-		 * Wraps the columns of the given row in internal format into a changelog row of a given kind.
-		 *
-		 * <p>Generates and adds computed columns if necessary.
+		 * Generates and adds computed columns to a {@link ChangelogRow} if necessary.
 		 */
 		ChangelogRow convert(ChangelogRow changelogRow);
 

@@ -34,7 +34,7 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
 	boolean supportsWatermarkPushDown();
 
-	DynamicTableSource applyWatermark(WatermarkAssigner assigner);
+	void applyWatermark(WatermarkAssigner assigner);
 
 	// --------------------------------------------------------------------------------------------
 

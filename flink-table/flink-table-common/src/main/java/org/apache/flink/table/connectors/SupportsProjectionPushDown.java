@@ -29,5 +29,5 @@ public interface SupportsProjectionPushDown extends SupportsChangelogReading {
 
 	boolean supportsProjectionPushDown();
 
-	DynamicTableSource applyProjection(TableSchema schema);
+	void applyProjection(TableSchema schema);
 }

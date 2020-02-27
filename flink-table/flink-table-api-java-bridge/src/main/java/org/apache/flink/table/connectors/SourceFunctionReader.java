@@ -27,4 +27,17 @@ interface SourceFunctionReader extends SupportsChangelogReading.ChangelogReader 
 
 	SourceFunction<ChangelogRow> createSourceFunction();
 
+	static SourceFunctionReader of(SourceFunction<ChangelogRow> sourceFunction, boolean isBounded) {
+		return new SourceFunctionReader() {
+			@Override
+			public SourceFunction<ChangelogRow> createSourceFunction() {
+				return sourceFunction;
+			}
+
+			@Override
+			public boolean isBounded() {
+				return isBounded;
+			}
+		};
+	}
 }

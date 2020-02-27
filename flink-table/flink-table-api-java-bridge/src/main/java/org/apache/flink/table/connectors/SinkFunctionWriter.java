@@ -26,4 +26,8 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 public interface SinkFunctionWriter extends SupportsChangelogWriting.ChangelogWriter {
 
 	SinkFunction<ChangelogRow> createSinkFunction();
+
+	static SinkFunctionWriter of(SinkFunction<ChangelogRow> sinkFunction) {
+		return () -> sinkFunction;
+	}
 }

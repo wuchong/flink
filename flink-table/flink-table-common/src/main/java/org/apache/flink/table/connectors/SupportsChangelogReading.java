@@ -20,6 +20,7 @@ package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.types.DataType;
 
 import javax.annotation.Nullable;
@@ -56,7 +57,16 @@ public interface SupportsChangelogReading extends ReadingAbility {
 		/**
 		 * Creates type information describing the internal format of the given {@link DataType}.
 		 */
-		TypeInformation<Object> createTypeInformation(DataType producedDataType);
+		TypeInformation<?> createTypeInformation(DataType producedDataType);
+
+		/**
+		 * Creates a runtime data format converter that converts data of the given {@link DataType}
+		 * to Flink's internal data structures.
+		 *
+		 * <p>Note: This converter is only applicable for the top-level record. The planner will validate
+		 * that this method is only called with a row data type that corresponds to {@link TableSchema}.
+		 */
+		ChangelogRowConverter createChangelogRowConverter(DataType producedDataType);
 
 		/**
 		 * Creates a runtime data format converter that converts data of the given {@link DataType}
@@ -65,18 +75,23 @@ public interface SupportsChangelogReading extends ReadingAbility {
 		DataFormatConverter createDataFormatConverter(DataType producedDataType);
 	}
 
+	/**
+	 * Converter for creating top-level rows that describe the kind of change.
+	 */
+	interface ChangelogRowConverter extends FormatConverter {
+
+		/**
+		 * Converts the given external object into a top-level row using an internal row data format.
+		 */
+		ChangelogRow toChangelogRow(ChangelogRow.Kind kind, Object externalFormat);
+	}
+
 	interface DataFormatConverter extends FormatConverter {
 
 		/**
 		 * Converts the given object into an internal data format.
 		 */
 		@Nullable Object toInternal(@Nullable Object externalFormat);
-
-		/**
-		 * Converts the given object into an internal row data format with a corresponding kind of
-		 * change. It assumes that the configured data type of this converter is a row type.
-		 */
-		@Nullable ChangelogRow toInternalRow(ChangelogRow.Kind kind, @Nullable Object externalFormat);
 	}
 
 	interface ChangelogReader {

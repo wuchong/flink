@@ -21,9 +21,13 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.api.common.io.OutputFormat;
 
 /**
- * A {@link SupportsChangelogWriting} that uses a {@link OutputFormat} for storing data.
+ * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
  */
-public interface OutputFormatTableWriter extends SupportsChangelogWriting {
+public interface OutputFormatTableWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	OutputFormat<ChangelogRow> createOutputFunction(Context context);
+	OutputFormat<ChangelogRow> createOutputFunction();
+
+	static OutputFormatTableWriter of(OutputFormat<ChangelogRow> outputFormat) {
+		return () -> outputFormat;
+	}
 }
