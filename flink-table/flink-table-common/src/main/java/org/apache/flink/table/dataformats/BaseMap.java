@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.types.logical.LogicalType;
 
 import java.io.Serializable;
@@ -30,6 +31,7 @@ import java.util.Map;
  * After serialization, it becomes the {@link BinaryMap} format.
  * Convenient updates use the {@link GenericMap} format.
  */
+@PublicEvolving
 public interface BaseMap extends Serializable {
 
 	/**

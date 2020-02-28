@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.table.utils.SegmentsUtil;
@@ -32,7 +33,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * has a possibility to cross the boundary of a segment, while the fixed-length part of {@link BinaryRow}
  * must fit into its first memory segment.
  */
-public final class NestedRow extends BinarySection implements BaseRow {
+@Internal
+public final class NestedRow extends BinarySection implements BaseRow, TypedSetters {
 
 	private static final long serialVersionUID = 1L;
 
@@ -66,6 +68,17 @@ public final class NestedRow extends BinarySection implements BaseRow {
 	@Override
 	public int getArity() {
 		return arity;
+	}
+
+	@Override
+	public ChangelogKind getChangelogKind() {
+		byte header = SegmentsUtil.getByte(segments, offset);
+		return ChangelogKind.valueOf(header);
+	}
+
+	@Override
+	public void setChangelogKind(ChangelogKind kind) {
+		SegmentsUtil.setByte(segments, offset, kind.getValue());
 	}
 
 	private void setNotNullAt(int i) {

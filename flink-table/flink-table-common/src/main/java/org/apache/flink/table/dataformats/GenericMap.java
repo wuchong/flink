@@ -18,14 +18,17 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.types.logical.LogicalType;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A GenericMap is a map where all the keys have the same type, and all the values have the same type.
  * It can be considered as a wrapper class of the normal java map.
  */
+@PublicEvolving
 public class GenericMap implements BaseMap {
 
 	private static final long serialVersionUID = 1L;
@@ -46,6 +49,10 @@ public class GenericMap implements BaseMap {
 		return map;
 	}
 
+	public Map<?, ?> getJavaMap() {
+		return map;
+	}
+
 	@Override
 	public BaseArray keyArray() {
 		return null;
@@ -61,11 +68,20 @@ public class GenericMap implements BaseMap {
 	}
 
 	@Override
-	public String toString() {
-		return map.toString();
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		GenericMap that = (GenericMap) o;
+		return Objects.equals(map, that.map);
 	}
 
-	public Map<?, ?> getMap() {
-		return map;
+	@Override
+	public int hashCode() {
+		return Objects.hash(map);
+	}
+
+	@Override
+	public String toString() {
+		return map.toString();
 	}
 }

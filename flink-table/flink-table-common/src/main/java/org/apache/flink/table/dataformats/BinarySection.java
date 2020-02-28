@@ -17,12 +17,14 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**
  * Binary section of memory.
  */
+@Internal
 public class BinarySection implements BinaryFormat {
 
 	protected MemorySegment[] segments;

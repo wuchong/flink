@@ -18,12 +18,13 @@
 
 package org.apache.flink.table.dataformats;
 
-import static org.apache.flink.util.Preconditions.checkState;
+import org.apache.flink.annotation.PublicEvolving;
 
 /**
  * A GenericArray is an array where all the elements have the same type.
  * It can be considered as a wrapper class of the normal java array.
  */
+@PublicEvolving
 public class GenericArray implements BaseArray {
 
 	private static final long serialVersionUID = 1L;
@@ -85,12 +86,6 @@ public class GenericArray implements BaseArray {
 	@Override
 	public boolean isNullAt(int pos) {
 		return !isPrimitiveArray && ((Object[]) arr)[pos] == null;
-	}
-
-	@Override
-	public void setNullAt(int pos) {
-		checkState(!isPrimitiveArray, "Can't set null for primitive array");
-		((Object[]) arr)[pos] = null;
 	}
 
 	@Override
@@ -203,84 +198,7 @@ public class GenericArray implements BaseArray {
 		return (BaseMap) getObject(pos);
 	}
 
-	@Override
-	public void setBoolean(int pos, boolean value) {
-		if (isPrimitiveArray) {
-			((boolean[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setByte(int pos, byte value) {
-		if (isPrimitiveArray) {
-			((byte[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setShort(int pos, short value) {
-		if (isPrimitiveArray) {
-			((short[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setInt(int pos, int value) {
-		if (isPrimitiveArray) {
-			((int[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setLong(int pos, long value) {
-		if (isPrimitiveArray) {
-			((long[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setFloat(int pos, float value) {
-		if (isPrimitiveArray) {
-			((float[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setDouble(int pos, double value) {
-		if (isPrimitiveArray) {
-			((double[]) arr)[pos] = value;
-		} else {
-			setObject(pos, value);
-		}
-	}
-
-	@Override
-	public void setDecimal(int pos, Decimal value, int precision) {
-		setObject(pos, value);
-	}
-
-	@Override
-	public void setTimestamp(int pos, SqlTimestamp value, int precision) {
-		setObject(pos, value);
-	}
-
 	private Object getObject(int pos) {
 		return ((Object[]) arr)[pos];
-	}
-
-	private void setObject(int pos, Object value) {
-		((Object[]) arr)[pos] = value;
 	}
 }

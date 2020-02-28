@@ -18,24 +18,47 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
+
+@PublicEvolving
 public enum ChangelogKind {
 	/**
 	 * Insertion operation.
 	 */
-	INSERT,
+	INSERT(0),
 
 	/**
 	 * Previous content of an updated row.
 	 */
-	UPDATE_BEFORE,
+	UPDATE_BEFORE(1),
 
 	/**
 	 * New content of an updated row.
 	 */
-	UPDATE_AFTER,
+	UPDATE_AFTER(2),
 
 	/**
 	 * Deletion operation.
 	 */
-	DELETE
+	DELETE(3);
+
+	private final byte value;
+
+	ChangelogKind(int value) {
+		this.value = (byte) value;
+	}
+
+	public byte getValue() {
+		return value;
+	}
+
+	public static ChangelogKind valueOf(byte value) {
+		switch (value) {
+			case 0: return INSERT;
+			case 1: return UPDATE_BEFORE;
+			case 2: return UPDATE_AFTER;
+			case 3: return DELETE;
+			default: throw new IllegalArgumentException("Unsupported ChangelogKind value " + value);
+		}
+	}
 }

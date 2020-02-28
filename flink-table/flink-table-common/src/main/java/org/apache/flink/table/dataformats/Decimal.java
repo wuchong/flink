@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.utils.SegmentsUtil;
@@ -38,6 +39,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * - If decimalVal is set, it represents the whole decimal value
  * - Otherwise, the decimal value is longVal / (10 ** scale).
  */
+@PublicEvolving
 //@TypeInfo(DecimalTypeInfoFactory.class)
 public final class Decimal implements Comparable<Decimal>, Serializable {
 

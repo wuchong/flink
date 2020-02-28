@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.util.WrappingRuntimeException;
@@ -41,7 +42,8 @@ import java.io.IOException;
  * It can lazy the conversions as much as possible. Only when it is needed can it be converted
  * into the required form.
  */
-public abstract class LazyBinaryFormat<T> implements BinaryFormat {
+@Internal
+abstract class LazyBinaryFormat<T> implements BinaryFormat {
 
 	T javaObject;
 	BinarySection binarySection;

@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.table.utils.SegmentsUtil;
 import org.apache.flink.util.Preconditions;
@@ -36,6 +37,7 @@ import java.time.LocalTime;
  * holds the integral second and the milli-of-second. The nanoOfMillisecond holds the
  * nano-of-millisecond, which should between 0 - 999_999.
  */
+@PublicEvolving
 public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializable {
 
 	private static final long serialVersionUID = 1L;

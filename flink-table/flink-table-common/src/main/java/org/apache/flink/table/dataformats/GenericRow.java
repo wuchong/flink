@@ -17,6 +17,10 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
+
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 /**
  * A GenericRow can have arbitrary number of fields and contain a set of fields, which may all be
  * different types. The fields in GenericRow can be null.
@@ -24,15 +28,76 @@ package org.apache.flink.table.dataformats;
  * <p>The fields in the Row can be accessed by position (zero-based) {@link #getInt}.
  * And can update fields by {@link #setField(int, Object)}.
  *
- * <p>GenericRow is in principle serializable. However, it may contain non-serializable fields,
- * in which case serialization will fail.
+ * <p>GenericRow is Java serializable, and all internal data formats are Java serializable. However,
+ * in case of it contains a non-serializable generic fields, the Java serialization will fail.
  */
-public final class GenericRow extends ObjectArrayRow {
+@PublicEvolving
+public final class GenericRow implements BaseRow {
 
 	private static final long serialVersionUID = 1L;
 
+	/** The array to store the actual internal format values. */
+	private final Object[] fields;
+	/** The changelog kind of this row. */
+	private ChangelogKind kind;
+
+	/**
+	 * Create a new GenericRow instance.
+	 * @param arity The number of fields in the GenericRow
+	 */
 	public GenericRow(int arity) {
-		super(arity);
+		this.fields = new Object[arity];
+		this.kind = ChangelogKind.INSERT; // INSERT as default
+	}
+
+	/**
+	 * Sets the field at the specified ordinal.
+	 *
+	 * <p>Note: the given field value must in internal format, otherwise the {@link GenericRow} is
+	 * corrupted, and may throw exception when processing. See the description of {@link BaseRow}
+	 * for more information about internal format.
+	 *
+	 * @param ordinal The ordinal of the field, 0-based.
+	 * @param value The internal format value to be assigned to the field at the specified ordinal.
+	 * @throws IndexOutOfBoundsException Thrown, if the ordinal is negative, or equal to, or larger than the number of fields.
+	 */
+	public void setField(int ordinal, Object value) {
+		this.fields[ordinal] = value;
+	}
+
+	/**
+	 * Gets the field at the specified ordinal.
+	 *
+	 * <p>Note: the returned value is in internal format. See the description of {@link BaseRow}
+	 * for more information about internal format.
+	 *
+	 * @param ordinal The ordinal of the field, 0-based.
+	 * @return The field at the specified position.
+	 * @throws IndexOutOfBoundsException Thrown, if the ordinal is negative, or equal to, or larger than the number of fields.
+	 */
+	public Object getField(int ordinal) {
+		return this.fields[ordinal];
+	}
+
+	@Override
+	public int getArity() {
+		return fields.length;
+	}
+
+	@Override
+	public ChangelogKind getChangelogKind() {
+		return kind;
+	}
+
+	@Override
+	public void setChangelogKind(ChangelogKind kind) {
+		checkNotNull(kind);
+		this.kind = kind;
+	}
+
+	@Override
+	public boolean isNullAt(int ordinal) {
+		return this.fields[ordinal] == null;
 	}
 
 	@Override
@@ -71,50 +136,54 @@ public final class GenericRow extends ObjectArrayRow {
 	}
 
 	@Override
-	public void setBoolean(int ordinal, boolean value) {
-		this.fields[ordinal] = value;
+	public BinaryString getString(int ordinal) {
+		return (BinaryString) this.fields[ordinal];
 	}
 
 	@Override
-	public void setByte(int ordinal, byte value) {
-		this.fields[ordinal] = value;
+	public Decimal getDecimal(int ordinal, int precision, int scale) {
+		return (Decimal) this.fields[ordinal];
 	}
 
 	@Override
-	public void setShort(int ordinal, short value) {
-		this.fields[ordinal] = value;
+	public SqlTimestamp getTimestamp(int ordinal, int precision) {
+		return (SqlTimestamp) this.fields[ordinal];
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> BinaryGeneric<T> getGeneric(int ordinal) {
+		return (BinaryGeneric<T>) this.fields[ordinal];
 	}
 
 	@Override
-	public void setInt(int ordinal, int value) {
-		this.fields[ordinal] = value;
+	public byte[] getBinary(int ordinal) {
+		return new byte[0];
 	}
 
 	@Override
-	public void setLong(int ordinal, long value) {
-		this.fields[ordinal] = value;
+	public BaseArray getArray(int ordinal) {
+		return (BaseArray) this.fields[ordinal];
 	}
 
 	@Override
-	public void setFloat(int ordinal, float value) {
-		this.fields[ordinal] = value;
+	public BaseMap getMap(int ordinal) {
+		return (BaseMap) this.fields[ordinal];
 	}
 
 	@Override
-	public void setDouble(int ordinal, double value) {
-		this.fields[ordinal] = value;
+	public BaseRow getRow(int ordinal, int numFields) {
+		return (BaseRow) this.fields[ordinal];
 	}
 
-	public void setField(int ordinal, Object value) {
-		this.fields[ordinal] = value;
-	}
-
-	public Object getField(int ordinal) {
-		return this.fields[ordinal];
-	}
+	// ----------------------------------------------------------------------------------------
+	// Utilities
+	// ----------------------------------------------------------------------------------------
 
 	/**
-	 * Creates a GenericRow with the given internal format values.
+	 * Creates a GenericRow with the given internal format values and a default
+	 * {@link ChangelogKind#INSERT}.
+	 *
 	 * @param values internal format values
 	 */
 	public static GenericRow of(Object... values) {

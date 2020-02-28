@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
@@ -30,6 +31,7 @@ import java.io.Serializable;
 /**
  * Internal format to generic.
  */
+@PublicEvolving
 public final class BinaryGeneric<T> extends LazyBinaryFormat<T> implements Serializable {
 
 	private static final long serialVersionUID = 1L;

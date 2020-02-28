@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -54,7 +55,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * The difference is that BinaryRow is placed on a discontinuous memory, and the variable length
  * type can also be placed on a fixed length area (If it's short enough).
  */
-public final class BinaryRow extends BinarySection implements BaseRow {
+@Internal
+public final class BinaryRow extends BinarySection implements BaseRow, TypedSetters {
 	private static final long serialVersionUID = 1L;
 
 	public static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -127,6 +129,17 @@ public final class BinaryRow extends BinarySection implements BaseRow {
 	@Override
 	public int getArity() {
 		return arity;
+	}
+
+	@Override
+	public ChangelogKind getChangelogKind() {
+		byte header = segments[0].get(offset);
+		return ChangelogKind.valueOf(header);
+	}
+
+	@Override
+	public void setChangelogKind(ChangelogKind kind) {
+		segments[0].put(offset, kind.getValue());
 	}
 
 	public void setTotalSize(int sizeInBytes) {

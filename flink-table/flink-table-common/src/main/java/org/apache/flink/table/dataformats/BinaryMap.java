@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.dataformats;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -34,6 +35,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  *
  * <p>{@code BinaryMap} are influenced by Apache Spark UnsafeMapData.
  */
+@Internal
 public final class BinaryMap extends BinarySection implements BaseMap {
 
 	private static final long serialVersionUID = 1L;

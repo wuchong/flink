@@ -394,7 +394,7 @@ public abstract class AbstractBinaryWriter implements BinaryWriter {
 			if (from.isNullAt(i)) {
 				reuseArrayWriter.setNullAt(i, elementType);
 			} else {
-				BinaryWriter.write(reuseArrayWriter, i, TypedGetterSetters.get(from, i, elementType), elementType);
+				BinaryWriter.write(reuseArrayWriter, i, BaseArray.get(from, i, elementType), elementType);
 			}
 		}
 		reuseArrayWriter.complete();
