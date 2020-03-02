@@ -56,6 +56,12 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<BaseRow> {
 	private final String[] fieldNames;
 	private final LogicalType[] logicalTypes;
 
+	public BaseRowTypeInfo(RowType rowType) {
+		this(
+			rowType.getFields().stream().map(RowType.RowField::getType).toArray(LogicalType[]::new),
+			rowType.getFieldNames().toArray(new String[0]));
+	}
+
 	public BaseRowTypeInfo(LogicalType... logicalTypes) {
 		this(logicalTypes, generateDefaultFieldNames(logicalTypes.length));
 	}
