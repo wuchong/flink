@@ -20,6 +20,8 @@ package org.apache.flink.table.dataformats;
 
 import org.apache.flink.annotation.PublicEvolving;
 
+import java.util.Objects;
+
 /**
  * A GenericArray is an array where all the elements have the same type.
  * It can be considered as a wrapper class of the normal java array.
@@ -200,5 +202,20 @@ public class GenericArray implements BaseArray {
 
 	private Object getObject(int pos) {
 		return ((Object[]) arr)[pos];
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		GenericArray that = (GenericArray) o;
+		return numElements == that.numElements &&
+			isPrimitiveArray == that.isPrimitiveArray &&
+			Objects.equals(arr, that.arr);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(arr, numElements, isPrimitiveArray);
 	}
 }
