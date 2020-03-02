@@ -15,8 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformats.writer;
 
+import org.apache.flink.annotation.Internal;
+import org.apache.flink.table.dataformats.BaseArray;
+import org.apache.flink.table.dataformats.BaseMap;
+import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.BinaryGeneric;
+import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;
@@ -32,6 +40,7 @@ import org.apache.flink.table.types.logical.TimestampType;
  * 2. Write each field by writeXX or setNullAt. (Same field can not be written repeatedly.)
  * 3. Invoke {@link #complete()}.
  */
+@Internal
 public interface BinaryWriter {
 
 	/**

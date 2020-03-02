@@ -18,8 +18,10 @@
 package org.apache.flink.table.dataformats;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.typeinfo.TypeInfo;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.table.types.logical.DecimalType;
+import org.apache.flink.table.typeutils.DecimalTypeInfoFactory;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.Serializable;
@@ -40,7 +42,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * - Otherwise, the decimal value is longVal / (10 ** scale).
  */
 @PublicEvolving
-//@TypeInfo(DecimalTypeInfoFactory.class)
+@TypeInfo(DecimalTypeInfoFactory.class)
 public final class Decimal implements Comparable<Decimal>, Serializable {
 
 	private static final long serialVersionUID = 1L;

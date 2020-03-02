@@ -19,6 +19,9 @@
 package org.apache.flink.table.types.logical.utils;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.table.dataformats.BaseArray;
 import org.apache.flink.table.dataformats.BaseMap;
 import org.apache.flink.table.dataformats.BaseRow;
@@ -89,6 +92,17 @@ public final class LogicalTypeUtils {
 			default:
 				throw new RuntimeException("Not support type: " + type);
 		}
+	}
+
+	/**
+	 * Get internal(sql engine execution data formats) {@link TypeSerializer} for {@link LogicalType}.
+	 */
+	public static TypeSerializer<?> internalTypeSerializer(LogicalType type, ExecutionConfig conf) {
+		return internalTypeInfo(type).createSerializer(conf);
+	}
+
+	public static TypeInformation<?> internalTypeInfo(LogicalType type) {
+		return null;
 	}
 
 	// --------------------------------------------------------------------------------------------
