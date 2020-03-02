@@ -15,15 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformats.writer;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
+import org.apache.flink.table.dataformats.BinaryArray;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**
  * Writer for binary array. See {@link BinaryArray}.
  */
+@Internal
 public final class BinaryArrayWriter extends AbstractBinaryWriter {
 
 	private final int nullBitsSizeInBytes;

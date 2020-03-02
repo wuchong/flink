@@ -26,7 +26,7 @@ import org.apache.flink.table.utils.SegmentsUtil;
  * Binary format spanning {@link MemorySegment}s.
  */
 @Internal
-interface BinaryFormat {
+public interface BinaryFormat {
 	/**
 	 * It decides whether to put data in FixLenPart or VarLenPart. See more in {@link BinaryRow}.
 	 *

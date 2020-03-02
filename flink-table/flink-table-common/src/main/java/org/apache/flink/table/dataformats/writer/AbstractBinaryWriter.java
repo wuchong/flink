@@ -15,12 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformats.writer;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
+import org.apache.flink.table.dataformats.BaseArray;
+import org.apache.flink.table.dataformats.BaseMap;
+import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.BinaryArray;
+import org.apache.flink.table.dataformats.BinaryFormat;
+import org.apache.flink.table.dataformats.BinaryGeneric;
+import org.apache.flink.table.dataformats.BinaryRow;
+import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;
@@ -47,7 +58,8 @@ import java.util.Map;
  *
  * <p>If want to reuse this writer, please invoke {@link #reset()} first.
  */
-public abstract class AbstractBinaryWriter implements BinaryWriter {
+@Internal
+abstract class AbstractBinaryWriter implements BinaryWriter {
 
 	protected MemorySegment segment;
 

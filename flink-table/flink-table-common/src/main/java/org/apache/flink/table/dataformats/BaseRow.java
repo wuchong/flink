@@ -18,6 +18,11 @@
 package org.apache.flink.table.dataformats;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.types.logical.DecimalType;
+import org.apache.flink.table.types.logical.LocalZonedTimestampType;
+import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.TimestampType;
 
 import java.io.Serializable;
 
@@ -139,4 +144,55 @@ public interface BaseRow extends Serializable {
 	 * Get row value, internal format is BaseRow.
 	 */
 	BaseRow getRow(int ordinal, int numFields);
+
+	// ------------------------------------------------------------------------------------------
+
+	static Object get(BaseRow row, int ordinal, LogicalType type) {
+		switch (type.getTypeRoot()) {
+			case BOOLEAN:
+				return row.getBoolean(ordinal);
+			case TINYINT:
+				return row.getByte(ordinal);
+			case SMALLINT:
+				return row.getShort(ordinal);
+			case INTEGER:
+			case DATE:
+			case TIME_WITHOUT_TIME_ZONE:
+			case INTERVAL_YEAR_MONTH:
+				return row.getInt(ordinal);
+			case BIGINT:
+			case INTERVAL_DAY_TIME:
+				return row.getLong(ordinal);
+			case TIMESTAMP_WITHOUT_TIME_ZONE:
+				TimestampType timestampType = (TimestampType) type;
+				return row.getTimestamp(ordinal, timestampType.getPrecision());
+			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+				LocalZonedTimestampType lzTs = (LocalZonedTimestampType) type;
+				return row.getTimestamp(ordinal, lzTs.getPrecision());
+			case FLOAT:
+				return row.getFloat(ordinal);
+			case DOUBLE:
+				return row.getDouble(ordinal);
+			case CHAR:
+			case VARCHAR:
+				return row.getString(ordinal);
+			case DECIMAL:
+				DecimalType decimalType = (DecimalType) type;
+				return row.getDecimal(ordinal, decimalType.getPrecision(), decimalType.getScale());
+			case ARRAY:
+				return row.getArray(ordinal);
+			case MAP:
+			case MULTISET:
+				return row.getMap(ordinal);
+			case ROW:
+				return row.getRow(ordinal, ((RowType) type).getFieldCount());
+			case BINARY:
+			case VARBINARY:
+				return row.getBinary(ordinal);
+			case RAW:
+				return row.getGeneric(ordinal);
+			default:
+				throw new RuntimeException("Not support type: " + type);
+		}
+	}
 }

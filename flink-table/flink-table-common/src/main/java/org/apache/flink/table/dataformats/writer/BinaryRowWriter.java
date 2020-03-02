@@ -15,14 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformats.writer;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
+import org.apache.flink.table.dataformats.BinaryRow;
+import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**
  * Writer for {@link BinaryRow}.
  */
+@Internal
 public final class BinaryRowWriter extends AbstractBinaryWriter {
 
 	private final int nullBitsSizeInBytes;
@@ -68,8 +72,8 @@ public final class BinaryRowWriter extends AbstractBinaryWriter {
 		SegmentsUtil.bitSet(segment, 0, pos + BinaryRow.HEADER_SIZE_IN_BITS);
 	}
 
-	public void writeHeader(byte header) {
-		segment.put(0, header);
+	public void writeChangelogKind(ChangelogKind kind) {
+		segment.put(0, kind.getValue());
 	}
 
 	@Override

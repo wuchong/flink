@@ -18,9 +18,11 @@
 package org.apache.flink.table.dataformats;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.typeinfo.TypeInfo;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
+import org.apache.flink.table.typeutils.BinaryStringTypeInfoFactory;
 import org.apache.flink.table.utils.SegmentsUtil;
 import org.apache.flink.table.utils.StringUtf8Utils;
 
@@ -41,7 +43,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * <p>{@code BinaryString} are influenced by Apache Spark UTF8String.
  */
 @PublicEvolving
-//@TypeInfo(BinaryStringTypeInfoFactory.class)
+@TypeInfo(BinaryStringTypeInfoFactory.class)
 public final class BinaryString extends LazyBinaryFormat<String> implements Comparable<BinaryString>, Serializable {
 
 	private static final long serialVersionUID = 1L;
