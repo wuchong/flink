@@ -18,37 +18,27 @@
 
 package org.apache.flink.table.connectors;
 
+import org.apache.flink.api.common.io.InputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
+
 /**
- * Minimal abstraction for all kind of rows.
- *
- * <p>Note: This abstraction does not have concrete accessor methods. Use provided converters instead.
+ * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
  */
-public interface ChangelogRow {
+public interface InputFormatReader extends SupportsChangelogReading.ChangelogReader {
 
-	Kind getKind();
+	InputFormat<BaseRow, ?> createInputFormat();
 
-	int getArity();
+	static InputFormatReader of(InputFormat<BaseRow, ?> inputFormat) {
+		return new InputFormatReader() {
+			@Override
+			public InputFormat<BaseRow, ?> createInputFormat() {
+				return inputFormat;
+			}
 
-	enum Kind {
-
-		/**
-		 * Insertion operation.
-		 */
-		INSERT,
-
-		/**
-		 * Previous content of an updated row.
-		 */
-		UPDATE_BEFORE,
-
-		/**
-		 * New content of an updated row.
-		 */
-		UPDATE_AFTER,
-
-		/**
-		 * Deletion operation.
-		 */
-		DELETE
+			@Override
+			public boolean isBounded() {
+				return true;
+			}
+		};
 	}
 }

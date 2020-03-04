@@ -19,18 +19,19 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
  * {@link SupportsChangelogReading} by using a {@link SourceFunction} during runtime.
  */
 interface SourceFunctionReader extends SupportsChangelogReading.ChangelogReader {
 
-	SourceFunction<ChangelogRow> createSourceFunction();
+	SourceFunction<BaseRow> createSourceFunction();
 
-	static SourceFunctionReader of(SourceFunction<ChangelogRow> sourceFunction, boolean isBounded) {
+	static SourceFunctionReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
 		return new SourceFunctionReader() {
 			@Override
-			public SourceFunction<ChangelogRow> createSourceFunction() {
+			public SourceFunction<BaseRow> createSourceFunction() {
 				return sourceFunction;
 			}
 

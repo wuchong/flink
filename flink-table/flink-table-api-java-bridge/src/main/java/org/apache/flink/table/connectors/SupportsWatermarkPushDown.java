@@ -21,6 +21,7 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
+import org.apache.flink.table.dataformats.BaseRow;
 
 import javax.annotation.Nullable;
 
@@ -40,22 +41,22 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
 	final class WatermarkAssigner {
 
-		private @Nullable AssignerWithPeriodicWatermarks<ChangelogRow> periodicAssigner;
+		private @Nullable AssignerWithPeriodicWatermarks<BaseRow> periodicAssigner;
 
-		private @Nullable AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedAssigner;
+		private @Nullable AssignerWithPunctuatedWatermarks<BaseRow> punctuatedAssigner;
 
 		private WatermarkAssigner(
-				@Nullable AssignerWithPeriodicWatermarks<ChangelogRow> periodicAssigner,
-				@Nullable AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedAssigner) {
+				@Nullable AssignerWithPeriodicWatermarks<BaseRow> periodicAssigner,
+				@Nullable AssignerWithPunctuatedWatermarks<BaseRow> punctuatedAssigner) {
 			this.periodicAssigner = periodicAssigner;
 			this.punctuatedAssigner = punctuatedAssigner;
 		}
 
-		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<ChangelogRow> periodicWatermarks) {
+		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<BaseRow> periodicWatermarks) {
 			return new WatermarkAssigner(periodicWatermarks, null);
 		}
 
-		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<ChangelogRow> punctuatedWatermarks) {
+		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<BaseRow> punctuatedWatermarks) {
 			return new WatermarkAssigner(null, punctuatedWatermarks);
 		}
 
@@ -67,11 +68,11 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 			return periodicAssigner == null && punctuatedAssigner == null;
 		}
 
-		public Optional<AssignerWithPeriodicWatermarks<ChangelogRow>> getPeriodicAssigner() {
+		public Optional<AssignerWithPeriodicWatermarks<BaseRow>> getPeriodicAssigner() {
 			return Optional.ofNullable(periodicAssigner);
 		}
 
-		public Optional<AssignerWithPunctuatedWatermarks<ChangelogRow>> getPunctuatedAssigner() {
+		public Optional<AssignerWithPunctuatedWatermarks<BaseRow>> getPunctuatedAssigner() {
 			return Optional.ofNullable(punctuatedAssigner);
 		}
 	}

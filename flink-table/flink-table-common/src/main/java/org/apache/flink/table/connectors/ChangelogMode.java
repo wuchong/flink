@@ -19,6 +19,7 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.util.Preconditions;
 
 import java.util.Collections;
@@ -31,9 +32,9 @@ import java.util.Set;
 @PublicEvolving
 public final class ChangelogMode {
 
-	private final Set<ChangelogRow.Kind> kinds;
+	private final Set<ChangelogKind> kinds;
 
-	private ChangelogMode(Set<ChangelogRow.Kind> kinds) {
+	private ChangelogMode(Set<ChangelogKind> kinds) {
 		Preconditions.checkArgument(kinds.size() > 0, "At least one kind of row should be contained in a changelog.");
 		this.kinds = Collections.unmodifiableSet(kinds);
 	}
@@ -42,11 +43,11 @@ public final class ChangelogMode {
 		return new Builder();
 	}
 
-	public Set<ChangelogRow.Kind> getSupportedKinds() {
+	public Set<ChangelogKind> getSupportedKinds() {
 		return kinds;
 	}
 
-	public boolean supportsKind(ChangelogRow.Kind kind) {
+	public boolean supportsKind(ChangelogKind kind) {
 		return kinds.contains(kind);
 	}
 
@@ -54,13 +55,13 @@ public final class ChangelogMode {
 
 	public static class Builder {
 
-		private final Set<ChangelogRow.Kind> kinds = new HashSet<>();
+		private final Set<ChangelogKind> kinds = new HashSet<>();
 
 		public Builder() {
 			// default constructor to allow a fluent definition
 		}
 
-		public Builder addSupportedKind(ChangelogRow.Kind kind) {
+		public Builder addSupportedKind(ChangelogKind kind) {
 			this.kinds.add(kind);
 			return this;
 		}

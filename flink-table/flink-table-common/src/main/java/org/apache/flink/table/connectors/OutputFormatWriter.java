@@ -18,26 +18,17 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.api.common.io.InputFormat;
+import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
+ * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
  */
-public interface InputFormatTableReader extends SupportsChangelogReading.ChangelogReader {
+public interface OutputFormatWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	InputFormat<ChangelogRow, ?> createInputFormat();
+	OutputFormat<BaseRow> createOutputFunction();
 
-	static InputFormatTableReader of(InputFormat<ChangelogRow, ?> inputFormat) {
-		return new InputFormatTableReader() {
-			@Override
-			public InputFormat<ChangelogRow, ?> createInputFormat() {
-				return inputFormat;
-			}
-
-			@Override
-			public boolean isBounded() {
-				return true;
-			}
-		};
+	static OutputFormatWriter of(OutputFormat<BaseRow> outputFormat) {
+		return () -> outputFormat;
 	}
 }
