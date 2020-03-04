@@ -25,7 +25,9 @@ import org.apache.flink.table.dataformat.vector.VectorizedColumnBatch;
  * Columnar row to support access to vector column data. It is a row view in {@link VectorizedColumnBatch}.
  */
 public final class ColumnarRow implements BaseRow {
-	private byte header;
+	private static final long serialVersionUID = 1L;
+
+	private ChangelogKind kind;
 	private VectorizedColumnBatch vectorizedColumnBatch;
 	private int rowId;
 
@@ -51,13 +53,13 @@ public final class ColumnarRow implements BaseRow {
 	}
 
 	@Override
-	public byte getHeader() {
-		return header;
+	public ChangelogKind getChangelogKind() {
+		return kind;
 	}
 
 	@Override
-	public void setHeader(byte header) {
-		this.header = header;
+	public void setChangelogKind(ChangelogKind kind) {
+		this.kind = kind;
 	}
 
 	@Override
@@ -154,56 +156,6 @@ public final class ColumnarRow implements BaseRow {
 	public BaseMap getMap(int ordinal) {
 		// TODO
 		throw new UnsupportedOperationException("Map is not supported.");
-	}
-
-	@Override
-	public void setNullAt(int ordinal) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setBoolean(int ordinal, boolean value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setByte(int ordinal, byte value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setShort(int ordinal, short value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setInt(int ordinal, int value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setLong(int ordinal, long value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setFloat(int pos, float value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setDouble(int ordinal, double value) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setDecimal(int ordinal, Decimal value, int precision) {
-		throw new UnsupportedOperationException("Not support the operation!");
-	}
-
-	@Override
-	public void setTimestamp(int ordinal, SqlTimestamp value, int precision) {
-		throw new UnsupportedOperationException("Not support the operation!");
 	}
 
 	@Override

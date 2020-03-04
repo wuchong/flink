@@ -31,6 +31,9 @@ import org.apache.flink.table.runtime.operators.join.stream.state.OuterJoinRecor
 import org.apache.flink.table.runtime.operators.join.stream.state.OuterJoinRecordStateViews;
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
 
+import static org.apache.flink.table.dataformat.ChangelogKind.INSERT;
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
+
 /**
  * Streaming unbounded Join operator which supports INNER/LEFT/RIGHT/FULL JOIN.
  */
@@ -193,7 +196,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 				OuterJoinRecordStateView inputSideOuterStateView = (OuterJoinRecordStateView) inputSideStateView;
 				if (associatedRecords.isEmpty()) { // there is no matched rows on the other side
 					// send +[record+null]
-					outRow.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+					outRow.setChangelogKind(INSERT);
 					outputNullPadding(input, inputIsLeft);
 					// state.add(record, 0)
 					inputSideOuterStateView.addRecord(input, 0);
@@ -205,7 +208,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 							// if the matched num in the matched rows == 0
 							if (outerRecord.numOfAssociations == 0) {
 								// send -[null+other]
-								outRow.setHeader(BaseRowUtil.RETRACT_MSG);
+								outRow.setChangelogKind(DELETE);
 								outputNullPadding(other, !inputIsLeft);
 							} // ignore matched number > 0
 							// otherState.update(other, old + 1)
@@ -213,7 +216,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 						}
 					}
 					// send +[record+other]s
-					outRow.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+					outRow.setChangelogKind(INSERT);
 					for (BaseRow other : associatedRecords.getRecords()) {
 						output(input, other, inputIsLeft);
 					}
@@ -229,7 +232,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 						for (OuterRecord outerRecord : associatedRecords.getOuterRecords()) {
 							if (outerRecord.numOfAssociations == 0) { // if the matched num in the matched rows == 0
 								// send -[null+other]
-								outRow.setHeader(BaseRowUtil.RETRACT_MSG);
+								outRow.setChangelogKind(DELETE);
 								outputNullPadding(outerRecord.record, !inputIsLeft);
 							}
 							// otherState.update(other, old + 1)
@@ -237,7 +240,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 						}
 					}
 					// send +[record+other]s
-					outRow.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+					outRow.setChangelogKind(DELETE);
 					for (BaseRow other : associatedRecords.getRecords()) {
 						output(input, other, inputIsLeft);
 					}
@@ -246,18 +249,18 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 			}
 		} else { // input record is retract
 			// state.retract(record)
-			input.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+			input.setChangelogKind(INSERT);
 			inputSideStateView.retractRecord(input);
 			if (associatedRecords.isEmpty()) { // there is no matched rows on the other side
 				if (inputIsOuter) { // input side is outer
 					// send -[record+null]
-					outRow.setHeader(BaseRowUtil.RETRACT_MSG);
+					outRow.setChangelogKind(DELETE);
 					outputNullPadding(input, inputIsLeft);
 				}
 				// nothing to do when input side is not outer
 			} else { // there are matched rows on the other side
 				// send -[record+other]s
-				outRow.setHeader(BaseRowUtil.RETRACT_MSG);
+				outRow.setChangelogKind(DELETE);
 				for (BaseRow other : associatedRecords.getRecords()) {
 					output(input, other, inputIsLeft);
 				}
@@ -267,7 +270,7 @@ public class StreamingJoinOperator extends AbstractStreamingJoinOperator {
 					for (OuterRecord outerRecord : associatedRecords.getOuterRecords()) {
 						if (outerRecord.numOfAssociations == 1) {
 							// send +[null+other]
-							outRow.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+							outRow.setChangelogKind(INSERT);
 							outputNullPadding(outerRecord.record, !inputIsLeft);
 						} // nothing else to do when number of associations > 1
 						// otherState.update(other, old - 1)

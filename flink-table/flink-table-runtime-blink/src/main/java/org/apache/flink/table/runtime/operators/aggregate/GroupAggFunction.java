@@ -33,8 +33,8 @@ import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.util.Collector;
 
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.ACCUMULATE_MSG;
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.RETRACT_MSG;
+import static org.apache.flink.table.dataformat.ChangelogKind.INSERT;
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
 import static org.apache.flink.table.dataformat.util.BaseRowUtil.isAccumulateMsg;
 
 /**
@@ -184,13 +184,13 @@ public class GroupAggFunction extends KeyedProcessFunctionWithCleanupState<BaseR
 					// retract previous result
 					if (generateRetraction) {
 						// prepare retraction message for previous row
-						resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+						resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 						out.collect(resultRow);
 					}
 				}
 			}
 			// emit the new result
-			resultRow.replace(currentKey, newAggValue).setHeader(ACCUMULATE_MSG);
+			resultRow.replace(currentKey, newAggValue).setChangelogKind(INSERT);
 			out.collect(resultRow);
 
 		} else {
@@ -198,7 +198,7 @@ public class GroupAggFunction extends KeyedProcessFunctionWithCleanupState<BaseR
 			// sent out a delete message
 			if (!firstRow) {
 				// prepare delete message for previous row
-				resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+				resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 				out.collect(resultRow);
 			}
 			// and clear all state

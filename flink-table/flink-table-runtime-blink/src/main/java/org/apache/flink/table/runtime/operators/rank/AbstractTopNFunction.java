@@ -27,6 +27,7 @@ import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Gauge;
 import org.apache.flink.streaming.api.operators.KeyContext;
 import org.apache.flink.table.dataformat.BaseRow;
+import org.apache.flink.table.dataformat.ChangelogKind;
 import org.apache.flink.table.dataformat.GenericRow;
 import org.apache.flink.table.dataformat.JoinedRow;
 import org.apache.flink.table.dataformat.util.BaseRowUtil;
@@ -262,19 +263,19 @@ public abstract class AbstractTopNFunction extends KeyedProcessFunctionWithClean
 	 */
 	protected void delete(Collector<BaseRow> out, BaseRow inputRow, long rank) {
 		if (isInRankRange(rank)) {
-			out.collect(createOutputRow(inputRow, rank, BaseRowUtil.RETRACT_MSG));
+			out.collect(createOutputRow(inputRow, rank, ChangelogKind.DELETE));
 		}
 	}
 
 	protected void collect(Collector<BaseRow> out, BaseRow inputRow, long rank) {
 		if (isInRankRange(rank)) {
-			out.collect(createOutputRow(inputRow, rank, BaseRowUtil.ACCUMULATE_MSG));
+			out.collect(createOutputRow(inputRow, rank, ChangelogKind.INSERT));
 		}
 	}
 
 	protected void retract(Collector<BaseRow> out, BaseRow inputRow, long rank) {
 		if (generateRetraction && isInRankRange(rank)) {
-			out.collect(createOutputRow(inputRow, rank, BaseRowUtil.RETRACT_MSG));
+			out.collect(createOutputRow(inputRow, rank, ChangelogKind.DELETE));
 		}
 	}
 
@@ -291,16 +292,16 @@ public abstract class AbstractTopNFunction extends KeyedProcessFunctionWithClean
 		return rankStart > 1;
 	}
 
-	private BaseRow createOutputRow(BaseRow inputRow, long rank, byte header) {
+	private BaseRow createOutputRow(BaseRow inputRow, long rank, ChangelogKind kind) {
 		if (outputRankNumber) {
 			GenericRow rankRow = new GenericRow(1);
 			rankRow.setField(0, rank);
 
 			outputRow.replace(inputRow, rankRow);
-			outputRow.setHeader(header);
+			outputRow.setChangelogKind(kind);
 			return outputRow;
 		} else {
-			inputRow.setHeader(header);
+			inputRow.setChangelogKind(kind);
 			return inputRow;
 		}
 	}

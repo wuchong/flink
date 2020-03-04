@@ -153,7 +153,7 @@ public class TemporalRowTimeJoinOperator
 			TIMERS_STATE_NAME, VoidNamespaceSerializer.INSTANCE, this);
 		collector = new TimestampedCollector<>(output);
 		outRow = new JoinedRow();
-		outRow.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+		outRow.setChangelogKind(INSERT);
 	}
 
 	@Override

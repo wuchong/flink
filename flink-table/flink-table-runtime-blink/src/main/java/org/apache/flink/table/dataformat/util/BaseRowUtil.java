@@ -19,8 +19,8 @@
 package org.apache.flink.table.dataformat.util;
 
 import org.apache.flink.table.dataformat.BaseRow;
+import org.apache.flink.table.dataformat.ChangelogKind;
 import org.apache.flink.table.dataformat.GenericRow;
-import org.apache.flink.table.dataformat.TypeGetterSetters;
 import org.apache.flink.table.types.logical.LogicalType;
 
 /**
@@ -28,31 +28,21 @@ import org.apache.flink.table.types.logical.LogicalType;
  */
 public final class BaseRowUtil {
 
-	/**
-	 * Indicates the row as an accumulate message.
-	 */
-	public static final byte ACCUMULATE_MSG = 0;
-
-	/**
-	 * Indicates the row as a retraction message.
-	 */
-	public static final byte RETRACT_MSG = 1;
-
 	public static boolean isAccumulateMsg(BaseRow baseRow) {
-		return baseRow.getHeader() == ACCUMULATE_MSG;
+		return baseRow.getChangelogKind() == ChangelogKind.INSERT;
 	}
 
 	public static boolean isRetractMsg(BaseRow baseRow) {
-		return baseRow.getHeader() == RETRACT_MSG;
+		return baseRow.getChangelogKind() == ChangelogKind.DELETE;
 	}
 
 	public static BaseRow setAccumulate(BaseRow baseRow) {
-		baseRow.setHeader(ACCUMULATE_MSG);
+		baseRow.setChangelogKind(ChangelogKind.INSERT);
 		return baseRow;
 	}
 
 	public static BaseRow setRetract(BaseRow baseRow) {
-		baseRow.setHeader(RETRACT_MSG);
+		baseRow.setChangelogKind(ChangelogKind.DELETE);
 		return baseRow;
 	}
 
@@ -63,12 +53,12 @@ public final class BaseRowUtil {
 			return (GenericRow) baseRow;
 		} else {
 			GenericRow row = new GenericRow(baseRow.getArity());
-			row.setHeader(baseRow.getHeader());
+			row.setChangelogKind(baseRow.getChangelogKind());
 			for (int i = 0; i < row.getArity(); i++) {
 				if (baseRow.isNullAt(i)) {
 					row.setField(i, null);
 				} else {
-					row.setField(i, TypeGetterSetters.get(baseRow, i, types[i]));
+					row.setField(i, BaseRow.get(baseRow, i, types[i]));
 				}
 			}
 			return row;

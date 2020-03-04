@@ -33,7 +33,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * has a possibility to cross the boundary of a segment, while the fixed-length part of {@link BinaryRow}
  * must fit into its first memory segment.
  */
-public final class NestedRow extends BinarySection implements BaseRow {
+public final class NestedRow extends BinarySection implements BaseRow, TypedSetters {
+	private static final long serialVersionUID = 1L;
 
 	private final int arity;
 	private final int nullBitsSizeInBytes;
@@ -68,13 +69,13 @@ public final class NestedRow extends BinarySection implements BaseRow {
 	}
 
 	@Override
-	public byte getHeader() {
-		return SegmentsUtil.getByte(segments, offset);
+	public ChangelogKind getChangelogKind() {
+		return ChangelogKind.valueOf(SegmentsUtil.getByte(segments, offset));
 	}
 
 	@Override
-	public void setHeader(byte header) {
-		SegmentsUtil.setByte(segments, offset, header);
+	public void setChangelogKind(ChangelogKind kind) {
+		SegmentsUtil.setByte(segments, offset, kind.getValue());
 	}
 
 	private void setNotNullAt(int i) {

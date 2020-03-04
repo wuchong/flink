@@ -18,6 +18,9 @@
 package org.apache.flink.table.dataformat;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.util.StringUtils;
+
+import java.util.Arrays;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -174,6 +177,37 @@ public final class GenericRow implements BaseRow {
 	@Override
 	public BaseRow getRow(int ordinal, int numFields) {
 		return (BaseRow) this.fields[ordinal];
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		sb.append(String.format("%1$-13s", kind.toString()));
+		sb.append("|");
+		for (int i = 0; i < fields.length; i++) {
+			if (i != 0) {
+				sb.append(",");
+			}
+			sb.append(StringUtils.arrayAwareToString(fields[i]));
+		}
+		sb.append(")");
+		return sb.toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * getChangelogKind().hashCode() + Arrays.hashCode(fields);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof GenericRow) {
+			GenericRow other = (GenericRow) o;
+			return kind == other.kind && Arrays.equals(fields, other.fields);
+		} else {
+			return false;
+		}
 	}
 
 	// ----------------------------------------------------------------------------------------

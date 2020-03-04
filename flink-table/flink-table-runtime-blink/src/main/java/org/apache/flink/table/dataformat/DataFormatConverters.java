@@ -29,6 +29,8 @@ import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 import org.apache.flink.api.java.typeutils.TupleTypeInfoBase;
 import org.apache.flink.api.java.typeutils.runtime.TupleSerializerBase;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.dataformat.writer.BinaryArrayWriter;
+import org.apache.flink.table.dataformat.writer.BinaryWriter;
 import org.apache.flink.table.runtime.functions.SqlDateTimeUtils;
 import org.apache.flink.table.runtime.types.InternalSerializers;
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter;
@@ -896,7 +898,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(int[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -923,7 +925,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(boolean[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -967,7 +969,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(short[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -994,7 +996,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(long[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -1021,7 +1023,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(float[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -1048,7 +1050,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(double[] value) {
-			return new GenericArray(value, value.length, true);
+			return new GenericArray(value);
 		}
 
 		@Override
@@ -1090,7 +1092,7 @@ public class DataFormatConverters {
 
 		@Override
 		BaseArray toInternalImpl(T[] value) {
-			return isEleIndentity ? new GenericArray(value, value.length) : toBinaryArray(value);
+			return isEleIndentity ? new GenericArray(value) : toBinaryArray(value);
 		}
 
 		private BaseArray toBinaryArray(T[] value) {
@@ -1107,7 +1109,7 @@ public class DataFormatConverters {
 				if (field == null) {
 					reuseWriter.setNullAt(i, elementType);
 				} else {
-					BinaryWriter.write(reuseWriter, i, elementConverter.toInternalImpl(value[i]), elementType, eleSer);
+					BinaryWriter.write(reuseWriter, i, elementConverter.toInternalImpl(value[i]), elementType);
 				}
 			}
 			reuseWriter.complete();
@@ -1127,6 +1129,7 @@ public class DataFormatConverters {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private static <T> T[] genericArrayToJavaArray(GenericArray value, LogicalType eleType) {
 		Object array = value.getArray();
 		if (value.isPrimitiveArray()) {
@@ -1153,6 +1156,7 @@ public class DataFormatConverters {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private static <T> T[] binaryArrayToJavaArray(BinaryArray value, LogicalType elementType,
 			Class<T> componentClass, DataFormatConverter<Object, T> elementConverter) {
 		int size = value.numElements();
@@ -1161,8 +1165,7 @@ public class DataFormatConverters {
 			if (value.isNullAt(i)) {
 				values[i] = null;
 			} else {
-				values[i] = elementConverter.toExternalImpl(
-						TypeGetterSetters.get(value, i, elementType));
+				values[i] = elementConverter.toExternalImpl(BaseArray.get(value, i, elementType));
 			}
 		}
 		return values;
@@ -1235,12 +1238,12 @@ public class DataFormatConverters {
 				if (entry.getKey() == null) {
 					reuseKWriter.setNullAt(i, keyType);
 				} else {
-					BinaryWriter.write(reuseKWriter, i, keyConverter.toInternalImpl(entry.getKey()), keyType, keySer);
+					BinaryWriter.write(reuseKWriter, i, keyConverter.toInternalImpl(entry.getKey()), keyType);
 				}
 				if (entry.getValue() == null) {
 					reuseVWriter.setNullAt(i, valueType);
 				} else {
-					BinaryWriter.write(reuseVWriter, i, valueConverter.toInternalImpl(entry.getValue()), valueType, valueSer);
+					BinaryWriter.write(reuseVWriter, i, valueConverter.toInternalImpl(entry.getValue()), valueType);
 				}
 				i++;
 			}
@@ -1253,7 +1256,7 @@ public class DataFormatConverters {
 		@Override
 		Map toExternalImpl(BaseMap value) {
 			return (isKeyValueIndentity && value instanceof GenericMap) ?
-					((GenericMap) value).getMap() :
+					((GenericMap) value).getJavaMap() :
 					binaryMapToMap((BinaryMap) value);
 		}
 

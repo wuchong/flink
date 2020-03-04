@@ -29,6 +29,9 @@ import org.apache.flink.table.runtime.operators.join.stream.state.OuterJoinRecor
 import org.apache.flink.table.runtime.operators.join.stream.state.OuterJoinRecordStateViews;
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
 
+import static org.apache.flink.table.dataformat.ChangelogKind.INSERT;
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
+
 /**
  * Streaming unbounded Join operator which supports SEMI/ANTI JOIN.
  */
@@ -109,7 +112,7 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
 		if (BaseRowUtil.isAccumulateMsg(input)) {
 			leftRecordStateView.addRecord(input, associatedRecords.size());
 		} else { // input is retract
-			input.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+			input.setChangelogKind(INSERT);
 			leftRecordStateView.retractRecord(input);
 		}
 	}
@@ -159,10 +162,10 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
 					if (outerRecord.numOfAssociations == 0) {
 						if (isAntiJoin) {
 							// send -[other]
-							other.setHeader(BaseRowUtil.RETRACT_MSG);
+							other.setChangelogKind(DELETE);
 							collector.collect(other);
 							// set header back to ACCUMULATE_MSG, because we will update the other row to state
-							other.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+							other.setChangelogKind(INSERT);
 						} else {
 							// send +[other]
 							// the header of other is ACCUMULATE_MSG
@@ -173,7 +176,7 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
 				}
 			} // ignore when associated number == 0
 		} else { // retract input
-			input.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+			input.setChangelogKind(INSERT);
 			rightRecordStateView.retractRecord(input);
 			if (!associatedRecords.isEmpty()) {
 				// there are matched rows on the other side
@@ -182,10 +185,10 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
 					if (outerRecord.numOfAssociations == 1) {
 						if (!isAntiJoin) {
 							// send -[other]
-							other.setHeader(BaseRowUtil.RETRACT_MSG);
+							other.setChangelogKind(DELETE);
 							collector.collect(other);
 							// set header back to ACCUMULATE_MSG, because we will update the other row to state
-							other.setHeader(BaseRowUtil.ACCUMULATE_MSG);
+							other.setChangelogKind(INSERT);
 						} else {
 							// send +[other]
 							collector.collect(other);

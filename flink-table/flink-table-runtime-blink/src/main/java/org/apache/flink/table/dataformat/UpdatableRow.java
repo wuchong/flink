@@ -20,7 +20,8 @@ package org.apache.flink.table.dataformat;
 /**
  * Wrap row to a updatable Generic Row.
  */
-public final class UpdatableRow implements BaseRow {
+public final class UpdatableRow implements BaseRow, TypedSetters {
+	private static final long serialVersionUID = 1L;
 
 	private BaseRow row;
 	private final Object[] fields;
@@ -42,13 +43,13 @@ public final class UpdatableRow implements BaseRow {
 	}
 
 	@Override
-	public byte getHeader() {
-		return row.getHeader();
+	public ChangelogKind getChangelogKind() {
+		return row.getChangelogKind();
 	}
 
 	@Override
-	public void setHeader(byte header) {
-		row.setHeader(header);
+	public void setChangelogKind(ChangelogKind kind) {
+		row.setChangelogKind(kind);
 	}
 
 	@Override

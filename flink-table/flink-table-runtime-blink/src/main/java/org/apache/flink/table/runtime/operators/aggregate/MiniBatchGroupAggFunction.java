@@ -42,8 +42,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.ACCUMULATE_MSG;
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.RETRACT_MSG;
+import static org.apache.flink.table.dataformat.ChangelogKind.INSERT;
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
 import static org.apache.flink.table.dataformat.util.BaseRowUtil.isAccumulateMsg;
 
 /**
@@ -210,11 +210,11 @@ public class MiniBatchGroupAggFunction extends MapBundleFunction<BaseRow, List<B
 						// new row is not same with prev row
 						if (generateRetraction) {
 							// prepare retraction message for previous row
-							resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+							resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 							out.collect(resultRow);
 						}
 						// prepare accumulation message for new row
-						resultRow.replace(currentKey, newAggValue).setHeader(ACCUMULATE_MSG);
+						resultRow.replace(currentKey, newAggValue).setChangelogKind(INSERT);
 						out.collect(resultRow);
 					}
 					// new row is same with prev row, no need to output
@@ -222,7 +222,7 @@ public class MiniBatchGroupAggFunction extends MapBundleFunction<BaseRow, List<B
 					// this is the first, output new result
 
 					// prepare accumulation message for new row
-					resultRow.replace(currentKey, newAggValue).setHeader(ACCUMULATE_MSG);
+					resultRow.replace(currentKey, newAggValue).setChangelogKind(INSERT);
 					out.collect(resultRow);
 				}
 
@@ -231,7 +231,7 @@ public class MiniBatchGroupAggFunction extends MapBundleFunction<BaseRow, List<B
 				// if this is not first row sent out a delete message
 				if (!firstRow) {
 					// prepare delete message for previous row
-					resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+					resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 					out.collect(resultRow);
 				}
 				// and clear all state

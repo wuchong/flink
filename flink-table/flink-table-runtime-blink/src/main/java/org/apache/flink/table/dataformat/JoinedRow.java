@@ -21,10 +21,11 @@ package org.apache.flink.table.dataformat;
  * Join two row to one row.
  */
 public final class JoinedRow implements BaseRow {
+	private static final long serialVersionUID = 1L;
 
 	private BaseRow row1;
 	private BaseRow row2;
-	private byte header;
+	private ChangelogKind kind;
 
 	public JoinedRow() {}
 
@@ -45,13 +46,13 @@ public final class JoinedRow implements BaseRow {
 	}
 
 	@Override
-	public byte getHeader() {
-		return header;
+	public ChangelogKind getChangelogKind() {
+		return kind;
 	}
 
 	@Override
-	public void setHeader(byte header) {
-		this.header = header;
+	public void setChangelogKind(ChangelogKind kind) {
+		this.kind = kind;
 	}
 
 	@Override
@@ -195,96 +196,6 @@ public final class JoinedRow implements BaseRow {
 			return row1.getMap(i);
 		} else {
 			return row2.getMap(i - row1.getArity());
-		}
-	}
-
-	@Override
-	public void setNullAt(int i) {
-		if (i < row1.getArity()) {
-			row1.setNullAt(i);
-		} else {
-			row2.setNullAt(i - row1.getArity());
-		}
-	}
-
-	@Override
-	public void setBoolean(int i, boolean value) {
-		if (i < row1.getArity()) {
-			row1.setBoolean(i, value);
-		} else {
-			row2.setBoolean(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setByte(int i, byte value) {
-		if (i < row1.getArity()) {
-			row1.setByte(i, value);
-		} else {
-			row2.setByte(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setShort(int i, short value) {
-		if (i < row1.getArity()) {
-			row1.setShort(i, value);
-		} else {
-			row2.setShort(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setInt(int i, int value) {
-		if (i < row1.getArity()) {
-			row1.setInt(i, value);
-		} else {
-			row2.setInt(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setLong(int i, long value) {
-		if (i < row1.getArity()) {
-			row1.setLong(i, value);
-		} else {
-			row2.setLong(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setFloat(int i, float value) {
-		if (i < row1.getArity()) {
-			row1.setFloat(i, value);
-		} else {
-			row2.setFloat(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setDouble(int i, double value) {
-		if (i < row1.getArity()) {
-			row1.setDouble(i, value);
-		} else {
-			row2.setDouble(i - row1.getArity(), value);
-		}
-	}
-
-	@Override
-	public void setDecimal(int i, Decimal value, int precision) {
-		if (i < row1.getArity()) {
-			row1.setDecimal(i, value, precision);
-		} else {
-			row2.setDecimal(i - row1.getArity(), value, precision);
-		}
-	}
-
-	@Override
-	public void setTimestamp(int i, SqlTimestamp value, int precision) {
-		if (i < row1.getArity()) {
-			row1.setTimestamp(i, value, precision);
-		} else {
-			row2.setTimestamp(i - row1.getArity(), value, precision);
 		}
 	}
 

@@ -37,8 +37,8 @@ import javax.annotation.Nullable;
 
 import java.util.Map;
 
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.ACCUMULATE_MSG;
-import static org.apache.flink.table.dataformat.util.BaseRowUtil.RETRACT_MSG;
+import static org.apache.flink.table.dataformat.ChangelogKind.INSERT;
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
 
 /**
  * Aggregate Function used for the global groupby (without window) aggregate in miniBatch mode.
@@ -199,18 +199,18 @@ public class MiniBatchGlobalGroupAggFunction extends MapBundleFunction<BaseRow, 
 						// new row is not same with prev row
 						if (generateRetraction) {
 							// prepare retraction message for previous row
-							resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+							resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 							out.collect(resultRow);
 						}
 						// prepare accumulation message for new row
-						resultRow.replace(currentKey, newAggValue).setHeader(ACCUMULATE_MSG);
+						resultRow.replace(currentKey, newAggValue).setChangelogKind(INSERT);
 						out.collect(resultRow);
 					}
 					// new row is same with prev row, no need to output
 				} else {
 					// this is the first, output new result
 					// prepare accumulation message for new row
-					resultRow.replace(currentKey, newAggValue).setHeader(ACCUMULATE_MSG);
+					resultRow.replace(currentKey, newAggValue).setChangelogKind(INSERT);
 					out.collect(resultRow);
 				}
 
@@ -219,7 +219,7 @@ public class MiniBatchGlobalGroupAggFunction extends MapBundleFunction<BaseRow, 
 				// sent out a delete message
 				if (!firstRow) {
 					// prepare delete message for previous row
-					resultRow.replace(currentKey, prevAggValue).setHeader(RETRACT_MSG);
+					resultRow.replace(currentKey, prevAggValue).setChangelogKind(DELETE);
 					out.collect(resultRow);
 				}
 				// and clear all state

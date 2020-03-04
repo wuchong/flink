@@ -24,6 +24,8 @@ import org.apache.flink.table.dataformat.util.BaseRowUtil;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.Preconditions;
 
+import static org.apache.flink.table.dataformat.ChangelogKind.DELETE;
+
 /**
  * Utility for deduplicate function.
  */
@@ -48,7 +50,7 @@ class DeduplicateFunctionHelper {
 			BaseRow preRow = state.value();
 			state.update(currentRow);
 			if (preRow != null) {
-				preRow.setHeader(BaseRowUtil.RETRACT_MSG);
+				preRow.setChangelogKind(DELETE);
 				out.collect(preRow);
 			}
 		}
