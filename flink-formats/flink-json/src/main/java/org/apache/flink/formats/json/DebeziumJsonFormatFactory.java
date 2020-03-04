@@ -18,32 +18,23 @@
 
 package org.apache.flink.formats.json;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
-import org.apache.flink.table.factories.DeserializationSchemaFactory;
 import org.apache.flink.table.factories.TableFormatFactoryBase;
-import org.apache.flink.table.types.logical.RowType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Table format factory for providing configured instances of JSON-to-row {@link SerializationSchema}
- * and {@link DeserializationSchema}.
- */
-@PublicEvolving
-public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
+public class DebeziumJsonFormatFactory extends TableFormatFactoryBase<BaseRow>
 		implements ChangelogDeserializationSchemaFactory {
 
-	public JsonBaseRowFormatFactory() {
-		super(JsonValidator.FORMAT_TYPE_VALUE, 1, true);
+	public DebeziumJsonFormatFactory() {
+		super("dbz-json", 1, true);
 	}
 
 	@Override
@@ -57,8 +48,18 @@ public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
 
 	@Override
 	public ChangelogDeserializationSchema createDeserializationSchema(Map<String, String> properties) {
-		TableSchema schema = deriveSchema(properties);
-		RowType logicalType = (RowType) schema.toRowDataType().getLogicalType();
-		return new JsonBaseRowDeserializationSchema(logicalType);
+		final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
+		TableSchema schema = deriveSchema(descriptorProperties.asMap());
+		return new DebeziumJsonDeserializationSchema(schema);
+	}
+
+	private static DescriptorProperties getValidatedProperties(Map<String, String> propertiesMap) {
+		final DescriptorProperties descriptorProperties = new DescriptorProperties();
+		descriptorProperties.putProperties(propertiesMap);
+
+		// validate
+		new JsonValidator().validate(descriptorProperties);
+
+		return descriptorProperties;
 	}
 }

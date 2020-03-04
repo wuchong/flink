@@ -21,8 +21,11 @@ package org.apache.flink.formats.csv;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
+import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.dataformats.Decimal;
 import org.apache.flink.table.dataformats.GenericRow;
 import org.apache.flink.table.dataformats.SqlTimestamp;
@@ -49,7 +52,7 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * the specified fields.
  */
 @Internal
-public final class CsvBaseRowDeserializationSchema implements DeserializationSchema<BaseRow> {
+public final class CsvBaseRowDeserializationSchema implements ChangelogDeserializationSchema {
 	private static final long serialVersionUID = 1L;
 	public static final String DEFAULT_LINE_DELIMITER = "\n";
 	public static final String DEFAULT_FIELD_DELIMITER = ",";
@@ -94,6 +97,12 @@ public final class CsvBaseRowDeserializationSchema implements DeserializationSch
 	@Override
 	public TypeInformation<BaseRow> getProducedType() {
 		return new BaseRowTypeInfo(rowType);
+	}
+
+	@Override
+	public ChangelogMode getChangelogMode() {
+//		ChangelogMode.newBuilder().addSupportedKind(ChangelogKind.INSERT).build();
+		return ChangelogMode.insertOnly();
 	}
 
 	// -------------------------------------------------------------------------------------

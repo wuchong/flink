@@ -21,6 +21,8 @@ package org.apache.flink.formats.json;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
+import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.dataformats.Decimal;
 import org.apache.flink.table.dataformats.GenericArray;
@@ -66,7 +68,7 @@ import static org.apache.flink.formats.json.TimeFormats.RFC3339_TIME_FORMAT;
  * the specified fields.
  */
 @Internal
-public class JsonBaseRowDeserializationSchema implements DeserializationSchema<BaseRow> {
+public class JsonBaseRowDeserializationSchema implements ChangelogDeserializationSchema {
 	private static final long serialVersionUID = 8576854315236033439L;
 
 	/** logical type describing the result type. **/
@@ -100,6 +102,12 @@ public class JsonBaseRowDeserializationSchema implements DeserializationSchema<B
 	@Override
 	public TypeInformation<BaseRow> getProducedType() {
 		return new BaseRowTypeInfo(rowType);
+	}
+
+	@Override
+	public ChangelogMode getChangelogMode() {
+//		ChangelogMode.newBuilder().addSupportedKind(ChangelogKind.INSERT).build();
+		return ChangelogMode.insertOnly();
 	}
 
 	// -------------------------------------------------------------------------------------
