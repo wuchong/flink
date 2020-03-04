@@ -39,6 +39,10 @@ public final class ChangelogMode {
 		this.kinds = Collections.unmodifiableSet(kinds);
 	}
 
+	public static ChangelogMode insertOnly() {
+		return new ChangelogMode(Collections.singleton(ChangelogKind.INSERT));
+	}
+
 	public static Builder newBuilder() {
 		return new Builder();
 	}

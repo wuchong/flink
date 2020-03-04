@@ -18,27 +18,16 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
 
-/**
- * {@link SupportsChangelogReading} by using a {@link SourceFunction} during runtime.
- */
-public interface SourceFunctionReader extends SupportsChangelogReading.ChangelogReader {
+public interface ChangelogDeserializationSchema extends DeserializationSchema<BaseRow> {
 
-	SourceFunction<BaseRow> createSourceFunction();
+	/**
+	 * Returns what kind of changes are produced by this {@link DeserializationSchema}.
+	 *
+	 * @see org.apache.flink.table.dataformats.ChangelogKind
+	 */
+	ChangelogMode getChangelogMode();
 
-	static SourceFunctionReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
-		return new SourceFunctionReader() {
-			@Override
-			public SourceFunction<BaseRow> createSourceFunction() {
-				return sourceFunction;
-			}
-
-			@Override
-			public boolean isBounded() {
-				return isBounded;
-			}
-		};
-	}
 }
