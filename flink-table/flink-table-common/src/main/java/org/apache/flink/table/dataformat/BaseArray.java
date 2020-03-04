@@ -1,12 +1,13 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.	See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.	You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformat;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -27,40 +28,16 @@ import org.apache.flink.table.types.logical.TimestampType;
 import java.io.Serializable;
 
 /**
- * An interface for row used internally in Flink Table/SQL, which only contains the columns as
- * internal types.
+ * An interface for array used internally in Flink Table/SQL.
  *
- * <p>A {@link BaseRow} also contains {@link ChangelogKind} which is a metadata information of
- * this row, not a column of this row. The {@link ChangelogKind} represents the changelog operation
- * kind: INSERT/DELETE/UPDATE_BEFORE/UPDATE_AFTER.
- *
- * <p>TODO: add a list and description for all internal formats
- *
- * <p>There are different implementations depending on the scenario. For example, the binary-orient
- * implementation {@link BinaryRow} and the object-orient implementation {@link GenericRow}. All
- * the different implementations have the same binary format after serialization.
- *
- * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
+ * <p>There are different implementations depending on the scenario:
+ * After serialization, it becomes the {@link BinaryArray} format.
+ * Convenient updates use the {@link GenericArray} format.
  */
 @PublicEvolving
-public interface BaseRow extends Serializable {
+public interface BaseArray extends Serializable {
 
-	/**
-	 * Get the number of fields in the BaseRow.
-	 *
-	 * @return The number of fields in the BaseRow.
-	 */
-	int getArity();
-
-	/**
-	 * Gets the changelog kind of this row, it is a metadata of this row, not a column of this row.
-	 */
-	ChangelogKind getChangelogKind();
-
-	/**
-	 * Sets the changelog kind of this row, it is a metadata of this row, not a column of this row.
-	 */
-	void setChangelogKind(ChangelogKind kind);
+	int numElements();
 
 	/**
 	 * Because the specific row implementation such as BinaryRow uses the binary format. We must
@@ -145,52 +122,66 @@ public interface BaseRow extends Serializable {
 	 */
 	BaseRow getRow(int ordinal, int numFields);
 
+	boolean[] toBooleanArray();
+
+	byte[] toByteArray();
+
+	short[] toShortArray();
+
+	int[] toIntArray();
+
+	long[] toLongArray();
+
+	float[] toFloatArray();
+
+	double[] toDoubleArray();
+
 	// ------------------------------------------------------------------------------------------
 
-	static Object get(BaseRow row, int ordinal, LogicalType type) {
+	static Object get(BaseArray array, int ordinal, LogicalType type) {
 		switch (type.getTypeRoot()) {
 			case BOOLEAN:
-				return row.getBoolean(ordinal);
+				return array.getBoolean(ordinal);
 			case TINYINT:
-				return row.getByte(ordinal);
+				return array.getByte(ordinal);
 			case SMALLINT:
-				return row.getShort(ordinal);
+				return array.getShort(ordinal);
 			case INTEGER:
 			case DATE:
 			case TIME_WITHOUT_TIME_ZONE:
 			case INTERVAL_YEAR_MONTH:
-				return row.getInt(ordinal);
+				return array.getInt(ordinal);
 			case BIGINT:
 			case INTERVAL_DAY_TIME:
-				return row.getLong(ordinal);
+				return array.getLong(ordinal);
 			case TIMESTAMP_WITHOUT_TIME_ZONE:
 				TimestampType timestampType = (TimestampType) type;
-				return row.getTimestamp(ordinal, timestampType.getPrecision());
+				return array.getTimestamp(ordinal, timestampType.getPrecision());
 			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
 				LocalZonedTimestampType lzTs = (LocalZonedTimestampType) type;
-				return row.getTimestamp(ordinal, lzTs.getPrecision());
+				return array.getTimestamp(ordinal, lzTs.getPrecision());
 			case FLOAT:
-				return row.getFloat(ordinal);
+				return array.getFloat(ordinal);
 			case DOUBLE:
-				return row.getDouble(ordinal);
+				return array.getDouble(ordinal);
 			case CHAR:
 			case VARCHAR:
-				return row.getString(ordinal);
+				return array.getString(ordinal);
 			case DECIMAL:
 				DecimalType decimalType = (DecimalType) type;
-				return row.getDecimal(ordinal, decimalType.getPrecision(), decimalType.getScale());
+				return array.getDecimal(ordinal, decimalType.getPrecision(), decimalType.getScale());
 			case ARRAY:
-				return row.getArray(ordinal);
+				return array.getArray(ordinal);
 			case MAP:
 			case MULTISET:
-				return row.getMap(ordinal);
+				return array.getMap(ordinal);
 			case ROW:
-				return row.getRow(ordinal, ((RowType) type).getFieldCount());
+				return array.getRow(ordinal, ((RowType) type).getFieldCount());
 			case BINARY:
 			case VARBINARY:
-				return row.getBinary(ordinal);
+				return array.getBinary(ordinal);
 			case RAW:
-				return row.getGeneric(ordinal);
+				return array.getGeneric(ordinal);
 			default:
 				throw new RuntimeException("Not support type: " + type);
 		}

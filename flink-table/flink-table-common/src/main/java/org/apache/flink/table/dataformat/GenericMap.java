@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformat;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.types.logical.LogicalType;

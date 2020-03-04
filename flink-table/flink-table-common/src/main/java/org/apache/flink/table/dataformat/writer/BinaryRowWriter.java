@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats.writer;
+package org.apache.flink.table.dataformat.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryRow;
-import org.apache.flink.table.dataformats.ChangelogKind;
+import org.apache.flink.table.dataformat.BinaryRow;
+import org.apache.flink.table.dataformat.ChangelogKind;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**

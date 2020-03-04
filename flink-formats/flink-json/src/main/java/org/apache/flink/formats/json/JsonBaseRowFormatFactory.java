@@ -22,7 +22,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformat.BaseRow;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.DeserializationSchemaFactory;
 import org.apache.flink.table.factories.TableFormatFactoryBase;

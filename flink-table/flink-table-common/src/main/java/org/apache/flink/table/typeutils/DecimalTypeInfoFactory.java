@@ -21,7 +21,7 @@ package org.apache.flink.table.typeutils;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInfoFactory;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformat.Decimal;
 
 import java.lang.reflect.Type;
 import java.util.Map;

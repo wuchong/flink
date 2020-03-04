@@ -26,7 +26,7 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryGeneric;
+import org.apache.flink.table.dataformat.BinaryGeneric;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;

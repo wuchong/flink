@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.dataformat;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.table.utils.SegmentsUtil;
 
-import static org.apache.flink.table.dataformats.BinaryRow.calculateBitSetWidthInBytes;
+import static org.apache.flink.table.dataformat.BinaryRow.calculateBitSetWidthInBytes;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**

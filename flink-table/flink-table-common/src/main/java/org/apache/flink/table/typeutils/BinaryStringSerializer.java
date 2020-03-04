@@ -24,7 +24,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformat.BinaryString;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
