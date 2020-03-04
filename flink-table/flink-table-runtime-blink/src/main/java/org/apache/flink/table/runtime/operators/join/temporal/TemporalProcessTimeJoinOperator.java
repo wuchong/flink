@@ -32,7 +32,7 @@ import org.apache.flink.table.dataformat.JoinedRow;
 import org.apache.flink.table.dataformat.util.BaseRowUtil;
 import org.apache.flink.table.runtime.generated.GeneratedJoinCondition;
 import org.apache.flink.table.runtime.generated.JoinCondition;
-import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.BaseRowTypeInfo;
 
 /**
  * The operator to temporal join a stream on processing time.
@@ -84,7 +84,7 @@ public class TemporalProcessTimeJoinOperator
 
 		BaseRow leftSideRow = element.getValue();
 		if (joinCondition.apply(leftSideRow, rightSideRow)) {
-			outRow.setHeader(leftSideRow.getHeader());
+			outRow.setChangelogKind(leftSideRow.getChangelogKind());
 			outRow.replace(leftSideRow, rightSideRow);
 			collector.collect(outRow);
 		}

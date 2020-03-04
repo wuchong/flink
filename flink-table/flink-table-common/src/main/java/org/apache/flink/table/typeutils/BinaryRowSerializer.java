@@ -43,8 +43,8 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	private static final long serialVersionUID = 1L;
 	public static final int LENGTH_SIZE_IN_BYTES = 4;
 
-	private final int numFields;
-	private final int fixedLengthPartSize;
+	protected final int numFields;
+	protected final int fixedLengthPartSize;
 
 	public BinaryRowSerializer(int numFields) {
 		this.numFields = numFields;

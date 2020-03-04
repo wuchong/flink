@@ -16,22 +16,38 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
-import org.apache.flink.api.common.typeinfo.TypeInfoFactory;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeutils.SerializerTestBase;
 import org.apache.flink.table.dataformat.Decimal;
 
-import java.lang.reflect.Type;
-import java.util.Map;
-
 /**
- * The type factory of Decimal.
+ * A test for the {@link DecimalSerializer}.
  */
-public class DecimalTypeInfoFactory extends TypeInfoFactory<Decimal> {
+public class DecimalSerializerTest extends SerializerTestBase<Decimal> {
 
 	@Override
-	public TypeInformation<Decimal> createTypeInfo(Type t, Map<String, TypeInformation<?>> genericParameters) {
-		return DecimalTypeInfo.of(38, 18);
+	protected DecimalSerializer createSerializer() {
+		return new DecimalSerializer(5, 2);
+	}
+
+	@Override
+	protected int getLength() {
+		return -1;
+	}
+
+	@Override
+	protected Class<Decimal> getTypeClass() {
+		return Decimal.class;
+	}
+
+	@Override
+	protected Decimal[] getTestData() {
+		return new Decimal[] {
+				Decimal.fromLong(1, 5, 2),
+				Decimal.fromLong(2, 5, 2),
+				Decimal.fromLong(3, 5, 2),
+				Decimal.fromLong(4, 5, 2)
+		};
 	}
 }

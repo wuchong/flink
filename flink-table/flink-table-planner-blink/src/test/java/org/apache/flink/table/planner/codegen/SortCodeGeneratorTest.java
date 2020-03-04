@@ -29,6 +29,7 @@ import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.runtime.operators.sort.QuickSort;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableConfig;
+import org.apache.flink.table.dataformat.BaseRow;
 import org.apache.flink.table.dataformat.BinaryArray;
 import org.apache.flink.table.dataformat.BinaryGeneric;
 import org.apache.flink.table.dataformat.BinaryRow;
@@ -40,6 +41,8 @@ import org.apache.flink.table.dataformat.Decimal;
 import org.apache.flink.table.dataformat.GenericRow;
 import org.apache.flink.table.dataformat.SqlTimestamp;
 import org.apache.flink.table.dataformat.TypeGetterSetters;
+import org.apache.flink.table.dataformat.writer.BinaryRowWriter;
+import org.apache.flink.table.dataformat.writer.BinaryWriter;
 import org.apache.flink.table.planner.codegen.sort.SortCodeGenerator;
 import org.apache.flink.table.planner.plan.utils.SortUtil;
 import org.apache.flink.table.runtime.generated.GeneratedNormalizedKeyComputer;
@@ -51,6 +54,7 @@ import org.apache.flink.table.runtime.operators.sort.ListMemorySegmentPool;
 import org.apache.flink.table.runtime.types.InternalSerializers;
 import org.apache.flink.table.runtime.typeutils.AbstractRowSerializer;
 import org.apache.flink.table.runtime.typeutils.BinaryGenericSerializer;
+import org.apache.flink.table.runtime.typeutils.BinaryRowPagedSerializer;
 import org.apache.flink.table.runtime.typeutils.BinaryRowSerializer;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.ArrayType;
@@ -190,8 +194,7 @@ public class SortCodeGeneratorTest {
 			if (value == null) {
 				writer.setNullAt(j);
 			} else {
-				BinaryWriter.write(writer, j, value, types[fields[j]],
-						InternalSerializers.create(types[fields[j]], new ExecutionConfig()));
+				BinaryWriter.write(writer, j, value, types[fields[j]]);
 			}
 		}
 
@@ -452,10 +455,10 @@ public class SortCodeGeneratorTest {
 		Tuple2<NormalizedKeyComputer, RecordComparator> tuple2 = getSortBaseWithNulls(
 				this.getClass().getSimpleName(), keyTypes, keys, orders, nullsIsLast);
 
-		BinaryRowSerializer serializer = new BinaryRowSerializer(fieldTypes.length);
+		BinaryRowPagedSerializer serializer = new BinaryRowPagedSerializer(fieldTypes.length);
 
 		BinaryInMemorySortBuffer sortBuffer = BinaryInMemorySortBuffer.createBuffer(
-				tuple2.f0, (AbstractRowSerializer) serializer, serializer,
+				tuple2.f0, serializer, serializer,
 				tuple2.f1, new ListMemorySegmentPool(segments));
 
 		BinaryRow[] dataArray = getTestData();
@@ -486,10 +489,10 @@ public class SortCodeGeneratorTest {
 				Object first = null;
 				Object second = null;
 				if (!o1.isNullAt(keys[i])) {
-					first = TypeGetterSetters.get(o1, keys[i], keyTypes[i]);
+					first = BaseRow.get(o1, keys[i], keyTypes[i]);
 				}
 				if (!o2.isNullAt(keys[i])) {
-					second = TypeGetterSetters.get(o2, keys[i], keyTypes[i]);
+					second = BaseRow.get(o2, keys[i], keyTypes[i]);
 				}
 
 				if (first != null || second != null) {

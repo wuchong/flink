@@ -33,7 +33,7 @@ import org.apache.flink.table.dataformat.JoinedRow;
 import org.apache.flink.table.runtime.collector.TableFunctionResultFuture;
 import org.apache.flink.table.runtime.generated.GeneratedFunction;
 import org.apache.flink.table.runtime.generated.GeneratedResultFuture;
-import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.BaseRowTypeInfo;
 import org.apache.flink.types.Row;
 
 import javax.annotation.Nullable;
@@ -239,7 +239,7 @@ public class AsyncLookupJoinRunner extends RichAsyncFunction<BaseRow, BaseRow> {
 			if (rightRows == null || rightRows.isEmpty()) {
 				if (isLeftOuterJoin) {
 					BaseRow outRow = new JoinedRow(leftRow, nullRow);
-					outRow.setHeader(leftRow.getHeader());
+					outRow.setChangelogKind(leftRow.getChangelogKind());
 					realOutput.complete(Collections.singleton(outRow));
 				} else {
 					realOutput.complete(Collections.emptyList());
@@ -248,7 +248,7 @@ public class AsyncLookupJoinRunner extends RichAsyncFunction<BaseRow, BaseRow> {
 				List<BaseRow> outRows = new ArrayList<>();
 				for (BaseRow rightRow : rightRows) {
 					BaseRow outRow = new JoinedRow(leftRow, rightRow);
-					outRow.setHeader(leftRow.getHeader());
+					outRow.setChangelogKind(leftRow.getChangelogKind());
 					outRows.add(outRow);
 				}
 				realOutput.complete(outRows);

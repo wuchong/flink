@@ -31,11 +31,12 @@ import org.apache.flink.streaming.api.operators.InternalTimerService;
 import org.apache.flink.streaming.api.operators.TimestampedCollector;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.dataformat.BaseRow;
+import org.apache.flink.table.dataformat.ChangelogKind;
 import org.apache.flink.table.dataformat.JoinedRow;
 import org.apache.flink.table.dataformat.util.BaseRowUtil;
 import org.apache.flink.table.runtime.generated.GeneratedJoinCondition;
 import org.apache.flink.table.runtime.generated.JoinCondition;
-import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.BaseRowTypeInfo;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -153,7 +154,7 @@ public class TemporalRowTimeJoinOperator
 			TIMERS_STATE_NAME, VoidNamespaceSerializer.INSTANCE, this);
 		collector = new TimestampedCollector<>(output);
 		outRow = new JoinedRow();
-		outRow.setChangelogKind(INSERT);
+		outRow.setChangelogKind(ChangelogKind.INSERT);
 	}
 
 	@Override

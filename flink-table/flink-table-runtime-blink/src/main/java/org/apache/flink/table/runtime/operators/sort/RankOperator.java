@@ -33,6 +33,7 @@ import org.apache.flink.table.runtime.util.StreamRecordCollector;
  * Rank operator to compute top N.
  */
 public class RankOperator extends TableStreamOperator<BaseRow> implements OneInputStreamOperator<BaseRow, BaseRow> {
+	private static final long serialVersionUID = 1L;
 
 	private GeneratedRecordComparator partitionByGenComp;
 	private GeneratedRecordComparator orderByGenComp;
@@ -102,7 +103,7 @@ public class RankOperator extends TableStreamOperator<BaseRow> implements OneInp
 	private void emitInternal(BaseRow element) {
 		if (rank >= rankStart && rank <= rankEnd) {
 			if (outputRankFunColumn) {
-				rankValueRow.setLong(0, rank);
+				rankValueRow.setField(0, rank);
 				collector.collect(joinedRow.replace(element, rankValueRow));
 			} else {
 				collector.collect(element);

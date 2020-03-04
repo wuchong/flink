@@ -16,38 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
-import org.apache.flink.api.common.typeutils.SerializerTestBase;
-import org.apache.flink.table.dataformat.Decimal;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeutils.TypeInformationTestBase;
 
 /**
- * A test for the {@link DecimalSerializer}.
+ * Test for {@link BinaryStringTypeInfo}, {@link DecimalTypeInfo}.
  */
-public class DecimalSerializerTest extends SerializerTestBase<Decimal> {
+public class InternalTypeInfoTest extends TypeInformationTestBase<TypeInformation<?>> {
 
 	@Override
-	protected DecimalSerializer createSerializer() {
-		return new DecimalSerializer(5, 2);
-	}
-
-	@Override
-	protected int getLength() {
-		return -1;
-	}
-
-	@Override
-	protected Class<Decimal> getTypeClass() {
-		return Decimal.class;
-	}
-
-	@Override
-	protected Decimal[] getTestData() {
-		return new Decimal[] {
-				Decimal.fromLong(1, 5, 2),
-				Decimal.fromLong(2, 5, 2),
-				Decimal.fromLong(3, 5, 2),
-				Decimal.fromLong(4, 5, 2)
+	protected TypeInformation[] getTestData() {
+		return new TypeInformation[] {
+				BinaryStringTypeInfo.INSTANCE,
+				new DecimalTypeInfo(5, 2),
+				new SqlTimestampTypeInfo(0),
+				new SqlTimestampTypeInfo(3),
+				new SqlTimestampTypeInfo(6),
+				new SqlTimestampTypeInfo(9)
 		};
 	}
 }

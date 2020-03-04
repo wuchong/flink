@@ -26,7 +26,7 @@ import org.apache.flink.table.dataformat.BaseRow;
 import org.apache.flink.table.dataformat.BinaryRow;
 import org.apache.flink.table.runtime.generated.NormalizedKeyComputer;
 import org.apache.flink.table.runtime.generated.RecordComparator;
-import org.apache.flink.table.runtime.typeutils.BinaryRowSerializer;
+import org.apache.flink.table.runtime.typeutils.BinaryRowPagedSerializer;
 import org.apache.flink.table.runtime.util.MemorySegmentPool;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public abstract class BinaryIndexedSortable implements IndexedSortable {
 
 	// put/compare/swap normalized key
 	private final NormalizedKeyComputer normalizedKeyComputer;
-	protected final BinaryRowSerializer serializer;
+	protected final BinaryRowPagedSerializer serializer;
 
 	// if normalized key not fully determines, need compare record.
 	private final RecordComparator comparator;
@@ -63,8 +63,8 @@ public abstract class BinaryIndexedSortable implements IndexedSortable {
 	private final boolean useNormKeyUninverted;
 
 	// for serialized comparison
-	protected final BinaryRowSerializer serializer1;
-	private final BinaryRowSerializer serializer2;
+	protected final BinaryRowPagedSerializer serializer1;
+	private final BinaryRowPagedSerializer serializer2;
 	protected final BinaryRow row1;
 	private final BinaryRow row2;
 
@@ -74,7 +74,7 @@ public abstract class BinaryIndexedSortable implements IndexedSortable {
 
 	public BinaryIndexedSortable(
 			NormalizedKeyComputer normalizedKeyComputer,
-			BinaryRowSerializer serializer,
+			BinaryRowPagedSerializer serializer,
 			RecordComparator comparator,
 			ArrayList<MemorySegment> recordBufferSegments,
 			MemorySegmentPool memorySegmentPool) {
@@ -100,8 +100,8 @@ public abstract class BinaryIndexedSortable implements IndexedSortable {
 		this.indexEntriesPerSegment = segmentSize / this.indexEntrySize;
 		this.lastIndexEntryOffset = (this.indexEntriesPerSegment - 1) * this.indexEntrySize;
 
-		this.serializer1 = (BinaryRowSerializer) serializer.duplicate();
-		this.serializer2 = (BinaryRowSerializer) serializer.duplicate();
+		this.serializer1 = (BinaryRowPagedSerializer) serializer.duplicate();
+		this.serializer2 = (BinaryRowPagedSerializer) serializer.duplicate();
 		this.row1 = this.serializer1.createInstance();
 		this.row2 = this.serializer2.createInstance();
 

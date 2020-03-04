@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeutils.SerializerTestInstance;
@@ -24,11 +24,11 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer;
 import org.apache.flink.table.dataformat.BaseRow;
 import org.apache.flink.table.dataformat.BinaryArray;
-import org.apache.flink.table.dataformat.BinaryArrayWriter;
 import org.apache.flink.table.dataformat.BinaryGeneric;
 import org.apache.flink.table.dataformat.BinaryMap;
 import org.apache.flink.table.dataformat.BinaryRow;
 import org.apache.flink.table.dataformat.GenericRow;
+import org.apache.flink.table.dataformat.writer.BinaryArrayWriter;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DoubleType;
 import org.apache.flink.table.types.logical.IntType;

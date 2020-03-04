@@ -16,21 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
 import org.apache.flink.api.common.typeutils.SerializerTestBase;
-import org.apache.flink.table.dataformat.BinaryRow;
-import org.apache.flink.table.dataformat.BinaryRowWriter;
 import org.apache.flink.table.dataformat.BinaryString;
 
+import java.util.Arrays;
+
 /**
- * A test for the {@link BinaryRowSerializer}.
+ * A test for the {@link BinaryStringSerializer}.
  */
-public class BinaryRowSerializerTest extends SerializerTestBase<BinaryRow> {
+public class BinaryStringSerializerTest extends SerializerTestBase<BinaryString> {
 
 	@Override
-	protected BinaryRowSerializer createSerializer() {
-		return new BinaryRowSerializer(2);
+	protected BinaryStringSerializer createSerializer() {
+		return BinaryStringSerializer.INSTANCE;
 	}
 
 	@Override
@@ -39,26 +39,14 @@ public class BinaryRowSerializerTest extends SerializerTestBase<BinaryRow> {
 	}
 
 	@Override
-	protected Class<BinaryRow> getTypeClass() {
-		return BinaryRow.class;
+	protected Class<BinaryString> getTypeClass() {
+		return BinaryString.class;
 	}
 
 	@Override
-	protected BinaryRow[] getTestData() {
-		return new BinaryRow[] {
-				createRow("11", 1),
-				createRow("12", 2),
-				createRow("132", 3),
-				createRow("13", 4)
-		};
-	}
-
-	private static BinaryRow createRow(String f0, int f1) {
-		BinaryRow row = new BinaryRow(2);
-		BinaryRowWriter writer = new BinaryRowWriter(row);
-		writer.writeString(0, BinaryString.fromString(f0));
-		writer.writeInt(1, f1);
-		writer.complete();
-		return row;
+	protected BinaryString[] getTestData() {
+		return Arrays.stream(
+				new String[] {"a", "", "bcd", "jbmbmner8 jhk hj \n \t üäßß@µ", "", "non-empty"})
+				.map(BinaryString::fromString).toArray(BinaryString[]::new);
 	}
 }

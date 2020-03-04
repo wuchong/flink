@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
 import org.apache.flink.table.types.logical.BooleanType;
 import org.apache.flink.table.types.logical.IntType;

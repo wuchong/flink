@@ -431,4 +431,41 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 	public int hashCode() {
 		return SegmentsUtil.hashByWords(segments, offset, sizeInBytes);
 	}
+
+
+	public String toOriginString(LogicalType... types) {
+		return toOriginString(this, types);
+	}
+
+	public static String toOriginString(BaseRow row, LogicalType[] types) {
+		checkArgument(types.length == row.getArity());
+		StringBuilder build = new StringBuilder("[");
+		build.append(row.getChangelogKind());
+		for (int i = 0; i < row.getArity(); i++) {
+			build.append(',');
+			if (row.isNullAt(i)) {
+				build.append("null");
+			} else {
+				build.append(BaseRow.get(row, i, types[i]));
+			}
+		}
+		build.append(']');
+		return build.toString();
+	}
+
+	public boolean equalsWithoutHeader(BaseRow o) {
+		return equalsFrom(o, 1);
+	}
+
+	private boolean equalsFrom(Object o, int startIndex) {
+		if (o instanceof BinaryRow) {
+			BinaryRow other = (BinaryRow) o;
+			return sizeInBytes == other.sizeInBytes &&
+				SegmentsUtil.equals(
+					segments, offset + startIndex,
+					other.segments, other.offset + startIndex, sizeInBytes - startIndex);
+		} else {
+			return false;
+		}
+	}
 }

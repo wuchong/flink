@@ -25,7 +25,7 @@ import org.apache.flink.table.dataformat.BinaryRow;
 import org.apache.flink.table.runtime.generated.NormalizedKeyComputer;
 import org.apache.flink.table.runtime.generated.RecordComparator;
 import org.apache.flink.table.runtime.typeutils.AbstractRowSerializer;
-import org.apache.flink.table.runtime.typeutils.BinaryRowSerializer;
+import org.apache.flink.table.runtime.typeutils.BinaryRowPagedSerializer;
 import org.apache.flink.table.runtime.util.MemorySegmentPool;
 import org.apache.flink.util.MutableObjectIterator;
 
@@ -56,7 +56,7 @@ public final class BinaryInMemorySortBuffer extends BinaryIndexedSortable {
 	public static BinaryInMemorySortBuffer createBuffer(
 			NormalizedKeyComputer normalizedKeyComputer,
 			AbstractRowSerializer<BaseRow> inputSerializer,
-			BinaryRowSerializer serializer,
+			BinaryRowPagedSerializer serializer,
 			RecordComparator comparator,
 			MemorySegmentPool memoryPool) {
 		checkArgument(memoryPool.freePages() >= MIN_REQUIRED_BUFFERS);
@@ -71,7 +71,7 @@ public final class BinaryInMemorySortBuffer extends BinaryIndexedSortable {
 	private BinaryInMemorySortBuffer(
 			NormalizedKeyComputer normalizedKeyComputer,
 			AbstractRowSerializer<BaseRow> inputSerializer,
-			BinaryRowSerializer serializer,
+			BinaryRowPagedSerializer serializer,
 			RecordComparator comparator,
 			ArrayList<MemorySegment> recordBufferSegments,
 			SimpleCollectingOutputView recordCollector,

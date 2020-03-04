@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.runtime.typeutils;
+package org.apache.flink.table.typeutils;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -28,10 +28,10 @@ import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.dataformat.BaseArray;
 import org.apache.flink.table.dataformat.BinaryArray;
-import org.apache.flink.table.dataformat.BinaryArrayWriter;
 import org.apache.flink.table.dataformat.BinaryGeneric;
 import org.apache.flink.table.dataformat.BinaryString;
 import org.apache.flink.table.dataformat.GenericArray;
+import org.apache.flink.table.dataformat.writer.BinaryArrayWriter;
 import org.apache.flink.testutils.DeeplyEqualsChecker;
 
 import org.junit.Test;
@@ -39,9 +39,9 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import static org.apache.flink.table.runtime.typeutils.SerializerTestUtil.MyObj;
-import static org.apache.flink.table.runtime.typeutils.SerializerTestUtil.MyObjSerializer;
-import static org.apache.flink.table.runtime.typeutils.SerializerTestUtil.snapshotAndReconfigure;
+import static org.apache.flink.table.typeutils.SerializerTestUtil.MyObj;
+import static org.apache.flink.table.typeutils.SerializerTestUtil.MyObjSerializer;
+import static org.apache.flink.table.typeutils.SerializerTestUtil.snapshotAndReconfigure;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -85,7 +85,7 @@ public class BaseArraySerializerTest extends SerializerTestBase<BaseArray> {
 		MyObj inputObj = new MyObj(114514, 1919810);
 		BaseArray inputArray = new GenericArray(new BinaryGeneric[] {
 			new BinaryGeneric<>(inputObj)
-		}, 1);
+		});
 
 		byte[] serialized;
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -133,7 +133,7 @@ public class BaseArraySerializerTest extends SerializerTestBase<BaseArray> {
 	@Override
 	protected BaseArray[] getTestData() {
 		return new BaseArray[] {
-				new GenericArray(new BinaryString[] {BinaryString.fromString("11")}, 1),
+				new GenericArray(new BinaryString[] {BinaryString.fromString("11")}),
 				createArray("11", "haa"),
 				createArray("11", "haa", "ke"),
 				createArray("11", "haa", "ke"),

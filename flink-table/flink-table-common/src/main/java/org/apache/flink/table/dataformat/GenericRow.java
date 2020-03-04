@@ -103,6 +103,10 @@ public final class GenericRow implements BaseRow {
 		return this.fields[ordinal] == null;
 	}
 
+	public void setNullAt(int ordinal) {
+		this.fields[ordinal] = null;
+	}
+
 	@Override
 	public boolean getBoolean(int ordinal) {
 		return (boolean) this.fields[ordinal];

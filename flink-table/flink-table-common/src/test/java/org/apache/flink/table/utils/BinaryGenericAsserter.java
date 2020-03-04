@@ -19,8 +19,7 @@
 package org.apache.flink.table.utils;
 
 import org.apache.flink.table.dataformat.BinaryGeneric;
-import org.apache.flink.table.runtime.typeutils.BinaryGenericSerializer;
-import org.apache.flink.table.runtime.util.SegmentsUtil;
+import org.apache.flink.table.typeutils.BinaryGenericSerializer;
 
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
