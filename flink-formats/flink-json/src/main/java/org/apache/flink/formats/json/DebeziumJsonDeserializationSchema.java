@@ -43,8 +43,8 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	private final TableSchema schema;
 
 	public DebeziumJsonDeserializationSchema(TableSchema schema) {
-		this.jsonDeserializer = new JsonBaseRowDeserializationSchema(createJsonRowType());
 		this.schema = schema;
+		this.jsonDeserializer = new JsonBaseRowDeserializationSchema(createJsonRowType(schema));
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 		return false;
 	}
 
-	private RowType createJsonRowType() {
+	private RowType createJsonRowType(TableSchema schema) {
 		TableSchema dbzSchema = TableSchema.builder()
 			.field("before", schema.toRowDataType())
 			.field("after", schema.toRowDataType())

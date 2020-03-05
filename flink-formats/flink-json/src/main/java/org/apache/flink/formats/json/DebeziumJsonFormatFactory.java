@@ -20,10 +20,12 @@ package org.apache.flink.formats.json;
 
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
+import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
+import org.apache.flink.table.factories.ChangelogSerializationSchemaFactory;
 import org.apache.flink.table.factories.TableFormatFactoryBase;
 
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DebeziumJsonFormatFactory extends TableFormatFactoryBase<BaseRow>
-		implements ChangelogDeserializationSchemaFactory {
+		implements ChangelogDeserializationSchemaFactory, ChangelogSerializationSchemaFactory {
 
 	public DebeziumJsonFormatFactory() {
 		super("dbz-json", 1, true);
@@ -51,6 +53,13 @@ public class DebeziumJsonFormatFactory extends TableFormatFactoryBase<BaseRow>
 		final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
 		TableSchema schema = deriveSchema(descriptorProperties.asMap());
 		return new DebeziumJsonDeserializationSchema(schema);
+	}
+
+	@Override
+	public ChangelogSerializationSchema createSerializationSchema(Map<String, String> properties) {
+		final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
+		TableSchema schema = deriveSchema(descriptorProperties.asMap());
+		return new DebeziumJsonSerializationSchema(schema);
 	}
 
 	private static DescriptorProperties getValidatedProperties(Map<String, String> propertiesMap) {
