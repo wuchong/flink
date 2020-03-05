@@ -14,3 +14,4 @@
 # limitations under the License.
 
 org.apache.flink.addons.hbase.HBaseTableFactory
+org.apache.flink.addons.hbase.HBaseDynamicTableFactory

@@ -20,14 +20,21 @@ package org.apache.flink.addons.hbase;
 
 import org.apache.flink.addons.hbase.util.HBaseTypeUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.types.AtomicDataType;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.FieldsDataType;
+import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,7 +46,7 @@ public class HBaseTableSchema implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	// A Map with key as column family.
-	private final Map<String, Map<String, TypeInformation<?>>> familyMap = new LinkedHashMap<>();
+	private final Map<String, Map<String, DataType>> familyMap = new LinkedHashMap<>();
 
 	// information about rowkey
 	private RowKeyInfo rowKeyInfo;
@@ -55,21 +62,27 @@ public class HBaseTableSchema implements Serializable {
 	 * @param clazz     the data type of the qualifier
 	 */
 	public void addColumn(String family, String qualifier, Class<?> clazz) {
+		Preconditions.checkNotNull(clazz, "class type");
+		DataType type = TypeConversions.fromLegacyInfoToDataType(TypeExtractor.getForClass(clazz));
+		addColumn(family, qualifier, type);
+	}
+
+	public void addColumn(String family, String qualifier, DataType type) {
 		Preconditions.checkNotNull(family, "family name");
 		Preconditions.checkNotNull(qualifier, "qualifier name");
-		Preconditions.checkNotNull(clazz, "class type");
-		Map<String, TypeInformation<?>> qualifierMap = this.familyMap.get(family);
+		Preconditions.checkNotNull(type, "data type");
+		Map<String, DataType> qualifierMap = this.familyMap.get(family);
 
-		if (!HBaseTypeUtils.isSupportedType(clazz)) {
+		if (!HBaseTypeUtils.isSupportedType(type)) {
 			// throw exception
-			throw new IllegalArgumentException("Unsupported class type found " + clazz + ". " +
+			throw new IllegalArgumentException("Unsupported class type found " + type + ". " +
 				"Better to use byte[].class and deserialize using user defined scalar functions");
 		}
 
 		if (qualifierMap == null) {
 			qualifierMap = new LinkedHashMap<>();
 		}
-		qualifierMap.put(qualifier, TypeExtractor.getForClass(clazz));
+		qualifierMap.put(qualifier, type);
 		familyMap.put(family, qualifierMap);
 	}
 
@@ -79,17 +92,23 @@ public class HBaseTableSchema implements Serializable {
 	 * @param clazz the data type of the row key
 	 */
 	public void setRowKey(String rowKeyName, Class<?> clazz) {
-		Preconditions.checkNotNull(rowKeyName, "row key field name");
 		Preconditions.checkNotNull(clazz, "row key class type");
-		if (!HBaseTypeUtils.isSupportedType(clazz)) {
+		DataType type = TypeConversions.fromLegacyInfoToDataType(TypeExtractor.getForClass(clazz));
+		setRowKey(rowKeyName, type);
+	}
+
+	public void setRowKey(String rowKeyName, DataType type) {
+		Preconditions.checkNotNull(rowKeyName, "row key field name");
+		Preconditions.checkNotNull(type, "row key data type");
+		if (!HBaseTypeUtils.isSupportedType(type)) {
 			// throw exception
-			throw new IllegalArgumentException("Unsupported class type found " + clazz + ". " +
+			throw new IllegalArgumentException("Unsupported class type found " + type + ". " +
 				"Better to use byte[].class and deserialize using user defined scalar functions");
 		}
 		if (rowKeyInfo != null) {
 			throw new IllegalArgumentException("Row key can't be set multiple times.");
 		}
-		this.rowKeyInfo = new RowKeyInfo(rowKeyName, TypeExtractor.getForClass(clazz), familyMap.size());
+		this.rowKeyInfo = new RowKeyInfo(rowKeyName, type, familyMap.size());
 	}
 
 	/**
@@ -126,6 +145,15 @@ public class HBaseTableSchema implements Serializable {
 		return familyKeys;
 	}
 
+	public byte[][][] getQualifierKeys() {
+		byte[][][] qualifiers = new byte[this.familyMap.size()][][];
+		int i = 0;
+		for (String name : this.familyMap.keySet()) {
+			qualifiers[i++] = getQualifierKeys(name);
+		}
+		return qualifiers;
+	}
+
 	/**
 	 * Returns the names of all registered column qualifiers of a specific column family.
 	 *
@@ -133,7 +161,7 @@ public class HBaseTableSchema implements Serializable {
 	 * @return The names of all registered column qualifiers of a specific column family.
 	 */
 	String[] getQualifierNames(String family) {
-		Map<String, TypeInformation<?>> qualifierMap = familyMap.get(family);
+		Map<String, DataType> qualifierMap = familyMap.get(family);
 
 		if (qualifierMap == null) {
 			throw new IllegalArgumentException("Family " + family + " does not exist in schema.");
@@ -155,7 +183,7 @@ public class HBaseTableSchema implements Serializable {
 	 * @return The HBase identifiers of all registered column qualifiers for a specific column family.
 	 */
 	public byte[][] getQualifierKeys(String family) {
-		Map<String, TypeInformation<?>> qualifierMap = familyMap.get(family);
+		Map<String, DataType> qualifierMap = familyMap.get(family);
 
 		if (qualifierMap == null) {
 			throw new IllegalArgumentException("Family " + family + " does not exist in schema.");
@@ -177,19 +205,26 @@ public class HBaseTableSchema implements Serializable {
 	 * @return The types of all registered column qualifiers of a specific column family.
 	 */
 	public TypeInformation<?>[] getQualifierTypes(String family) {
-		Map<String, TypeInformation<?>> qualifierMap = familyMap.get(family);
+		DataType[] dataTypes = getQualifierDataTypes(family);
+		return Arrays.stream(dataTypes)
+			.map(TypeConversions::fromDataTypeToLegacyInfo)
+			.toArray(TypeInformation[]::new);
+	}
+
+	public DataType[] getQualifierDataTypes(String family) {
+		Map<String, DataType> qualifierMap = familyMap.get(family);
 
 		if (qualifierMap == null) {
 			throw new IllegalArgumentException("Family " + family + " does not exist in schema.");
 		}
 
-		TypeInformation<?>[] typeInformation = new TypeInformation[qualifierMap.size()];
+		DataType[] dataTypes = new DataType[qualifierMap.size()];
 		int i = 0;
-		for (TypeInformation<?> typeInfo : qualifierMap.values()) {
-			typeInformation[i] = typeInfo;
+		for (DataType dataType : qualifierMap.values()) {
+			dataTypes[i] = dataType;
 			i++;
 		}
-		return typeInformation;
+		return dataTypes;
 	}
 
 	/**
@@ -198,7 +233,7 @@ public class HBaseTableSchema implements Serializable {
 	 * @param family The name of the column family for which the column qualifier names and types are returned.
 	 * @return The names and types of all registered column qualifiers of a specific column family.
 	 */
-	private Map<String, TypeInformation<?>> getFamilyInfo(String family) {
+	private Map<String, DataType> getFamilyInfo(String family) {
 		return familyMap.get(family);
 	}
 
@@ -222,7 +257,15 @@ public class HBaseTableSchema implements Serializable {
 	 * Returns the optional type information of row key. Returns null if row key is not set.
 	 */
 	public Optional<TypeInformation<?>> getRowKeyTypeInfo() {
-		return rowKeyInfo == null ? Optional.empty() : Optional.of(rowKeyInfo.rowKeyType);
+		return rowKeyInfo == null ?
+			Optional.empty() :
+			Optional.of(TypeConversions.fromDataTypeToLegacyInfo(rowKeyInfo.rowKeyType));
+	}
+
+	public Optional<DataType> getRowKeyDataType() {
+		return rowKeyInfo == null ?
+			Optional.empty() :
+			Optional.of(rowKeyInfo.rowKeyType);
 	}
 
 	/**
@@ -245,13 +288,13 @@ public class HBaseTableSchema implements Serializable {
 		for (int projectedField : projectedFields) {
 			String name = fieldNames[projectedField];
 			if (rowKeyInfo != null && name.equals(rowKeyInfo.rowKeyName)) {
-				newSchema.setRowKey(rowKeyInfo.rowKeyName, rowKeyInfo.rowKeyType.getTypeClass());
+				newSchema.setRowKey(rowKeyInfo.rowKeyName, rowKeyInfo.rowKeyType);
 			} else {
-				Map<String, TypeInformation<?>> familyInfo = getFamilyInfo(name);
-				for (Map.Entry<String, TypeInformation<?>> entry : familyInfo.entrySet()) {
+				Map<String, DataType> familyInfo = getFamilyInfo(name);
+				for (Map.Entry<String, DataType> entry : familyInfo.entrySet()) {
 					// create the newSchema
 					String qualifier = entry.getKey();
-					newSchema.addColumn(name, qualifier, entry.getValue().getTypeClass());
+					newSchema.addColumn(name, qualifier, entry.getValue());
 				}
 			}
 		}
@@ -271,7 +314,7 @@ public class HBaseTableSchema implements Serializable {
 		String[] familyNames = getFamilyNames();
 		if (rowKeyInfo != null) {
 			String[] fieldNames = new String[familyNames.length + 1];
-			TypeInformation<?>[] fieldTypes = new TypeInformation[familyNames.length + 1];
+			DataType[] fieldTypes = new DataType[familyNames.length + 1];
 			for (int i = 0; i < fieldNames.length; i++) {
 				if (i == rowKeyInfo.rowKeyIndex) {
 					fieldNames[i] = rowKeyInfo.rowKeyName;
@@ -280,20 +323,42 @@ public class HBaseTableSchema implements Serializable {
 					int familyIndex = i < rowKeyInfo.rowKeyIndex ? i : i - 1;
 					String family = familyNames[familyIndex];
 					fieldNames[i] = family;
-					fieldTypes[i] = new RowTypeInfo(getQualifierTypes(family), getQualifierNames(family));
+					fieldTypes[i] = DataTypes.ROW(getQualifierNames(family), getQualifierDataTypes(family));
 				}
 			}
-			return new TableSchema(fieldNames, fieldTypes);
+			return TableSchema.builder().fields(fieldNames, fieldTypes).build();
 		} else {
 			String[] fieldNames = new String[familyNames.length];
-			TypeInformation<?>[] fieldTypes = new TypeInformation[familyNames.length];
+			DataType[] fieldTypes = new DataType[familyNames.length];
 			for (int i = 0; i < fieldNames.length; i++) {
 				String family = familyNames[i];
 				fieldNames[i] = family;
-				fieldTypes[i] = new RowTypeInfo(getQualifierTypes(family), getQualifierNames(family));
+				fieldTypes[i] = DataTypes.ROW(getQualifierNames(family), getQualifierDataTypes(family));
 			}
-			return new TableSchema(fieldNames, fieldTypes);
+			return TableSchema.builder().fields(fieldNames, fieldTypes).build();
 		}
+	}
+
+	public static HBaseTableSchema build(TableSchema schema) {
+		HBaseTableSchema hbaseSchema = new HBaseTableSchema();
+		for (TableColumn column : schema.getTableColumns()) {
+			if (!column.isGenerated()) {
+				if (column.getType() instanceof FieldsDataType) {
+					String familyName = column.getName();
+					FieldsDataType familyType = (FieldsDataType) column.getType();
+					Map<String, DataType> qualifiers = familyType.getFieldDataTypes();
+					List<String> qualifierNames = familyType.getFieldNames();
+					for (String qualifierName : qualifierNames) {
+						hbaseSchema.addColumn(familyName, qualifierName, qualifiers.get(qualifierName));
+					}
+				} else if (column.getType() instanceof AtomicDataType) {
+					hbaseSchema.setRowKey(column.getName(), column.getType());
+				} else {
+					throw new IllegalArgumentException("Unsupported field type '" + column.getType() + "' for HBase.");
+				}
+			}
+		}
+		return hbaseSchema;
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -304,10 +369,10 @@ public class HBaseTableSchema implements Serializable {
 	private static class RowKeyInfo implements Serializable {
 		private static final long serialVersionUID = 1L;
 		final String rowKeyName;
-		final TypeInformation<?> rowKeyType;
+		final DataType rowKeyType;
 		final int rowKeyIndex;
 
-		RowKeyInfo(String rowKeyName, TypeInformation<?> rowKeyType, int rowKeyIndex) {
+		RowKeyInfo(String rowKeyName, DataType rowKeyType, int rowKeyIndex) {
 			this.rowKeyName = rowKeyName;
 			this.rowKeyType = rowKeyType;
 			this.rowKeyIndex = rowKeyIndex;

@@ -20,6 +20,9 @@ package org.apache.flink.addons.hbase.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.logical.LocalZonedTimestampType;
+import org.apache.flink.table.types.logical.TimestampType;
 
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -161,6 +164,32 @@ public class HBaseTypeUtils {
 			return 13;
 		} else {
 			return -1;
+		}
+	}
+
+	public static boolean isSupportedType(DataType type) {
+		switch (type.getLogicalType().getTypeRoot()) {
+			case BINARY:
+			case VARBINARY:
+			case CHAR:
+			case VARCHAR:
+			case TINYINT:
+			case SMALLINT:
+			case INTEGER:
+			case BIGINT:
+			case FLOAT:
+			case DOUBLE:
+			case BOOLEAN:
+			case DATE:
+			case TIME_WITHOUT_TIME_ZONE:
+			case DECIMAL:
+				return true;
+			case TIMESTAMP_WITHOUT_TIME_ZONE:
+				return ((TimestampType) type.getLogicalType()).getPrecision() == 3;
+			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+				return ((LocalZonedTimestampType) type.getLogicalType()).getPrecision() == 3;
+			default:
+				return false;
 		}
 	}
 }
