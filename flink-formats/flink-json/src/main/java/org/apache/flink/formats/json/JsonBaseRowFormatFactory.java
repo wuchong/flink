@@ -23,10 +23,11 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
+import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
-import org.apache.flink.table.factories.DeserializationSchemaFactory;
+import org.apache.flink.table.factories.ChangelogSerializationSchemaFactory;
 import org.apache.flink.table.factories.TableFormatFactoryBase;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -40,7 +41,7 @@ import java.util.Map;
  */
 @PublicEvolving
 public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
-		implements ChangelogDeserializationSchemaFactory {
+		implements ChangelogDeserializationSchemaFactory, ChangelogSerializationSchemaFactory {
 
 	public JsonBaseRowFormatFactory() {
 		super(JsonValidator.FORMAT_TYPE_VALUE, 1, true);
@@ -60,5 +61,12 @@ public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
 		TableSchema schema = deriveSchema(properties);
 		RowType logicalType = (RowType) schema.toRowDataType().getLogicalType();
 		return new JsonBaseRowDeserializationSchema(logicalType);
+	}
+
+	@Override
+	public ChangelogSerializationSchema createSerializationSchema(Map<String, String> properties) {
+		TableSchema schema = deriveSchema(properties);
+		RowType logicalType = (RowType) schema.toRowDataType().getLogicalType();
+		return new JsonBaseRowSerializationSchema(logicalType);
 	}
 }

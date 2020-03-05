@@ -23,11 +23,15 @@ import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
+import org.apache.flink.table.connectors.ChangelogSerializationSchema;
+import org.apache.flink.table.connectors.DynamicTableSink;
 import org.apache.flink.table.connectors.DynamicTableSource;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.KafkaValidator;
 import org.apache.flink.table.descriptors.SchemaValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
+import org.apache.flink.table.factories.ChangelogSerializationSchemaFactory;
+import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.TableFactoryService;
 import org.apache.flink.table.utils.TableSchemaUtils;
@@ -55,7 +59,7 @@ import static org.apache.flink.table.descriptors.KafkaValidator.CONNECTOR_TOPIC;
 import static org.apache.flink.table.descriptors.KafkaValidator.CONNECTOR_TYPE_VALUE_KAFKA;
 import static org.apache.flink.table.descriptors.Schema.SCHEMA;
 
-public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSourceFactory {
+public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSourceFactory, DynamicTableSinkFactory {
 
 	@Override
 	public Map<String, String> requiredContext() {
@@ -86,7 +90,7 @@ public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSource
 	}
 
 	@Override
-	public DynamicTableSource createTableSource(Context context) {
+	public DynamicTableSource createTableSource(DynamicTableSourceFactory.Context context) {
 		Map<String, String> properties = context.getTable().toProperties();
 		final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
 
@@ -102,6 +106,22 @@ public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSource
 			startupOptions.startupMode,
 			startupOptions.specificOffsets,
 			startupOptions.startupTimestampMillis);
+	}
+
+	@Override
+	public DynamicTableSink createTableSink(DynamicTableSinkFactory.Context context) {
+		Map<String, String> properties = context.getTable().toProperties();
+		final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
+
+		final TableSchema schema = TableSchemaUtils.getPhysicalSchema(
+			descriptorProperties.getTableSchema(SCHEMA));
+		final String topic = descriptorProperties.getString(CONNECTOR_TOPIC);
+
+		return createKafkaTableSink(
+			schema,
+			topic,
+			getKafkaProperties(descriptorProperties),
+			getSerializationSchema(properties));
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -141,6 +161,19 @@ public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSource
 		Map<KafkaTopicPartition, Long> specificStartupOffsets,
 		long startupTimestampMillis);
 
+	/**
+	 * Constructs the version-specific Kafka table sink.
+	 *
+	 * @param schema      Schema of the produced table.
+	 * @param topic       Kafka topic to consume.
+	 * @param properties  Properties for the Kafka consumer.
+	 */
+	protected abstract KafkaDynamicTableSinkBase createKafkaTableSink(
+		TableSchema schema,
+		String topic,
+		Properties properties,
+		ChangelogSerializationSchema serializationSchema);
+
 	// --------------------------------------------------------------------------------------------
 	// Helper methods
 	// --------------------------------------------------------------------------------------------
@@ -162,6 +195,14 @@ public abstract class KafkaDynamicTableFactoryBase implements DynamicTableSource
 			properties,
 			this.getClass().getClassLoader());
 		return formatFactory.createDeserializationSchema(properties);
+	}
+
+	private ChangelogSerializationSchema getSerializationSchema(Map<String, String> properties) {
+		final ChangelogSerializationSchemaFactory formatFactory = TableFactoryService.find(
+			ChangelogSerializationSchemaFactory.class,
+			properties,
+			this.getClass().getClassLoader());
+		return formatFactory.createSerializationSchema(properties);
 	}
 
 	private Properties getKafkaProperties(DescriptorProperties descriptorProperties) {

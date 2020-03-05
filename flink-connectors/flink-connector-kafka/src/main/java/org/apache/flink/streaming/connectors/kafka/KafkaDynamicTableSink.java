@@ -18,45 +18,38 @@
 
 package org.apache.flink.streaming.connectors.kafka;
 
-import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
-import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
+import org.apache.flink.annotation.Internal;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.connectors.kafka.internals.KeyedSerializationSchemaWrapper;
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.descriptors.KafkaValidator;
+import org.apache.flink.table.dataformats.BaseRow;
 
-import java.util.Map;
 import java.util.Properties;
 
-public class KafkaDynamicTableFactory extends KafkaDynamicTableFactoryBase {
-	@Override
-	protected String kafkaVersion() {
-		return KafkaValidator.CONNECTOR_VERSION_VALUE_UNIVERSAL;
-	}
+/**
+ * Kafka table sink for writing data into Kafka.
+ */
+@Internal
+public class KafkaDynamicTableSink extends KafkaDynamicTableSinkBase {
 
-	@Override
-	protected boolean supportsKafkaTimestamps() {
-		return true;
-	}
-
-	@Override
-	protected KafkaDynamicTableSourceBase createKafkaTableSource(
-			TableSchema schema,
-			String topic,
-			Properties properties,
-			ChangelogDeserializationSchema deserializationSchema,
-			StartupMode startupMode,
-			Map<KafkaTopicPartition, Long> specificStartupOffsets,
-			long startupTimestampMillis) {
-		return new KafkaDynamicTableSource(schema, topic, properties, deserializationSchema, startupMode, specificStartupOffsets, startupTimestampMillis);
-	}
-
-	@Override
-	protected KafkaDynamicTableSinkBase createKafkaTableSink(
+	protected KafkaDynamicTableSink(
 			TableSchema schema,
 			String topic,
 			Properties properties,
 			ChangelogSerializationSchema serializationSchema) {
-		return new KafkaDynamicTableSink(schema, topic, properties, serializationSchema);
+		super(schema, topic, properties, serializationSchema);
+	}
+
+	@Override
+	protected SinkFunction<BaseRow> createKafkaProducer(
+			String topic,
+			Properties properties,
+			ChangelogSerializationSchema serializationSchema) {
+		return new FlinkKafkaProducer<>(
+			topic,
+			new KeyedSerializationSchemaWrapper<>(serializationSchema),
+			properties,
+			FlinkKafkaProducer.Semantic.AT_LEAST_ONCE);
 	}
 }
