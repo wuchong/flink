@@ -49,6 +49,11 @@ public interface SupportsChangelogWriting extends WritingAbility {
 	interface Context {
 
 		/**
+		 * Whether the data is bounded or not.
+		 */
+		boolean isBounded();
+
+		/**
 		 * Returns the user code class loader.
 		 */
 		ClassLoader getUserClassLoader();
