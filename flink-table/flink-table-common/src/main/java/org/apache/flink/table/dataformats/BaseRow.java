@@ -148,6 +148,9 @@ public interface BaseRow extends Serializable {
 	// ------------------------------------------------------------------------------------------
 
 	static Object get(BaseRow row, int ordinal, LogicalType type) {
+		if (row.isNullAt(ordinal)) {
+			return null;
+		}
 		switch (type.getTypeRoot()) {
 			case BOOLEAN:
 				return row.getBoolean(ordinal);

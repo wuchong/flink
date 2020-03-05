@@ -16,18 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.factories;
 
-import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
 
-public interface ChangelogDeserializationSchema extends DeserializationSchema<BaseRow> {
+import java.util.Map;
+
+/**
+ * Factory for creating configured instances of {@link ChangelogSerializationSchema}.
+ */
+@PublicEvolving
+public interface ChangelogSerializationSchemaFactory extends TableFormatFactory<BaseRow> {
 
 	/**
-	 * Returns what kind of changes are produced by this {@link DeserializationSchema}.
+	 * Creates and configures a {@link ChangelogSerializationSchema} using the given properties.
 	 *
-	 * @see org.apache.flink.table.dataformats.ChangelogKind
+	 * @param properties normalized properties describing the format
+	 * @return the configured serialization schema or null if the factory cannot provide an
+	 *         instance of this class
 	 */
-	ChangelogMode producedChangelogMode();
+	ChangelogSerializationSchema createSerializationSchema(Map<String, String> properties);
 
 }

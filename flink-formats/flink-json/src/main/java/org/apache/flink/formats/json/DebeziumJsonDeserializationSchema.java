@@ -90,7 +90,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public ChangelogMode getChangelogMode() {
+	public ChangelogMode producedChangelogMode() {
 		return ChangelogMode.newBuilder()
 			.addSupportedKind(ChangelogKind.INSERT)
 			.addSupportedKind(ChangelogKind.UPDATE_AFTER)

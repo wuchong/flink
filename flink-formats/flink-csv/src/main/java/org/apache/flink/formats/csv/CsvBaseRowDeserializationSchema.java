@@ -100,7 +100,7 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 	}
 
 	@Override
-	public ChangelogMode getChangelogMode() {
+	public ChangelogMode producedChangelogMode() {
 //		ChangelogMode.newBuilder().addSupportedKind(ChangelogKind.INSERT).build();
 		return ChangelogMode.insertOnly();
 	}

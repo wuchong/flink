@@ -139,6 +139,9 @@ public interface BaseArray extends Serializable {
 	// ------------------------------------------------------------------------------------------
 
 	static Object get(BaseArray array, int ordinal, LogicalType type) {
+		if (array.isNullAt(ordinal)) {
+			return null;
+		}
 		switch (type.getTypeRoot()) {
 			case BOOLEAN:
 				return array.getBoolean(ordinal);

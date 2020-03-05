@@ -19,10 +19,8 @@
 package org.apache.flink.table.factories;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.typeutils.BaseRowSerializer;
 
 import java.util.Map;
 
@@ -36,7 +34,7 @@ public interface ChangelogDeserializationSchemaFactory extends TableFormatFactor
 	 * Creates and configures a {@link ChangelogDeserializationSchema} using the given properties.
 	 *
 	 * @param properties normalized properties describing the format
-	 * @return the configured serialization schema or null if the factory cannot provide an
+	 * @return the configured deserialization schema or null if the factory cannot provide an
 	 *         instance of this class
 	 */
 	ChangelogDeserializationSchema createDeserializationSchema(Map<String, String> properties);

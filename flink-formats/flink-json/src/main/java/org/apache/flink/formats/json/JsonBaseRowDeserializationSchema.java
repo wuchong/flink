@@ -105,7 +105,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 	}
 
 	@Override
-	public ChangelogMode getChangelogMode() {
+	public ChangelogMode producedChangelogMode() {
 //		ChangelogMode.newBuilder().addSupportedKind(ChangelogKind.INSERT).build();
 		return ChangelogMode.insertOnly();
 	}

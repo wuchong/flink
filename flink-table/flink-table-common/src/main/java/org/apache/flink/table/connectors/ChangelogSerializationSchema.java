@@ -18,16 +18,16 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.ChangelogKind;
 
-public interface ChangelogDeserializationSchema extends DeserializationSchema<BaseRow> {
+public interface ChangelogSerializationSchema extends SerializationSchema<BaseRow> {
 
 	/**
-	 * Returns what kind of changes are produced by this {@link DeserializationSchema}.
+	 * Returns what kind of changes are supported by this {@link SerializationSchema}.
 	 *
-	 * @see org.apache.flink.table.dataformats.ChangelogKind
+	 * @see ChangelogKind
 	 */
-	ChangelogMode producedChangelogMode();
-
+	ChangelogMode supportedChangelogMode();
 }

@@ -72,7 +72,7 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 
 	@Override
 	public ChangelogMode getChangelogMode() {
-		return deserializationSchema.getChangelogMode();
+		return deserializationSchema.producedChangelogMode();
 	}
 
 	@Override
