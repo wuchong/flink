@@ -29,7 +29,9 @@ import org.apache.flink.table.dataformats.BaseRow;
 @PublicEvolving
 public interface SupportsComputedColumnPushDown extends SupportsChangelogReading {
 
-	boolean supportsComputedColumnPushDown();
+	default boolean supportsComputedColumnPushDown() {
+		return true;
+	}
 
 	/**
 	 * Provides a converter that converts the produced {@link BaseRow} containing the physical

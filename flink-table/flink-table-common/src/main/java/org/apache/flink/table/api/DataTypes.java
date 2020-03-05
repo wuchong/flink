@@ -69,6 +69,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+
 /**
  * A {@link DataType} can be used to declare input and/or output types of operations. This class
  * enumerates all pre-defined data types of the Table & SQL API.
@@ -525,6 +527,15 @@ public final class DataTypes {
 		final Map<String, DataType> fieldDataTypes = Stream.of(fields)
 			.collect(Collectors.toMap(f -> f.name, f -> f.dataType));
 		return new FieldsDataType(new RowType(logicalFields), fieldDataTypes);
+	}
+
+	public static DataType ROW(String[] fieldNames, DataType[] fieldTypes) {
+		checkArgument(fieldNames.length == fieldTypes.length, "length of fieldNames and fieldTypes are not the same.");
+		Field[] fields = new Field[fieldNames.length];
+		for (int i = 0; i < fields.length; i++) {
+			fields[i] = FIELD(fieldNames[i], fieldTypes[i]);
+		}
+		return ROW(fields);
 	}
 
 	/**

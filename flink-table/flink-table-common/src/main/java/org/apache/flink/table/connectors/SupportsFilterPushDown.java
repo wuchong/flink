@@ -29,7 +29,9 @@ import java.util.List;
 @PublicEvolving
 public interface SupportsFilterPushDown extends SupportsChangelogReading {
 
-	boolean supportsFilterPushDown();
+	default boolean supportsFilterPushDown() {
+		return true;
+	}
 
 	void applyFilter(List<ResolvedExpression> predicates);
 }

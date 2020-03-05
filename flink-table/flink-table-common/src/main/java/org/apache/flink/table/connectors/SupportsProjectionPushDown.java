@@ -27,7 +27,9 @@ import org.apache.flink.table.api.TableSchema;
 @PublicEvolving
 public interface SupportsProjectionPushDown extends SupportsChangelogReading {
 
-	boolean supportsProjectionPushDown();
+	default boolean supportsProjectionPushDown() {
+		return true;
+	}
 
 	void applyProjection(TableSchema schema);
 }

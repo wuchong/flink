@@ -24,6 +24,7 @@ import org.apache.flink.util.Preconditions;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -39,12 +40,8 @@ public final class ChangelogMode {
 		this.kinds = Collections.unmodifiableSet(kinds);
 	}
 
-	public static ChangelogMode insertOnly() {
-		return new ChangelogMode(Collections.singleton(ChangelogKind.INSERT));
-	}
-
-	public static Builder newBuilder() {
-		return new Builder();
+	public boolean isInsertOnly() {
+		return this.equals(insertOnly());
 	}
 
 	public Set<ChangelogKind> getSupportedKinds() {
@@ -53,6 +50,35 @@ public final class ChangelogMode {
 
 	public boolean supportsKind(ChangelogKind kind) {
 		return kinds.contains(kind);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ChangelogMode that = (ChangelogMode) o;
+		return Objects.equals(kinds, that.kinds);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(kinds);
+	}
+
+	@Override
+	public String toString() {
+		String[] kindsStr = kinds.stream().map(Enum::toString).toArray(String[]::new);
+		return "ChangelogMode(" + String.join(",", kindsStr) + ')';
+	}
+
+	// utilities
+
+	public static ChangelogMode insertOnly() {
+		return new ChangelogMode(Collections.singleton(ChangelogKind.INSERT));
+	}
+
+	public static Builder newBuilder() {
+		return new Builder();
 	}
 
 	// --------------------------------------------------------------------------------------------
