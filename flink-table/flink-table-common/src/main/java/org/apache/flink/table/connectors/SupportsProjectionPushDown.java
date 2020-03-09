@@ -25,7 +25,7 @@ import org.apache.flink.table.api.TableSchema;
  * Allows to push down (possibly nested) projections into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
  */
 @PublicEvolving
-public interface SupportsProjectionPushDown extends SupportsChangelogReading {
+public interface SupportsProjectionPushDown extends ReadingAbility {
 
 	/**
 	 * Apply the (possible nested) projection into the table source to project its output to the

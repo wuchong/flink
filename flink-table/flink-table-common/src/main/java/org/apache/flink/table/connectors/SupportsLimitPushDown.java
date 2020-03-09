@@ -18,7 +18,7 @@
 
 package org.apache.flink.table.connectors;
 
-public interface SupportsLimitPushDown extends SupportsChangelogReading {
+public interface SupportsLimitPushDown extends ReadingAbility {
 
 	/**
 	 * @param limit the value which limit the number of records.

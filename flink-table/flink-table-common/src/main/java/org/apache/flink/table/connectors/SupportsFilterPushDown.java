@@ -27,7 +27,7 @@ import java.util.List;
  * Allows to push down filters into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
  */
 @PublicEvolving
-public interface SupportsFilterPushDown extends SupportsChangelogReading {
+public interface SupportsFilterPushDown extends ReadingAbility {
 
 	List<ResolvedExpression> applyFilters(List<ResolvedExpression> filters);
 }

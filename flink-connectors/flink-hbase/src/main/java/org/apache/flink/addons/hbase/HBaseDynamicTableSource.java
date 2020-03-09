@@ -22,7 +22,7 @@ import org.apache.flink.HBaseBaseRowInputFormat;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.DynamicTableSource;
-import org.apache.flink.table.connectors.InputFormatReader;
+import org.apache.flink.table.connectors.InputFormatChangelogReader;
 import org.apache.flink.table.connectors.SupportsChangelogReading;
 import org.apache.flink.table.connectors.SupportsProjectionPushDown;
 
@@ -54,7 +54,7 @@ public class HBaseDynamicTableSource implements DynamicTableSource,
 			conf,
 			tableName,
 			hbaseSchema);
-		return InputFormatReader.of(inputFormat);
+		return InputFormatChangelogReader.of(inputFormat);
 	}
 
 	@Override

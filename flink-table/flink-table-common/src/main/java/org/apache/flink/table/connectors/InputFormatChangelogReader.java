@@ -24,12 +24,12 @@ import org.apache.flink.table.dataformats.BaseRow;
 /**
  * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
  */
-public interface InputFormatReader extends SupportsChangelogReading.ChangelogReader {
+public interface InputFormatChangelogReader extends SupportsChangelogReading.ChangelogReader {
 
 	InputFormat<BaseRow, ?> createInputFormat();
 
-	static InputFormatReader of(InputFormat<BaseRow, ?> inputFormat) {
-		return new InputFormatReader() {
+	static InputFormatChangelogReader of(InputFormat<BaseRow, ?> inputFormat) {
+		return new InputFormatChangelogReader() {
 			@Override
 			public InputFormat<BaseRow, ?> createInputFormat() {
 				return inputFormat;

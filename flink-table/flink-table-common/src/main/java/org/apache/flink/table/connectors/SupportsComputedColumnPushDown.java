@@ -27,7 +27,7 @@ import org.apache.flink.table.dataformats.BaseRow;
  * Allows to push down computed columns into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
  */
 @PublicEvolving
-public interface SupportsComputedColumnPushDown extends SupportsChangelogReading {
+public interface SupportsComputedColumnPushDown extends ReadingAbility {
 
 	/**
 	 * Provides a converter that converts the produced {@link BaseRow} containing the physical

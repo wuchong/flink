@@ -18,11 +18,17 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * Runtime implementation
+ * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
  */
-@PublicEvolving
-public interface TableReader {
+public interface SourceFunctionSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
+
+	SourceFunction<BaseRow> createSourceFunction();
+
+	static SourceFunctionSnapshotReader of(SourceFunction<BaseRow> sourceFunction) {
+		return () -> sourceFunction;
+	}
 }

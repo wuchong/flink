@@ -18,21 +18,27 @@
 
 package org.apache.flink.table.connectors;
 
-import java.util.List;
-import java.util.Map;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.table.dataformats.BaseRow;
 
-public interface SupportsPartitionPushDown extends ReadingAbility {
+/**
+ * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
+ */
+public interface SourceFunctionChangelogReader extends SupportsChangelogReading.ChangelogReader {
 
-	/**
-	 * Returns all the partitions of this {@link DynamicTableSource}.
-	 */
-	List<Map<String, String>> getPartitions();
+	SourceFunction<BaseRow> createSourceFunction();
 
-	/**
-	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
-	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
-	 *
-	 * @param remainingPartitions Remaining partitions after partition pruning applied.
-	 */
-	void applyPartitionPruning(List<Map<String, String>> remainingPartitions);
+	static SourceFunctionChangelogReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
+		return new SourceFunctionChangelogReader() {
+			@Override
+			public SourceFunction<BaseRow> createSourceFunction() {
+				return sourceFunction;
+			}
+
+			@Override
+			public boolean isBounded() {
+				return isBounded;
+			}
+		};
+	}
 }

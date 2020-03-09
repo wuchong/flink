@@ -18,26 +18,21 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * {@link SupportsChangelogReading} by using a {@link SourceFunction} during runtime.
+ * {@link SupportsSnapshotReading.SnapshotReader} by using a {@link InputFormat} during runtime.
  */
-public interface SourceFunctionReader extends SupportsChangelogReading.ChangelogReader {
+public interface InputFormatSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
 
-	SourceFunction<BaseRow> createSourceFunction();
+	InputFormat<BaseRow, ?> createInputFormat();
 
-	static SourceFunctionReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
-		return new SourceFunctionReader() {
+	static InputFormatSnapshotReader of(InputFormat<BaseRow, ?> inputFormat) {
+		return new InputFormatSnapshotReader() {
 			@Override
-			public SourceFunction<BaseRow> createSourceFunction() {
-				return sourceFunction;
-			}
-
-			@Override
-			public boolean isBounded() {
-				return isBounded;
+			public InputFormat<BaseRow, ?> createInputFormat() {
+				return inputFormat;
 			}
 		};
 	}

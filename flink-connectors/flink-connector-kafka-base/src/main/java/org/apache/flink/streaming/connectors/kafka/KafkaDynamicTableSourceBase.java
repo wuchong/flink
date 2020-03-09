@@ -26,7 +26,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.DynamicTableSource;
-import org.apache.flink.table.connectors.SourceFunctionReader;
+import org.apache.flink.table.connectors.SourceFunctionChangelogReader;
 import org.apache.flink.table.connectors.SupportsChangelogReading;
 import org.apache.flink.table.dataformats.BaseRow;
 
@@ -82,7 +82,7 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 			topic,
 			properties,
 			deserializationSchema);
-		return SourceFunctionReader.of(kafkaConsumer, false);
+		return SourceFunctionChangelogReader.of(kafkaConsumer, false);
 	}
 
 	@Override
