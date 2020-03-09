@@ -33,10 +33,6 @@ import java.util.Optional;
 @PublicEvolving
 public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
-	default boolean supportsWatermarkPushDown() {
-		return true;
-	}
-
 	void applyWatermark(WatermarkAssigner assigner);
 
 	// --------------------------------------------------------------------------------------------

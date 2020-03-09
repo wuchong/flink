@@ -18,16 +18,21 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.expressions.ResolvedExpression;
-
 import java.util.List;
+import java.util.Map;
 
-/**
- * Allows to push down filters into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
- */
-@PublicEvolving
-public interface SupportsFilterPushDown extends SupportsChangelogReading {
+public interface SupportsPartitionPushDown extends SupportsChangelogReading {
 
-	List<ResolvedExpression> applyFilters(List<ResolvedExpression> filters);
+	/**
+	 * Returns all the partitions of this {@link DynamicTableSource}.
+	 */
+	List<Map<String, String>> getPartitions();
+
+	/**
+	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
+	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
+	 *
+	 * @param remainingPartitions Remaining partitions after partition pruning applied.
+	 */
+	void applyPartitionPruning(List<Map<String, String>> remainingPartitions);
 }

@@ -18,16 +18,10 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.expressions.ResolvedExpression;
+public interface SupportsLimitPushDown extends SupportsChangelogReading {
 
-import java.util.List;
-
-/**
- * Allows to push down filters into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
- */
-@PublicEvolving
-public interface SupportsFilterPushDown extends SupportsChangelogReading {
-
-	List<ResolvedExpression> applyFilters(List<ResolvedExpression> filters);
+	/**
+	 * @param limit the value which limit the number of records.
+	 */
+	void applyLimit(long limit);
 }

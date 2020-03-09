@@ -63,7 +63,9 @@ public class HBaseDynamicTableSource implements DynamicTableSource,
 	}
 
 	@Override
-	public void applyProjection(TableSchema schema) {
-		this.tableSchema = schema;
+	public TableSchema applyProjection(TableSchema remainingSchema) {
+		// supports nested projection
+		this.tableSchema = remainingSchema;
+		return remainingSchema;
 	}
 }
