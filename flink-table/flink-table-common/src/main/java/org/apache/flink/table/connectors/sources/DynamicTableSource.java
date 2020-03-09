@@ -16,23 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import java.util.List;
-import java.util.Map;
+import org.apache.flink.annotation.PublicEvolving;
 
-public interface SupportsPartitionPushDown extends ReadingAbility {
+/**
+ * Source of a dynamic table from an external storage system.
+ *
+ * <p>A dynamic table source can be seen as a factory that produces concrete runtime implementation. Depending
+ * on the specified {@link ReadingAbility}, the planner might apply changes to instances of this class and thus
+ * mutates the produced runtime implementation.
+ *
+ * <p>Use {@link ReadingAbility}s to specify how to read the table.
+ */
+@PublicEvolving
+public interface DynamicTableSource {
 
 	/**
-	 * Returns all the partitions of this {@link DynamicTableSource}.
+	 * Returns a string that summarizes this source for printing to a console or log.
 	 */
-	List<Map<String, String>> getPartitions();
-
-	/**
-	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
-	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
-	 *
-	 * @param remainingPartitions Remaining partitions after partition pruning applied.
-	 */
-	void applyPartitionPruning(List<Map<String, String>> remainingPartitions);
+	String asSummaryString();
 }

@@ -19,6 +19,8 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.connectors.sinks.DynamicTableSink;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
 import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.util.Preconditions;
 

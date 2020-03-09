@@ -25,9 +25,9 @@ import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.connectors.DynamicTableSource;
-import org.apache.flink.table.connectors.SourceFunctionChangelogReader;
-import org.apache.flink.table.connectors.SupportsChangelogReading;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
+import org.apache.flink.table.connectors.sources.SourceFunctionChangelogReader;
+import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
 import org.apache.flink.table.dataformats.BaseRow;
 
 import java.util.Map;

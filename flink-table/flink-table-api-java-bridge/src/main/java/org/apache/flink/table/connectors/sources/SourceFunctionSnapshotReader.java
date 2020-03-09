@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.table.dataformats.BaseRow;
@@ -24,21 +24,11 @@ import org.apache.flink.table.dataformats.BaseRow;
 /**
  * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
  */
-public interface SourceFunctionChangelogReader extends SupportsChangelogReading.ChangelogReader {
+public interface SourceFunctionSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
 
 	SourceFunction<BaseRow> createSourceFunction();
 
-	static SourceFunctionChangelogReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
-		return new SourceFunctionChangelogReader() {
-			@Override
-			public SourceFunction<BaseRow> createSourceFunction() {
-				return sourceFunction;
-			}
-
-			@Override
-			public boolean isBounded() {
-				return isBounded;
-			}
-		};
+	static SourceFunctionSnapshotReader of(SourceFunction<BaseRow> sourceFunction) {
+		return () -> sourceFunction;
 	}
 }

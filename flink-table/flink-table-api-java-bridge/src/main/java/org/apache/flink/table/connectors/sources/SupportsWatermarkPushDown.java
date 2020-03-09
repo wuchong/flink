@@ -16,11 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
+import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
 import org.apache.flink.table.dataformats.BaseRow;
 
 import javax.annotation.Nullable;
@@ -28,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
- * Allows to push down watermarks into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
+ * Allows to push down watermarks into a {@link DynamicTableSource ) if it {@link SupportsChangelogReading }.
  */
 @PublicEvolving
 public interface SupportsWatermarkPushDown extends SupportsChangelogReading {

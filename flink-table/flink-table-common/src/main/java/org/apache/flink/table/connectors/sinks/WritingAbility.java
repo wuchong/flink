@@ -16,14 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sinks;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
 
 /**
- * Entity that specifies how to read a {@link DynamicTableSource}.
+ * Entity that specifies how to write a {@link DynamicTableSource}.
  */
 @PublicEvolving
-public interface ReadingAbility {
+public interface WritingAbility {
 	// marker interface
 }

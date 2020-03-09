@@ -16,19 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.table.dataformats.BaseRow;
+public interface SupportsLimitPushDown extends ReadingAbility {
 
-/**
- * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
- */
-public interface SourceFunctionSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
-
-	SourceFunction<BaseRow> createSourceFunction();
-
-	static SourceFunctionSnapshotReader of(SourceFunction<BaseRow> sourceFunction) {
-		return () -> sourceFunction;
-	}
+	/**
+	 * @param limit the value which limit the number of records.
+	 */
+	void applyLimit(long limit);
 }

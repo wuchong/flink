@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sinks;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.connectors.ChangelogMode;
+import org.apache.flink.table.connectors.FormatConverter;
 import org.apache.flink.table.types.DataType;
 
 import javax.annotation.Nullable;

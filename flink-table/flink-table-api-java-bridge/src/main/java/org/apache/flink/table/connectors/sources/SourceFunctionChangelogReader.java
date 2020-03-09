@@ -16,19 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
+ * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
  */
-public interface OutputFormatChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
+public interface SourceFunctionChangelogReader extends SupportsChangelogReading.ChangelogReader {
 
-	OutputFormat<BaseRow> createOutputFunction();
+	SourceFunction<BaseRow> createSourceFunction();
 
-	static OutputFormatChangelogWriter of(OutputFormat<BaseRow> outputFormat) {
-		return () -> outputFormat;
+	static SourceFunctionChangelogReader of(SourceFunction<BaseRow> sourceFunction, boolean isBounded) {
+		return new SourceFunctionChangelogReader() {
+			@Override
+			public SourceFunction<BaseRow> createSourceFunction() {
+				return sourceFunction;
+			}
+
+			@Override
+			public boolean isBounded() {
+				return isBounded;
+			}
+		};
 	}
 }

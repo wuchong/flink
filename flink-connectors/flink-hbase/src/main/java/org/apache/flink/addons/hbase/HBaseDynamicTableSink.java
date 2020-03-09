@@ -19,9 +19,9 @@
 package org.apache.flink.addons.hbase;
 
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.connectors.DynamicTableSink;
-import org.apache.flink.table.connectors.SinkFunctionChangelogWriter;
-import org.apache.flink.table.connectors.SupportsChangelogWriting;
+import org.apache.flink.table.connectors.sinks.DynamicTableSink;
+import org.apache.flink.table.connectors.sinks.SinkFunctionChangelogWriter;
+import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
 import org.apache.flink.table.dataformats.ChangelogKind;
 
 import org.apache.hadoop.conf.Configuration;

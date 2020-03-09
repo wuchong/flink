@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.api.TableSchema;

@@ -16,18 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.table.functions.TableFunction;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+
+import java.util.List;
 
 /**
- * {@link SupportsLookupReading} by using a {@link TableFunction} during runtime.
+ * A {@link ReadingAbility} that looks up rows of an external storage system by one or more keys.
  */
-public interface TableFunctionLookupReader<T> extends SupportsLookupReading.LookupReader {
+@PublicEvolving
+public interface SupportsLookupReading extends ReadingAbility {
 
-	TableFunction<T> createTableFunction();
+	/**
+	 * Returns the actual implementation for reading the data.
+	 */
+	LookupReader getLookupReader(List<FieldReferenceExpression> fields);
 
-	static <T> TableFunctionLookupReader<T> of(TableFunction<T> tableFunction) {
-		return () -> tableFunction;
+	interface LookupReader {
+		// marker interface
 	}
 }

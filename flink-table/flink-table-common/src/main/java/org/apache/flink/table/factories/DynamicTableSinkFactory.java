@@ -22,7 +22,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ObjectIdentifier;
-import org.apache.flink.table.connectors.DynamicTableSink;
+import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 
 /**
  * A factory to create configured table source instances in a batch or stream environment based on

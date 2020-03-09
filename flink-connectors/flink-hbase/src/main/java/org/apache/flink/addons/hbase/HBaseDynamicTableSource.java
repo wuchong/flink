@@ -21,10 +21,10 @@ package org.apache.flink.addons.hbase;
 import org.apache.flink.HBaseBaseRowInputFormat;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.connectors.DynamicTableSource;
-import org.apache.flink.table.connectors.InputFormatChangelogReader;
-import org.apache.flink.table.connectors.SupportsChangelogReading;
-import org.apache.flink.table.connectors.SupportsProjectionPushDown;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
+import org.apache.flink.table.connectors.sources.InputFormatChangelogReader;
+import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
+import org.apache.flink.table.connectors.sources.SupportsProjectionPushDown;
 
 /**
  * Creates a table source to scan an HBase table.

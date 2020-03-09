@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sinks;
 
-import org.apache.flink.table.functions.AsyncTableFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * {@link SupportsLookupReading} by using a {@link AsyncTableFunction} during runtime.
+ * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.
  */
-public interface AsyncTableFunctionLookupReader<T> extends SupportsLookupReading.LookupReader {
+public interface SinkFunctionChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	AsyncTableFunction<T> createAsyncTableFunction();
+	SinkFunction<BaseRow> createSinkFunction();
 
-	static <T> AsyncTableFunctionLookupReader<T> of(AsyncTableFunction<T> tableFunction) {
-		return () -> tableFunction;
+	static SinkFunctionChangelogWriter of(SinkFunction<BaseRow> sinkFunction) {
+		return () -> sinkFunction;
 	}
 }

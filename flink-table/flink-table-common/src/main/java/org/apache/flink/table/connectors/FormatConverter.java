@@ -18,6 +18,9 @@
 
 package org.apache.flink.table.connectors;
 
+import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
+import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
+
 import java.io.Serializable;
 
 /**

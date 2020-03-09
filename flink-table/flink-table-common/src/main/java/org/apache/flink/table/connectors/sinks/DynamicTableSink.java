@@ -16,12 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sinks;
 
-public interface SupportsLimitPushDown extends ReadingAbility {
+import org.apache.flink.annotation.PublicEvolving;
+
+/**
+ * Sink of a dynamic table to an external storage system.
+ *
+ * <p>A dynamic table sink can be seen as a factory that produces concrete runtime implementation. Depending
+ * on the specified {@link WritingAbility}, the planner might apply changes to instances of this class and thus
+ * mutates the produced runtime implementation.
+ *
+ * <p>Use {@link WritingAbility}s to specify how to write the table.
+ */
+@PublicEvolving
+public interface DynamicTableSink {
 
 	/**
-	 * @param limit the value which limit the number of records.
+	 * Returns a string that summarizes this sink for printing to a console or log.
 	 */
-	void applyLimit(long limit);
+	String asSummaryString();
 }

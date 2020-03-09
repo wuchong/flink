@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.functions.TableFunction;
 
 /**
- * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.
+ * {@link SupportsLookupReading} by using a {@link TableFunction} during runtime.
  */
-public interface SinkFunctionChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
+public interface TableFunctionLookupReader<T> extends SupportsLookupReading.LookupReader {
 
-	SinkFunction<BaseRow> createSinkFunction();
+	TableFunction<T> createTableFunction();
 
-	static SinkFunctionChangelogWriter of(SinkFunction<BaseRow> sinkFunction) {
-		return () -> sinkFunction;
+	static <T> TableFunctionLookupReader<T> of(TableFunction<T> tableFunction) {
+		return () -> tableFunction;
 	}
 }

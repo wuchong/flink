@@ -16,24 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.io.InputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * Source of a dynamic table from an external storage system.
- *
- * <p>A dynamic table source can be seen as a factory that produces concrete runtime implementation. Depending
- * on the specified {@link ReadingAbility}, the planner might apply changes to instances of this class and thus
- * mutates the produced runtime implementation.
- *
- * <p>Use {@link ReadingAbility}s to specify how to read the table.
+ * {@link SupportsSnapshotReading.SnapshotReader} by using a {@link InputFormat} during runtime.
  */
-@PublicEvolving
-public interface DynamicTableSource {
+public interface InputFormatSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
 
-	/**
-	 * Returns a string that summarizes this source for printing to a console or log.
-	 */
-	String asSummaryString();
+	InputFormat<BaseRow, ?> createInputFormat();
+
+	static InputFormatSnapshotReader of(InputFormat<BaseRow, ?> inputFormat) {
+		return new InputFormatSnapshotReader() {
+			@Override
+			public InputFormat<BaseRow, ?> createInputFormat() {
+				return inputFormat;
+			}
+		};
+	}
 }

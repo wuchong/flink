@@ -16,14 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sinks;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * Entity that specifies how to write a {@link DynamicTableSource}.
+ * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
  */
-@PublicEvolving
-public interface WritingAbility {
-	// marker interface
+public interface OutputFormatChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
+
+	OutputFormat<BaseRow> createOutputFunction();
+
+	static OutputFormatChangelogWriter of(OutputFormat<BaseRow> outputFormat) {
+		return () -> outputFormat;
+	}
 }

@@ -19,8 +19,8 @@
 package org.apache.flink.addons.hbase;
 
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.connectors.DynamicTableSink;
-import org.apache.flink.table.connectors.DynamicTableSource;
+import org.apache.flink.table.connectors.sinks.DynamicTableSink;
+import org.apache.flink.table.connectors.sources.DynamicTableSource;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.HBaseValidator;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;

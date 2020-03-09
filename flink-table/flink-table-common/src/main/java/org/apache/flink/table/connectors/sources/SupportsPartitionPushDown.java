@@ -16,24 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.annotation.PublicEvolving;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Sink of a dynamic table to an external storage system.
- *
- * <p>A dynamic table sink can be seen as a factory that produces concrete runtime implementation. Depending
- * on the specified {@link WritingAbility}, the planner might apply changes to instances of this class and thus
- * mutates the produced runtime implementation.
- *
- * <p>Use {@link WritingAbility}s to specify how to write the table.
- */
-@PublicEvolving
-public interface DynamicTableSink {
+public interface SupportsPartitionPushDown extends ReadingAbility {
 
 	/**
-	 * Returns a string that summarizes this sink for printing to a console or log.
+	 * Returns all the partitions of this {@link DynamicTableSource}.
 	 */
-	String asSummaryString();
+	List<Map<String, String>> getPartitions();
+
+	/**
+	 * Applies the remaining partitions to the table source. The {@code remainingPartitions} is
+	 * the remaining partitions of {@link #getPartitions()} after partition pruning applied.
+	 *
+	 * @param remainingPartitions Remaining partitions after partition pruning applied.
+	 */
+	void applyPartitionPruning(List<Map<String, String>> remainingPartitions);
 }

@@ -16,18 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.table.expressions.ResolvedExpression;
-
-import java.util.List;
+import org.apache.flink.api.common.io.InputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * Allows to push down filters into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
+ * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
  */
-@PublicEvolving
-public interface SupportsFilterPushDown extends ReadingAbility {
+public interface InputFormatChangelogReader extends SupportsChangelogReading.ChangelogReader {
 
-	List<ResolvedExpression> applyFilters(List<ResolvedExpression> filters);
+	InputFormat<BaseRow, ?> createInputFormat();
+
+	static InputFormatChangelogReader of(InputFormat<BaseRow, ?> inputFormat) {
+		return new InputFormatChangelogReader() {
+			@Override
+			public InputFormat<BaseRow, ?> createInputFormat() {
+				return inputFormat;
+			}
+
+			@Override
+			public boolean isBounded() {
+				return true;
+			}
+		};
+	}
 }

@@ -16,24 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connectors;
+package org.apache.flink.table.connectors.sources;
 
-import org.apache.flink.api.common.io.InputFormat;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.annotation.PublicEvolving;
 
 /**
- * {@link SupportsSnapshotReading.SnapshotReader} by using a {@link InputFormat} during runtime.
+ * Entity that specifies how to read a {@link DynamicTableSource}.
  */
-public interface InputFormatSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
-
-	InputFormat<BaseRow, ?> createInputFormat();
-
-	static InputFormatSnapshotReader of(InputFormat<BaseRow, ?> inputFormat) {
-		return new InputFormatSnapshotReader() {
-			@Override
-			public InputFormat<BaseRow, ?> createInputFormat() {
-				return inputFormat;
-			}
-		};
-	}
+@PublicEvolving
+public interface ReadingAbility {
+	// marker interface
 }
