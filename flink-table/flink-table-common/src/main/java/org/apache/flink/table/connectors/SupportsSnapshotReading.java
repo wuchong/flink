@@ -37,13 +37,13 @@ public interface SupportsSnapshotReading extends ReadingAbility {
 	/**
 	 * Returns the actual implementation for reading the data.
 	 */
-	SnapshotReader getSnapshotReader(Context context);
+	SnapshotReader getSnapshotReader(SnapshotReaderContext context);
 
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
 
-	interface Context {
+	interface SnapshotReaderContext {
 
 		/**
 		 * Returns the user code class loader.

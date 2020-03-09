@@ -57,7 +57,7 @@ public class HBaseDynamicTableSink implements DynamicTableSink, SupportsChangelo
 	}
 
 	@Override
-	public ChangelogWriter getChangelogWriter(Context context) {
+	public ChangelogWriter getChangelogWriter(ChangelogWriterContext context) {
 		Configuration hbaseClientConf = HBaseConfiguration.create();
 		hbaseClientConf.set(HConstants.ZOOKEEPER_QUORUM, hbaseOptions.getZkQuorum());
 		hbaseOptions.getZkNodeParent().ifPresent(v -> hbaseClientConf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, v));

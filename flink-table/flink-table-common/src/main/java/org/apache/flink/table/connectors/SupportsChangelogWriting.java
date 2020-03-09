@@ -40,13 +40,13 @@ public interface SupportsChangelogWriting extends WritingAbility {
 	/**
 	 * Returns the actual implementation for writing the data.
 	 */
-	ChangelogWriter getChangelogWriter(Context context);
+	ChangelogWriter getChangelogWriter(ChangelogWriterContext context);
 
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
 
-	interface Context {
+	interface ChangelogWriterContext {
 
 		/**
 		 * Whether the data is bounded or not.

@@ -78,7 +78,7 @@ public abstract class KafkaDynamicTableSinkBase implements DynamicTableSink, Sup
 	}
 
 	@Override
-	public ChangelogWriter getChangelogWriter(Context context) {
+	public ChangelogWriter getChangelogWriter(ChangelogWriterContext context) {
 		final SinkFunction<BaseRow> kafkaProducer = createKafkaProducer(
 			topic,
 			properties,

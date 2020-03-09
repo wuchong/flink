@@ -40,13 +40,13 @@ public interface SupportsChangelogReading extends ReadingAbility {
 	/**
 	 * Returns the actual implementation for reading the data.
 	 */
-	ChangelogReader getChangelogReader(Context context);
+	ChangelogReader getChangelogReader(ChangelogReaderContext context);
 
 	// --------------------------------------------------------------------------------------------
 	// Helper Interfaces
 	// --------------------------------------------------------------------------------------------
 
-	interface Context {
+	interface ChangelogReaderContext {
 
 		/**
 		 * Returns the user code class loader.

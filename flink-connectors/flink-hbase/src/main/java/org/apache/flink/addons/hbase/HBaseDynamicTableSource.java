@@ -48,7 +48,7 @@ public class HBaseDynamicTableSource implements DynamicTableSource,
 	}
 
 	@Override
-	public ChangelogReader getChangelogReader(Context context) {
+	public ChangelogReader getChangelogReader(ChangelogReaderContext context) {
 		HBaseTableSchema hbaseSchema = HBaseTableSchema.build(tableSchema);
 		HBaseBaseRowInputFormat inputFormat = new HBaseBaseRowInputFormat(
 			conf,

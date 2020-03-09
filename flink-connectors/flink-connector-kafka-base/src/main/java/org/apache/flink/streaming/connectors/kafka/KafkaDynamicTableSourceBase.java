@@ -76,7 +76,7 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 	}
 
 	@Override
-	public ChangelogReader getChangelogReader(Context context) {
+	public ChangelogReader getChangelogReader(ChangelogReaderContext context) {
 		// Version-specific Kafka consumer
 		FlinkKafkaConsumerBase<BaseRow> kafkaConsumer = getKafkaConsumer(
 			topic,
