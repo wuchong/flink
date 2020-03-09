@@ -20,7 +20,7 @@ package org.apache.flink.addons.hbase;
 
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.DynamicTableSink;
-import org.apache.flink.table.connectors.SinkFunctionWriter;
+import org.apache.flink.table.connectors.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.SupportsChangelogWriting;
 import org.apache.flink.table.dataformats.ChangelogKind;
 
@@ -68,7 +68,7 @@ public class HBaseDynamicTableSink implements DynamicTableSink, SupportsChangelo
 			writeOptions.getBufferFlushMaxSizeInBytes(),
 			writeOptions.getBufferFlushMaxRows(),
 			writeOptions.getBufferFlushIntervalMillis());
-		return SinkFunctionWriter.of(sinkFunction);
+		return SinkFunctionChangelogWriter.of(sinkFunction);
 	}
 
 	@Override

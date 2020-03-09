@@ -24,11 +24,11 @@ import org.apache.flink.table.dataformats.BaseRow;
 /**
  * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.
  */
-public interface SinkFunctionWriter extends SupportsChangelogWriting.ChangelogWriter {
+public interface SinkFunctionChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
 
 	SinkFunction<BaseRow> createSinkFunction();
 
-	static SinkFunctionWriter of(SinkFunction<BaseRow> sinkFunction) {
+	static SinkFunctionChangelogWriter of(SinkFunction<BaseRow> sinkFunction) {
 		return () -> sinkFunction;
 	}
 }

@@ -18,16 +18,17 @@
 
 package org.apache.flink.table.connectors;
 
-import org.apache.flink.table.functions.TableFunction;
+import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.table.dataformats.BaseRow;
 
 /**
- * {@link SupportsLookupReading} by using a {@link TableFunction} during runtime.
+ * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
  */
-public interface TableFunctionReader<T> extends SupportsLookupReading.LookupReader {
+public interface OutputFormatChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	TableFunction<T> createTableFunction();
+	OutputFormat<BaseRow> createOutputFunction();
 
-	static <T> TableFunctionReader<T> of(TableFunction<T> tableFunction) {
-		return () -> tableFunction;
+	static OutputFormatChangelogWriter of(OutputFormat<BaseRow> outputFormat) {
+		return () -> outputFormat;
 	}
 }

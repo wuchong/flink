@@ -24,7 +24,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.connectors.DynamicTableSink;
-import org.apache.flink.table.connectors.SinkFunctionWriter;
+import org.apache.flink.table.connectors.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.SupportsChangelogWriting;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
@@ -83,7 +83,7 @@ public abstract class KafkaDynamicTableSinkBase implements DynamicTableSink, Sup
 			topic,
 			properties,
 			serializationSchema);
-		return SinkFunctionWriter.of(kafkaProducer);
+		return SinkFunctionChangelogWriter.of(kafkaProducer);
 	}
 
 	/**

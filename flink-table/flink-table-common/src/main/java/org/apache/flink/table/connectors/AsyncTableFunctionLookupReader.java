@@ -23,11 +23,11 @@ import org.apache.flink.table.functions.AsyncTableFunction;
 /**
  * {@link SupportsLookupReading} by using a {@link AsyncTableFunction} during runtime.
  */
-public interface AsyncTableFunctionReader<T> extends SupportsLookupReading.LookupReader {
+public interface AsyncTableFunctionLookupReader<T> extends SupportsLookupReading.LookupReader {
 
 	AsyncTableFunction<T> createAsyncTableFunction();
 
-	static <T> AsyncTableFunctionReader<T> of(AsyncTableFunction<T> tableFunction) {
+	static <T> AsyncTableFunctionLookupReader<T> of(AsyncTableFunction<T> tableFunction) {
 		return () -> tableFunction;
 	}
 }
