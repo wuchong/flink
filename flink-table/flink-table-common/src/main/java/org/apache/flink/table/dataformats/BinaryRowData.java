@@ -56,7 +56,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * type can also be placed on a fixed length area (If it's short enough).
  */
 @Internal
-public final class BinaryRow extends BinarySection implements SqlRow, TypedSetters {
+public final class BinaryRowData extends BinarySection implements RowData, TypedSetters {
 	private static final long serialVersionUID = 1L;
 
 	public static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -90,11 +90,11 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 			case DOUBLE:
 				return true;
 			case DECIMAL:
-				return ((DecimalType) type).getPrecision() <= SqlDecimal.MAX_COMPACT_PRECISION;
+				return ((DecimalType) type).getPrecision() <= DecimalData.MAX_COMPACT_PRECISION;
 			case TIMESTAMP_WITHOUT_TIME_ZONE:
-				return SqlTimestamp.isCompact(((TimestampType) type).getPrecision());
+				return TimestampData.isCompact(((TimestampType) type).getPrecision());
 			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-				return SqlTimestamp.isCompact(((LocalZonedTimestampType) type).getPrecision());
+				return TimestampData.isCompact(((LocalZonedTimestampType) type).getPrecision());
 			default:
 				return false;
 		}
@@ -107,7 +107,7 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	private final int arity;
 	private final int nullBitsSizeInBytes;
 
-	public BinaryRow(int arity) {
+	public BinaryRowData(int arity) {
 		checkArgument(arity >= 0);
 		this.arity = arity;
 		this.nullBitsSizeInBytes = calculateBitSetWidthInBytes(arity);
@@ -132,13 +132,13 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public ChangelogKind getChangelogKind() {
+	public RowKind getChangelogKind() {
 		byte header = segments[0].get(offset);
-		return ChangelogKind.valueOf(header);
+		return RowKind.valueOf(header);
 	}
 
 	@Override
-	public void setChangelogKind(ChangelogKind kind) {
+	public void setChangelogKind(RowKind kind) {
 		segments[0].put(offset, kind.getValue());
 	}
 
@@ -189,10 +189,10 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public void setDecimal(int pos, SqlDecimal value, int precision) {
+	public void setDecimal(int pos, DecimalData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlDecimal.isCompact(precision)) {
+		if (DecimalData.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -220,10 +220,10 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public void setTimestamp(int pos, SqlTimestamp value, int precision) {
+	public void setTimestamp(int pos, TimestampData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
+		if (TimestampData.isCompact(precision)) {
 			setLong(pos, value.getMillisecond());
 		} else {
 			int fieldOffset = getFieldOffset(pos);
@@ -316,7 +316,7 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlString getString(int pos) {
+	public StringData getString(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndLen = segments[0].getLong(fieldOffset);
@@ -324,36 +324,36 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlDecimal getDecimal(int pos, int precision, int scale) {
+	public DecimalData getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
 
-		if (SqlDecimal.isCompact(precision)) {
-			return SqlDecimal.fromUnscaledLong(precision, scale,
+		if (DecimalData.isCompact(precision)) {
+			return DecimalData.fromUnscaledLong(precision, scale,
 					segments[0].getLong(getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndSize = segments[0].getLong(fieldOffset);
-		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return DecimalData.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
-	public SqlTimestamp getTimestamp(int pos, int precision) {
+	public TimestampData getTimestamp(int pos, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
-			return SqlTimestamp.fromEpochMillis(segments[0].getLong(getFieldOffset(pos)));
+		if (TimestampData.isCompact(precision)) {
+			return TimestampData.fromEpochMillis(segments[0].getLong(getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndNanoOfMilli = segments[0].getLong(fieldOffset);
-		return SqlTimestamp.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
+		return TimestampData.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
 	}
 
 	@Override
-	public <T> SqlRawValue<T> getGeneric(int pos) {
+	public <T> RawValueData<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return LazyBinaryRawValue.fromAddress(segments, offset, getLong(pos));
+		return BinaryRawValueData.fromAddress(segments, offset, getLong(pos));
 	}
 
 	@Override
@@ -365,21 +365,21 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlArray getArray(int pos) {
+	public ArrayData getArray(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryArrayData.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlMap getMap(int pos) {
+	public MapData getMap(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryMapData.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlRow getRow(int pos, int numFields) {
+	public RowData getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
-		return NestedRow.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
+		return NestedRowData.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
 	}
 
 	/**
@@ -407,15 +407,15 @@ public final class BinaryRow extends BinarySection implements SqlRow, TypedSette
 		return false;
 	}
 
-	public BinaryRow copy() {
-		return copy(new BinaryRow(arity));
+	public BinaryRowData copy() {
+		return copy(new BinaryRowData(arity));
 	}
 
-	public BinaryRow copy(BinaryRow reuse) {
+	public BinaryRowData copy(BinaryRowData reuse) {
 		return copyInternal(reuse);
 	}
 
-	private BinaryRow copyInternal(BinaryRow reuse) {
+	private BinaryRowData copyInternal(BinaryRowData reuse) {
 		byte[] bytes = SegmentsUtil.copyToBytes(segments, offset, sizeInBytes);
 		reuse.pointTo(MemorySegmentFactory.wrap(bytes), 0, sizeInBytes);
 		return reuse;

@@ -37,7 +37,7 @@ import static org.apache.flink.core.memory.MemoryUtils.UNSAFE;
  * <p>{@code BinaryArray} are influenced by Apache Spark UnsafeArrayData.
  */
 @Internal
-public final class BinaryArray extends BinarySection implements SqlArray {
+public final class BinaryArrayData extends BinarySection implements ArrayData {
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -85,7 +85,7 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 	/** The position to start storing array elements. */
 	private int elementOffset;
 
-	public BinaryArray() {}
+	public BinaryArrayData() {}
 
 	private void assertIndexIsValid(int ordinal) {
 		assert ordinal >= 0 : "ordinal (" + ordinal + ") should >= 0";
@@ -167,7 +167,7 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 	}
 
 	@Override
-	public SqlString getString(int pos) {
+	public StringData getString(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
@@ -176,38 +176,38 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 	}
 
 	@Override
-	public SqlDecimal getDecimal(int pos, int precision, int scale) {
+	public DecimalData getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
-		if (SqlDecimal.isCompact(precision)) {
-			return SqlDecimal.fromUnscaledLong(precision, scale,
+		if (DecimalData.isCompact(precision)) {
+			return DecimalData.fromUnscaledLong(precision, scale,
 				SegmentsUtil.getLong(segments, getElementOffset(pos, 8)));
 		}
 
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return DecimalData.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
-	public SqlTimestamp getTimestamp(int pos, int precision) {
+	public TimestampData getTimestamp(int pos, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
-			return SqlTimestamp.fromEpochMillis(
+		if (TimestampData.isCompact(precision)) {
+			return TimestampData.fromEpochMillis(
 				SegmentsUtil.getLong(segments, getElementOffset(pos, 8)));
 		}
 
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndNanoOfMilli = SegmentsUtil.getLong(segments, fieldOffset);
-		return SqlTimestamp.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
+		return TimestampData.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
 	}
 
 	@Override
-	public <T> SqlRawValue<T> getGeneric(int pos) {
+	public <T> RawValueData<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return LazyBinaryRawValue.fromAddress(segments, offset, offsetAndSize);
+		return BinaryRawValueData.fromAddress(segments, offset, offsetAndSize);
 	}
 
 	@Override
@@ -220,23 +220,23 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 	}
 
 	@Override
-	public SqlArray getArray(int pos) {
+	public ArrayData getArray(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryArrayData.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlMap getMap(int pos) {
+	public MapData getMap(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryMapData.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlRow getRow(int pos, int numFields) {
+	public RowData getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return NestedRow.readNestedRowFieldFromSegments(
+		return NestedRowData.readNestedRowFieldFromSegments(
 			segments, numFields, offset, offsetAndSize);
 	}
 
@@ -330,10 +330,10 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 		SegmentsUtil.setDouble(segments, getElementOffset(pos, 8), 0.0);
 	}
 
-	public void setDecimal(int pos, SqlDecimal value, int precision) {
+	public void setDecimal(int pos, DecimalData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlDecimal.isCompact(precision)) {
+		if (DecimalData.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -360,10 +360,10 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 		}
 	}
 
-	public void setTimestamp(int pos, SqlTimestamp value, int precision) {
+	public void setTimestamp(int pos, TimestampData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
+		if (TimestampData.isCompact(precision)) {
 			setLong(pos, value.getMillisecond());
 		} else {
 			int fieldOffset = getElementOffset(pos, 8);
@@ -469,17 +469,17 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 		T[] values = (T[]) Array.newInstance(elementClass, size);
 		for (int i = 0; i < size; i++) {
 			if (!isNullAt(i)) {
-				values[i] = (T) SqlArray.get(this, i, elementType);
+				values[i] = (T) ArrayData.get(this, i, elementType);
 			}
 		}
 		return values;
 	}
 
-	public BinaryArray copy() {
-		return copy(new BinaryArray());
+	public BinaryArrayData copy() {
+		return copy(new BinaryArrayData());
 	}
 
-	public BinaryArray copy(BinaryArray reuse) {
+	public BinaryArrayData copy(BinaryArrayData reuse) {
 		byte[] bytes = SegmentsUtil.copyToBytes(segments, offset, sizeInBytes);
 		reuse.pointTo(MemorySegmentFactory.wrap(bytes), 0, sizeInBytes);
 		return reuse;
@@ -490,7 +490,7 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 		return SegmentsUtil.hashByWords(segments, offset, sizeInBytes);
 	}
 
-	private static BinaryArray fromPrimitiveArray(
+	private static BinaryArrayData fromPrimitiveArray(
 		Object arr, int offset, int length, int elementSize) {
 		final long headerInBytes = calculateHeaderInBytes(length);
 		final long valueRegionInBytes = elementSize * length;
@@ -509,44 +509,44 @@ public final class BinaryArray extends BinarySection implements SqlArray {
 		UNSAFE.copyMemory(
 			arr, offset, data, BYTE_ARRAY_BASE_OFFSET + headerInBytes, valueRegionInBytes);
 
-		BinaryArray result = new BinaryArray();
+		BinaryArrayData result = new BinaryArrayData();
 		result.pointTo(MemorySegmentFactory.wrap(data), 0, (int) totalSize);
 		return result;
 	}
 
-	public static BinaryArray fromPrimitiveArray(boolean[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(boolean[] arr) {
 		return fromPrimitiveArray(arr, BOOLEAN_ARRAY_OFFSET, arr.length, 1);
 	}
 
-	public static BinaryArray fromPrimitiveArray(byte[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(byte[] arr) {
 		return fromPrimitiveArray(arr, BYTE_ARRAY_BASE_OFFSET, arr.length, 1);
 	}
 
-	public static BinaryArray fromPrimitiveArray(short[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(short[] arr) {
 		return fromPrimitiveArray(arr, SHORT_ARRAY_OFFSET, arr.length, 2);
 	}
 
-	public static BinaryArray fromPrimitiveArray(int[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(int[] arr) {
 		return fromPrimitiveArray(arr, INT_ARRAY_OFFSET, arr.length, 4);
 	}
 
-	public static BinaryArray fromPrimitiveArray(long[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(long[] arr) {
 		return fromPrimitiveArray(arr, LONG_ARRAY_OFFSET, arr.length, 8);
 	}
 
-	public static BinaryArray fromPrimitiveArray(float[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(float[] arr) {
 		return fromPrimitiveArray(arr, FLOAT_ARRAY_OFFSET, arr.length, 4);
 	}
 
-	public static BinaryArray fromPrimitiveArray(double[] arr) {
+	public static BinaryArrayData fromPrimitiveArray(double[] arr) {
 		return fromPrimitiveArray(arr, DOUBLE_ARRAY_OFFSET, arr.length, 8);
 	}
 
-	static BinaryArray readBinaryArrayFieldFromSegments(
+	static BinaryArrayData readBinaryArrayFieldFromSegments(
 		MemorySegment[] segments, int baseOffset, long offsetAndSize) {
 		final int size = ((int) offsetAndSize);
 		int offset = (int) (offsetAndSize >> 32);
-		BinaryArray array = new BinaryArray();
+		BinaryArrayData array = new BinaryArrayData();
 		array.pointTo(segments, offset + baseOffset, size);
 		return array;
 	}

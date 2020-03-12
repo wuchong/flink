@@ -24,23 +24,23 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.LazyBinaryString;
-import org.apache.flink.table.dataformats.SqlString;
+import org.apache.flink.table.dataformats.BinaryStringData;
+import org.apache.flink.table.dataformats.StringData;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link SqlString}.
+ * Serializer for {@link StringData}.
  */
 @Internal
-public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString> {
+public final class StringDataSerializer extends TypeSerializerSingleton<StringData> {
 
 	private static final long serialVersionUID = 1L;
 
-	public static final SqlStringSerializer INSTANCE = new SqlStringSerializer();
+	public static final StringDataSerializer INSTANCE = new StringDataSerializer();
 
-	private SqlStringSerializer() {}
+	private StringDataSerializer() {}
 
 	@Override
 	public boolean isImmutableType() {
@@ -48,18 +48,18 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 	}
 
 	@Override
-	public SqlString createInstance() {
-		return SqlString.fromString("");
+	public StringData createInstance() {
+		return StringData.fromString("");
 	}
 
 	@Override
-	public SqlString copy(SqlString from) {
-		return ((LazyBinaryString) from).copy();
+	public StringData copy(StringData from) {
+		return ((BinaryStringData) from).copy();
 	}
 
 	@Override
-	public SqlString copy(SqlString from, SqlString reuse) {
-		return ((LazyBinaryString) from).copy();
+	public StringData copy(StringData from, StringData reuse) {
+		return ((BinaryStringData) from).copy();
 	}
 
 	@Override
@@ -68,27 +68,27 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 	}
 
 	@Override
-	public void serialize(SqlString record, DataOutputView target) throws IOException {
-		LazyBinaryString sqlString = (LazyBinaryString) record;
+	public void serialize(StringData record, DataOutputView target) throws IOException {
+		BinaryStringData sqlString = (BinaryStringData) record;
 		sqlString.ensureMaterialized();
 		target.writeInt(sqlString.getSizeInBytes());
 		SegmentsUtil.copyToView(sqlString.getSegments(), sqlString.getOffset(), sqlString.getSizeInBytes(), target);
 	}
 
 	@Override
-	public SqlString deserialize(DataInputView source) throws IOException {
+	public StringData deserialize(DataInputView source) throws IOException {
 		return deserializeInternal(source);
 	}
 
-	public static SqlString deserializeInternal(DataInputView source) throws IOException {
+	public static StringData deserializeInternal(DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
-		return SqlString.fromBytes(bytes);
+		return StringData.fromBytes(bytes);
 	}
 
 	@Override
-	public SqlString deserialize(SqlString record, DataInputView source) throws IOException {
+	public StringData deserialize(StringData record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
@@ -100,7 +100,7 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlString> snapshotConfiguration() {
+	public TypeSerializerSnapshot<StringData> snapshotConfiguration() {
 		return new SqlStringSerializerSnapshot();
 	}
 
@@ -108,7 +108,7 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 	 * Serializer configuration snapshot for compatibility and format evolution.
 	 */
 	@SuppressWarnings("WeakerAccess")
-	public static final class SqlStringSerializerSnapshot extends SimpleTypeSerializerSnapshot<SqlString> {
+	public static final class SqlStringSerializerSnapshot extends SimpleTypeSerializerSnapshot<StringData> {
 
 		public SqlStringSerializerSnapshot() {
 			super(() -> INSTANCE);

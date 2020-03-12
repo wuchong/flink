@@ -22,7 +22,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.FormatConverter;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 /**
  * Allows to push down computed columns into a {@link DynamicTableSource) if it {@link SupportsChangelogReading}.
@@ -31,8 +31,8 @@ import org.apache.flink.table.dataformats.SqlRow;
 public interface SupportsComputedColumnPushDown extends ReadingAbility {
 
 	/**
-	 * Provides a converter that converts the produced {@link SqlRow} containing the physical
-	 * fields of the external system into a new {@link SqlRow} with push-downed computed columns.
+	 * Provides a converter that converts the produced {@link RowData} containing the physical
+	 * fields of the external system into a new {@link RowData} with push-downed computed columns.
 	 *
 	 * <p>For example, in case of {@code CREATE TABLE t (s STRING, ts AS TO_TIMESTAMP(str), i INT, i2 AS i + 1)},
 	 * the converter will convert a {@code ChangelogRow(s, i)} to {@code ChangelogRow(s, ts, i, i2)}.
@@ -43,14 +43,14 @@ public interface SupportsComputedColumnPushDown extends ReadingAbility {
 	void applyComputedColumn(ComputedColumnConverter converter);
 
 	/**
-	 * Generates and adds computed columns to a {@link SqlRow} if necessary.
+	 * Generates and adds computed columns to a {@link RowData} if necessary.
 	 */
 	interface ComputedColumnConverter extends FormatConverter {
 
 		/**
-		 * Generates and adds computed columns to a {@link SqlRow} if necessary.
+		 * Generates and adds computed columns to a {@link RowData} if necessary.
 		 */
-		SqlRow convert(SqlRow changelogRow);
+		RowData convert(RowData changelogRow);
 
 	}
 }

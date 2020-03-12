@@ -22,18 +22,18 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.SqlArray;
-import org.apache.flink.table.dataformats.SqlMap;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.BinaryArray;
+import org.apache.flink.table.dataformats.ArrayData;
+import org.apache.flink.table.dataformats.MapData;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.BinaryArrayData;
 import org.apache.flink.table.dataformats.BinaryFormat;
-import org.apache.flink.table.dataformats.BinaryRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.LazyBinaryRawValue;
-import org.apache.flink.table.dataformats.LazyBinaryString;
-import org.apache.flink.table.dataformats.SqlRawValue;
-import org.apache.flink.table.dataformats.SqlString;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.BinaryRowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.BinaryRawValueData;
+import org.apache.flink.table.dataformats.BinaryStringData;
+import org.apache.flink.table.dataformats.RawValueData;
+import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;
@@ -69,9 +69,9 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 
 	protected DataOutputViewStreamWrapper outputView;
 
-	private Map<Integer, BinaryArray> reuseArrays = new HashMap<>();
+	private Map<Integer, BinaryArrayData> reuseArrays = new HashMap<>();
 	private Map<Integer, BinaryArrayWriter> reuseArrayWriters = new HashMap<>();
-	private BinaryArray reuseArray;
+	private BinaryArrayData reuseArray;
 	private BinaryArrayWriter reuseArrayWriter;
 //	private Map<Integer, BinaryMap> reuseMaps = new HashMap<>();
 //	private Map<Integer, BinaryMapWri> reuseMapWriters = new HashMap<>();
@@ -94,11 +94,11 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 	protected abstract void setNullBit(int ordinal);
 
 	/**
-	 * See {@link LazyBinaryString#readBinaryStringFieldFromSegments}.
+	 * See {@link BinaryStringData#readBinaryStringFieldFromSegments}.
 	 */
 	@Override
-	public void writeString(int pos, SqlString input) {
-		LazyBinaryString sqlString = (LazyBinaryString) input;
+	public void writeString(int pos, StringData input) {
+		BinaryStringData sqlString = (BinaryStringData) input;
 		if (sqlString.getSegments() == null) {
 			String javaObject = sqlString.getJavaString();
 			writeBytes(pos, javaObject.getBytes(StandardCharsets.UTF_8));
@@ -124,13 +124,13 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 	}
 
 	@Override
-	public void writeArray(int pos, SqlArray input, ArrayType type) {
-		BinaryArray binary = toBinaryArray(input, type);
+	public void writeArray(int pos, ArrayData input, ArrayType type) {
+		BinaryArrayData binary = toBinaryArray(input, type);
 		writeSegmentsToVarLenPart(pos, binary.getSegments(), binary.getOffset(), binary.getSizeInBytes());
 	}
 
 	@Override
-	public void writeMap(int pos, SqlMap input, MapType type) {
+	public void writeMap(int pos, MapData input, MapType type) {
 		// TODO:
 //		BinaryMap binary = serializer.toBinaryMap(input);
 //		writeSegmentsToVarLenPart(pos, binary.getSegments(), binary.getOffset(), binary.getSizeInBytes());
@@ -145,15 +145,15 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 
 	@Override
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public void writeGeneric(int pos, SqlRawValue<?> input, RawType<?> type) {
+	public void writeGeneric(int pos, RawValueData<?> input, RawType<?> type) {
 		TypeSerializer innerSerializer = type.getTypeSerializer();
-		LazyBinaryRawValue rawValue = (LazyBinaryRawValue) input;
+		BinaryRawValueData rawValue = (BinaryRawValueData) input;
 		rawValue.ensureMaterialized(innerSerializer);
 		writeSegmentsToVarLenPart(pos, rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes());
 	}
 
 	@Override
-	public void writeRow(int pos, SqlRow input, RowType type) {
+	public void writeRow(int pos, RowData input, RowType type) {
 		if (input instanceof BinaryFormat) {
 			BinaryFormat row = (BinaryFormat) input;
 			writeSegmentsToVarLenPart(pos, row.getSegments(), row.getOffset(), row.getSizeInBytes());
@@ -175,10 +175,10 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 	}
 
 	@Override
-	public void writeDecimal(int pos, SqlDecimal value, int precision) {
+	public void writeDecimal(int pos, DecimalData value, int precision) {
 		assert value == null || (value.getPrecision() == precision);
 
-		if (SqlDecimal.isCompact(precision)) {
+		if (DecimalData.isCompact(precision)) {
 			assert value != null;
 			writeLong(pos, value.toUnscaledLong());
 		} else {
@@ -210,8 +210,8 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 	}
 
 	@Override
-	public void writeTimestamp(int pos, SqlTimestamp value, int precision) {
-		if (SqlTimestamp.isCompact(precision)) {
+	public void writeTimestamp(int pos, TimestampData value, int precision) {
+		if (TimestampData.isCompact(precision)) {
 			writeLong(pos, value.getMillisecond());
 		} else {
 			// store the nanoOfMillisecond in fixed-length part as offset and nanoOfMillisecond
@@ -333,7 +333,7 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 			MemorySegment segment, int fieldOffset, byte[] bytes, int len) {
 		long firstByte = len | 0x80; // first bit is 1, other bits is len
 		long sevenBytes = 0L; // real data
-		if (BinaryRow.LITTLE_ENDIAN) {
+		if (BinaryRowData.LITTLE_ENDIAN) {
 			for (int i = 0; i < len; i++) {
 				sevenBytes |= ((0x00000000000000FFL & bytes[i]) << (i * 8L));
 			}
@@ -389,19 +389,19 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 
 	// ========================================================================================
 
-	private BinaryArray toBinaryArray(SqlArray from, ArrayType type) {
-		if (from instanceof BinaryArray) {
-			return (BinaryArray) from;
+	private BinaryArrayData toBinaryArray(ArrayData from, ArrayType type) {
+		if (from instanceof BinaryArrayData) {
+			return (BinaryArrayData) from;
 		}
 
 		LogicalType elementType = type.getElementType();
 		int numElements = from.numElements();
 		if (reuseArray == null) {
-			reuseArray = new BinaryArray();
+			reuseArray = new BinaryArrayData();
 		}
 		if (reuseArrayWriter == null || reuseArrayWriter.getNumElements() != numElements) {
 			reuseArrayWriter = new BinaryArrayWriter(
-				reuseArray, numElements, BinaryArray.calculateFixLengthPartSize(elementType));
+				reuseArray, numElements, BinaryArrayData.calculateFixLengthPartSize(elementType));
 		} else {
 			reuseArrayWriter.reset();
 		}
@@ -410,7 +410,7 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 			if (from.isNullAt(i)) {
 				reuseArrayWriter.setNullAt(i, elementType);
 			} else {
-				BinaryWriter.write(reuseArrayWriter, i, SqlArray.get(from, i, elementType), elementType);
+				BinaryWriter.write(reuseArrayWriter, i, ArrayData.get(from, i, elementType), elementType);
 			}
 		}
 		reuseArrayWriter.complete();

@@ -29,13 +29,13 @@ import java.util.Objects;
  * It can be considered as a wrapper class of the normal java map.
  */
 @PublicEvolving
-public final class GenericMap implements SqlMap {
+public final class GenericMapData implements MapData {
 
 	private static final long serialVersionUID = 1L;
 
 	private final Map<?, ?> map;
 
-	public GenericMap(Map<?, ?> map) {
+	public GenericMapData(Map<?, ?> map) {
 		this.map = map;
 	}
 
@@ -54,12 +54,12 @@ public final class GenericMap implements SqlMap {
 	}
 
 	@Override
-	public SqlArray keyArray() {
+	public ArrayData keyArray() {
 		return null;
 	}
 
 	@Override
-	public SqlArray valueArray() {
+	public ArrayData valueArray() {
 		return null;
 	}
 
@@ -71,7 +71,7 @@ public final class GenericMap implements SqlMap {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		GenericMap that = (GenericMap) o;
+		GenericMapData that = (GenericMapData) o;
 		return Objects.equals(map, that.map);
 	}
 

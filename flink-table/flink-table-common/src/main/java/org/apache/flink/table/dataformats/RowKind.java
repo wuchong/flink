@@ -21,7 +21,7 @@ package org.apache.flink.table.dataformats;
 import org.apache.flink.annotation.PublicEvolving;
 
 @PublicEvolving
-public enum ChangelogKind {
+public enum RowKind {
 	/**
 	 * Insertion operation.
 	 */
@@ -44,7 +44,7 @@ public enum ChangelogKind {
 
 	private final byte value;
 
-	ChangelogKind(int value) {
+	RowKind(int value) {
 		this.value = (byte) value;
 	}
 
@@ -52,7 +52,7 @@ public enum ChangelogKind {
 		return value;
 	}
 
-	public static ChangelogKind valueOf(byte value) {
+	public static RowKind valueOf(byte value) {
 		switch (value) {
 			case 0: return INSERT;
 			case 1: return UPDATE_BEFORE;

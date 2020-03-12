@@ -29,10 +29,10 @@ import org.apache.flink.api.java.typeutils.runtime.DataOutputViewStream;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.SqlMap;
-import org.apache.flink.table.dataformats.BinaryArray;
-import org.apache.flink.table.dataformats.BinaryMap;
-import org.apache.flink.table.dataformats.GenericMap;
+import org.apache.flink.table.dataformats.MapData;
+import org.apache.flink.table.dataformats.BinaryArrayData;
+import org.apache.flink.table.dataformats.BinaryMapData;
+import org.apache.flink.table.dataformats.GenericMapData;
 import org.apache.flink.table.dataformats.writer.BinaryArrayWriter;
 import org.apache.flink.table.dataformats.writer.BinaryWriter;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
@@ -48,11 +48,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Serializer for {@link SqlMap}.
+ * Serializer for {@link MapData}.
  */
 @Internal
-public class BaseMapSerializer extends TypeSerializer<SqlMap> {
-	private static final Logger LOG = LoggerFactory.getLogger(BaseMapSerializer.class);
+public class MapDataSerializer extends TypeSerializer<MapData> {
+	private static final Logger LOG = LoggerFactory.getLogger(MapDataSerializer.class);
 	private static final long serialVersionUID = 1L;
 
 	private final LogicalType keyType;
@@ -61,20 +61,20 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	private final TypeSerializer<Object> keySerializer;
 	private final TypeSerializer<Object> valueSerializer;
 
-	private transient BinaryArray reuseKeyArray;
-	private transient BinaryArray reuseValueArray;
+	private transient BinaryArrayData reuseKeyArray;
+	private transient BinaryArrayData reuseValueArray;
 	private transient BinaryArrayWriter reuseKeyWriter;
 	private transient BinaryArrayWriter reuseValueWriter;
 
 	@SuppressWarnings("unchecked")
-	public BaseMapSerializer(LogicalType keyType, LogicalType valueType, ExecutionConfig conf) {
+	public MapDataSerializer(LogicalType keyType, LogicalType valueType, ExecutionConfig conf) {
 		this.keyType = keyType;
 		this.valueType = valueType;
 		this.keySerializer = (TypeSerializer<Object>) LogicalTypeUtils.internalTypeSerializer(keyType, conf);
 		this.valueSerializer = (TypeSerializer<Object>) LogicalTypeUtils.internalTypeSerializer(valueType, conf);
 	}
 
-	private BaseMapSerializer(
+	private MapDataSerializer(
 			LogicalType keyType,
 			LogicalType valueType,
 			TypeSerializer<Object> keySerializer,
@@ -91,13 +91,13 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	}
 
 	@Override
-	public TypeSerializer<SqlMap> duplicate() {
-		return new BaseMapSerializer(keyType, valueType, keySerializer.duplicate(), valueSerializer.duplicate());
+	public TypeSerializer<MapData> duplicate() {
+		return new MapDataSerializer(keyType, valueType, keySerializer.duplicate(), valueSerializer.duplicate());
 	}
 
 	@Override
-	public SqlMap createInstance() {
-		return new BinaryMap();
+	public MapData createInstance() {
+		return new BinaryMapData();
 	}
 
 	/**
@@ -106,9 +106,9 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public SqlMap copy(SqlMap from) {
-		if (from instanceof GenericMap) {
-			Map<Object, Object> fromMap = (Map<Object, Object>) ((GenericMap) from).getJavaMap();
+	public MapData copy(MapData from) {
+		if (from instanceof GenericMapData) {
+			Map<Object, Object> fromMap = (Map<Object, Object>) ((GenericMapData) from).getJavaMap();
 			if (!(fromMap instanceof HashMap) && LOG.isDebugEnabled()) {
 				LOG.debug("It is dangerous to copy a non-HashMap to a HashMap.");
 			}
@@ -116,14 +116,14 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 			for (Map.Entry<Object, Object> entry : fromMap.entrySet()) {
 				toMap.put(keySerializer.copy(entry.getKey()), valueSerializer.copy(entry.getValue()));
 			}
-			return new GenericMap(toMap);
+			return new GenericMapData(toMap);
 		} else {
-			return ((BinaryMap) from).copy();
+			return ((BinaryMapData) from).copy();
 		}
 	}
 
 	@Override
-	public SqlMap copy(SqlMap from, SqlMap reuse) {
+	public MapData copy(MapData from, MapData reuse) {
 		return copy(from);
 	}
 
@@ -133,35 +133,35 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	}
 
 	@Override
-	public void serialize(SqlMap record, DataOutputView target) throws IOException {
-		BinaryMap binaryMap = toBinaryMap(record);
+	public void serialize(MapData record, DataOutputView target) throws IOException {
+		BinaryMapData binaryMap = toBinaryMap(record);
 		target.writeInt(binaryMap.getSizeInBytes());
 		SegmentsUtil.copyToView(binaryMap.getSegments(), binaryMap.getOffset(), binaryMap.getSizeInBytes(), target);
 	}
 
 	@SuppressWarnings("unchecked")
-	public BinaryMap toBinaryMap(SqlMap from) {
-		if (from instanceof BinaryMap) {
-			return (BinaryMap) from;
+	public BinaryMapData toBinaryMap(MapData from) {
+		if (from instanceof BinaryMapData) {
+			return (BinaryMapData) from;
 		}
 
-		Map<Object, Object> javaMap = (Map<Object, Object>) ((GenericMap) from).getJavaMap();
+		Map<Object, Object> javaMap = (Map<Object, Object>) ((GenericMapData) from).getJavaMap();
 		int numElements = javaMap.size();
 		if (reuseKeyArray == null) {
-			reuseKeyArray = new BinaryArray();
+			reuseKeyArray = new BinaryArrayData();
 		}
 		if (reuseValueArray == null) {
-			reuseValueArray = new BinaryArray();
+			reuseValueArray = new BinaryArrayData();
 		}
 		if (reuseKeyWriter == null || reuseKeyWriter.getNumElements() != numElements) {
 			reuseKeyWriter = new BinaryArrayWriter(
-					reuseKeyArray, numElements, BinaryArray.calculateFixLengthPartSize(keyType));
+					reuseKeyArray, numElements, BinaryArrayData.calculateFixLengthPartSize(keyType));
 		} else {
 			reuseKeyWriter.reset();
 		}
 		if (reuseValueWriter == null || reuseValueWriter.getNumElements() != numElements) {
 			reuseValueWriter = new BinaryArrayWriter(
-					reuseValueArray, numElements, BinaryArray.calculateFixLengthPartSize(valueType));
+					reuseValueArray, numElements, BinaryArrayData.calculateFixLengthPartSize(valueType));
 		} else {
 			reuseValueWriter.reset();
 		}
@@ -183,20 +183,20 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 		reuseKeyWriter.complete();
 		reuseValueWriter.complete();
 
-		return BinaryMap.valueOf(reuseKeyArray, reuseValueArray);
+		return BinaryMapData.valueOf(reuseKeyArray, reuseValueArray);
 	}
 
 	@Override
-	public SqlMap deserialize(DataInputView source) throws IOException {
-		return deserializeReuse(new BinaryMap(), source);
+	public MapData deserialize(DataInputView source) throws IOException {
+		return deserializeReuse(new BinaryMapData(), source);
 	}
 
 	@Override
-	public SqlMap deserialize(SqlMap reuse, DataInputView source) throws IOException {
-		return deserializeReuse(reuse instanceof GenericMap ? new BinaryMap() : (BinaryMap) reuse, source);
+	public MapData deserialize(MapData reuse, DataInputView source) throws IOException {
+		return deserializeReuse(reuse instanceof GenericMapData ? new BinaryMapData() : (BinaryMapData) reuse, source);
 	}
 
-	private BinaryMap deserializeReuse(BinaryMap reuse, DataInputView source) throws IOException {
+	private BinaryMapData deserializeReuse(BinaryMapData reuse, DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
@@ -220,7 +220,7 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 			return false;
 		}
 
-		BaseMapSerializer that = (BaseMapSerializer) o;
+		MapDataSerializer that = (MapDataSerializer) o;
 
 		return keyType.equals(that.keyType) && valueType.equals(that.valueType);
 	}
@@ -243,14 +243,14 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlMap> snapshotConfiguration() {
+	public TypeSerializerSnapshot<MapData> snapshotConfiguration() {
 		return new BaseMapSerializerSnapshot(keyType, valueType, keySerializer, valueSerializer);
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link BaseArraySerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link ArrayDataSerializer}.
 	 */
-	public static final class BaseMapSerializerSnapshot implements TypeSerializerSnapshot<SqlMap> {
+	public static final class BaseMapSerializerSnapshot implements TypeSerializerSnapshot<MapData> {
 		private static final int CURRENT_VERSION = 3;
 
 		private LogicalType previousKeyType;
@@ -304,22 +304,22 @@ public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 		}
 
 		@Override
-		public TypeSerializer<SqlMap> restoreSerializer() {
-			return new BaseMapSerializer(
+		public TypeSerializer<MapData> restoreSerializer() {
+			return new MapDataSerializer(
 				previousKeyType, previousValueType, previousKeySerializer, previousValueSerializer);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<SqlMap> resolveSchemaCompatibility(TypeSerializer<SqlMap> newSerializer) {
-			if (!(newSerializer instanceof BaseMapSerializer)) {
+		public TypeSerializerSchemaCompatibility<MapData> resolveSchemaCompatibility(TypeSerializer<MapData> newSerializer) {
+			if (!(newSerializer instanceof MapDataSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			BaseMapSerializer newBaseMapSerializer = (BaseMapSerializer) newSerializer;
-			if (!previousKeyType.equals(newBaseMapSerializer.keyType) ||
-				!previousValueType.equals(newBaseMapSerializer.valueType) ||
-				!previousKeySerializer.equals(newBaseMapSerializer.keySerializer) ||
-				!previousValueSerializer.equals(newBaseMapSerializer.valueSerializer)) {
+			MapDataSerializer newMapDataSerializer = (MapDataSerializer) newSerializer;
+			if (!previousKeyType.equals(newMapDataSerializer.keyType) ||
+				!previousValueType.equals(newMapDataSerializer.valueType) ||
+				!previousKeySerializer.equals(newMapDataSerializer.keySerializer) ||
+				!previousValueSerializer.equals(newMapDataSerializer.valueSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			} else {
 				return TypeSerializerSchemaCompatibility.compatibleAsIs();

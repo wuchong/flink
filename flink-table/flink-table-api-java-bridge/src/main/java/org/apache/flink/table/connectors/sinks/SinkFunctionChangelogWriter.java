@@ -19,16 +19,16 @@
 package org.apache.flink.table.connectors.sinks;
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 /**
  * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.
  */
 public interface SinkFunctionChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	SinkFunction<SqlRow> createSinkFunction();
+	SinkFunction<RowData> createSinkFunction();
 
-	static SinkFunctionChangelogWriter of(SinkFunction<SqlRow> sinkFunction) {
+	static SinkFunctionChangelogWriter of(SinkFunction<RowData> sinkFunction) {
 		return () -> sinkFunction;
 	}
 }

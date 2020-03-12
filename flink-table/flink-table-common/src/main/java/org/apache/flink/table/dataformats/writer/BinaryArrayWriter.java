@@ -19,23 +19,23 @@ package org.apache.flink.table.dataformats.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryArray;
+import org.apache.flink.table.dataformats.BinaryArrayData;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**
- * Writer for binary array. See {@link BinaryArray}.
+ * Writer for binary array. See {@link BinaryArrayData}.
  */
 @Internal
 public final class BinaryArrayWriter extends AbstractBinaryWriter {
 
 	private final int nullBitsSizeInBytes;
-	private final BinaryArray array;
+	private final BinaryArrayData array;
 	private final int numElements;
 	private int fixedSize;
 
-	public BinaryArrayWriter(BinaryArray array, int numElements, int elementSize) {
-		this.nullBitsSizeInBytes = BinaryArray.calculateHeaderInBytes(numElements);
+	public BinaryArrayWriter(BinaryArrayData array, int numElements, int elementSize) {
+		this.nullBitsSizeInBytes = BinaryArrayData.calculateHeaderInBytes(numElements);
 		this.fixedSize = roundNumberOfBytesToNearestWord(
 				nullBitsSizeInBytes + elementSize * numElements);
 		this.cursor = fixedSize;

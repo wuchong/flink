@@ -19,16 +19,16 @@
 package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 /**
  * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.
  */
 public interface SourceFunctionSnapshotReader extends SupportsSnapshotReading.SnapshotReader {
 
-	SourceFunction<SqlRow> createSourceFunction();
+	SourceFunction<RowData> createSourceFunction();
 
-	static SourceFunctionSnapshotReader of(SourceFunction<SqlRow> sourceFunction) {
+	static SourceFunctionSnapshotReader of(SourceFunction<RowData> sourceFunction) {
 		return () -> sourceFunction;
 	}
 }

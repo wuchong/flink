@@ -27,11 +27,11 @@ import java.io.Serializable;
  * An interface for array used internally in Flink Table/SQL.
  *
  * <p>There are different implementations depending on the scenario:
- * After serialization, it becomes the {@link BinaryArray} format.
- * Convenient updates use the {@link GenericArray} format.
+ * After serialization, it becomes the {@link BinaryArrayData} format.
+ * Convenient updates use the {@link GenericArrayData} format.
  */
 @PublicEvolving
-public interface SqlArray extends TypedGetters, Serializable {
+public interface ArrayData extends TypedGetters, Serializable {
 
 	int numElements();
 
@@ -51,7 +51,7 @@ public interface SqlArray extends TypedGetters, Serializable {
 
 	// ------------------------------------------------------------------------------------------
 
-	static Object get(SqlArray array, int ordinal, LogicalType type) {
+	static Object get(ArrayData array, int ordinal, LogicalType type) {
 		return TypedGetters.get(array, ordinal, type);
 	}
 }

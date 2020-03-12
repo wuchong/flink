@@ -22,13 +22,13 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.SqlArray;
-import org.apache.flink.table.dataformats.SqlMap;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.SqlRawValue;
-import org.apache.flink.table.dataformats.SqlString;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.ArrayData;
+import org.apache.flink.table.dataformats.MapData;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.RawValueData;
+import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.TimestampType;
@@ -67,28 +67,28 @@ public final class LogicalTypeUtils {
 				return Long.class;
 			case TIMESTAMP_WITHOUT_TIME_ZONE:
 			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-				return SqlTimestamp.class;
+				return TimestampData.class;
 			case FLOAT:
 				return Float.class;
 			case DOUBLE:
 				return Double.class;
 			case CHAR:
 			case VARCHAR:
-				return SqlString.class;
+				return StringData.class;
 			case DECIMAL:
-				return SqlDecimal.class;
+				return DecimalData.class;
 			case ARRAY:
-				return SqlArray.class;
+				return ArrayData.class;
 			case MAP:
 			case MULTISET:
-				return SqlMap.class;
+				return MapData.class;
 			case ROW:
-				return SqlRow.class;
+				return RowData.class;
 			case BINARY:
 			case VARBINARY:
 				return byte[].class;
 			case RAW:
-				return SqlRawValue.class;
+				return RawValueData.class;
 			default:
 				throw new RuntimeException("Not support type: " + type);
 		}

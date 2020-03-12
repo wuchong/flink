@@ -18,13 +18,13 @@
 package org.apache.flink.table.dataformats.writer;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.table.dataformats.SqlArray;
-import org.apache.flink.table.dataformats.SqlMap;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.SqlRawValue;
-import org.apache.flink.table.dataformats.SqlString;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.ArrayData;
+import org.apache.flink.table.dataformats.MapData;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.RawValueData;
+import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;
@@ -67,21 +67,21 @@ public interface BinaryWriter {
 
 	void writeDouble(int pos, double value);
 
-	void writeString(int pos, SqlString value);
+	void writeString(int pos, StringData value);
 
 	void writeBinary(int pos, byte[] bytes);
 
-	void writeDecimal(int pos, SqlDecimal value, int precision);
+	void writeDecimal(int pos, DecimalData value, int precision);
 
-	void writeTimestamp(int pos, SqlTimestamp value, int precision);
+	void writeTimestamp(int pos, TimestampData value, int precision);
 
-	void writeArray(int pos, SqlArray value, ArrayType type);
+	void writeArray(int pos, ArrayData value, ArrayType type);
 
-	void writeMap(int pos, SqlMap value, MapType type);
+	void writeMap(int pos, MapData value, MapType type);
 
-	void writeRow(int pos, SqlRow value, RowType type);
+	void writeRow(int pos, RowData value, RowType type);
 
-	void writeGeneric(int pos, SqlRawValue<?> value, RawType<?> type);
+	void writeGeneric(int pos, RawValueData<?> value, RawType<?> type);
 
 	/**
 	 * Finally, complete write to set real size to binary.
@@ -111,11 +111,11 @@ public interface BinaryWriter {
 				break;
 			case TIMESTAMP_WITHOUT_TIME_ZONE:
 				TimestampType timestampType = (TimestampType) type;
-				writer.writeTimestamp(pos, (SqlTimestamp) o, timestampType.getPrecision());
+				writer.writeTimestamp(pos, (TimestampData) o, timestampType.getPrecision());
 				break;
 			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
 				LocalZonedTimestampType lzTs = (LocalZonedTimestampType) type;
-				writer.writeTimestamp(pos, (SqlTimestamp) o, lzTs.getPrecision());
+				writer.writeTimestamp(pos, (TimestampData) o, lzTs.getPrecision());
 				break;
 			case FLOAT:
 				writer.writeFloat(pos, (float) o);
@@ -125,24 +125,24 @@ public interface BinaryWriter {
 				break;
 			case CHAR:
 			case VARCHAR:
-				writer.writeString(pos, (SqlString) o);
+				writer.writeString(pos, (StringData) o);
 				break;
 			case DECIMAL:
 				DecimalType decimalType = (DecimalType) type;
-				writer.writeDecimal(pos, (SqlDecimal) o, decimalType.getPrecision());
+				writer.writeDecimal(pos, (DecimalData) o, decimalType.getPrecision());
 				break;
 			case ARRAY:
-				writer.writeArray(pos, (SqlArray) o, (ArrayType) type);
+				writer.writeArray(pos, (ArrayData) o, (ArrayType) type);
 				break;
 			case MAP:
 			case MULTISET:
-				writer.writeMap(pos, (SqlMap) o, (MapType) type);
+				writer.writeMap(pos, (MapData) o, (MapType) type);
 				break;
 			case ROW:
-				writer.writeRow(pos, (SqlRow) o, (RowType) type);
+				writer.writeRow(pos, (RowData) o, (RowType) type);
 				break;
 			case RAW:
-				writer.writeGeneric(pos, (SqlRawValue<?>) o, (RawType<?>) type);
+				writer.writeGeneric(pos, (RawValueData<?>) o, (RawType<?>) type);
 				break;
 			case BINARY:
 			case VARBINARY:

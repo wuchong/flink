@@ -23,7 +23,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.internals.KeyedSerializationSchemaWrapper;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 import java.util.Properties;
 
@@ -42,7 +42,7 @@ public class KafkaDynamicTableSink extends KafkaDynamicTableSinkBase {
 	}
 
 	@Override
-	protected SinkFunction<SqlRow> createKafkaProducer(
+	protected SinkFunction<RowData> createKafkaProducer(
 			String topic,
 			Properties properties,
 			ChangelogSerializationSchema serializationSchema) {

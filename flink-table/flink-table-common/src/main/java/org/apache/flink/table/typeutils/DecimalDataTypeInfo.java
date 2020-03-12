@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.SqlDecimal;
+import org.apache.flink.table.dataformats.DecimalData;
 
 import java.util.Arrays;
 
@@ -30,19 +30,19 @@ import java.util.Arrays;
  * TypeInfo for Decimal.
  */
 @Internal
-public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
+public class DecimalDataTypeInfo extends TypeInformation<DecimalData> {
 
 	private static final long serialVersionUID = 1L;
 
-	public static DecimalTypeInfo of(int precision, int scale) {
-		return new DecimalTypeInfo(precision, scale);
+	public static DecimalDataTypeInfo of(int precision, int scale) {
+		return new DecimalDataTypeInfo(precision, scale);
 	}
 
 	private final int precision;
 
 	private final int scale;
 
-	public DecimalTypeInfo(int precision, int scale) {
+	public DecimalDataTypeInfo(int precision, int scale) {
 		this.precision = precision;
 		this.scale = scale;
 	}
@@ -68,8 +68,8 @@ public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
 	}
 
 	@Override
-	public Class<SqlDecimal> getTypeClass() {
-		return SqlDecimal.class;
+	public Class<DecimalData> getTypeClass() {
+		return DecimalData.class;
 	}
 
 	@Override
@@ -78,8 +78,8 @@ public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
 	}
 
 	@Override
-	public TypeSerializer<SqlDecimal> createSerializer(ExecutionConfig config) {
-		return new DecimalSerializer(precision, scale);
+	public TypeSerializer<DecimalData> createSerializer(ExecutionConfig config) {
+		return new DecimalDataSerializer(precision, scale);
 	}
 
 	@Override
@@ -89,10 +89,10 @@ public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof DecimalTypeInfo)) {
+		if (!(obj instanceof DecimalDataTypeInfo)) {
 			return false;
 		}
-		DecimalTypeInfo that = (DecimalTypeInfo) obj;
+		DecimalDataTypeInfo that = (DecimalDataTypeInfo) obj;
 		return this.precision == that.precision && this.scale == that.scale;
 	}
 
@@ -104,7 +104,7 @@ public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
 
 	@Override
 	public boolean canEqual(Object obj) {
-		return obj instanceof DecimalTypeInfo;
+		return obj instanceof DecimalDataTypeInfo;
 	}
 
 	public int precision() {

@@ -21,7 +21,7 @@ package org.apache.flink.table.connectors.sources;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 import javax.annotation.Nullable;
 
@@ -39,22 +39,22 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
 	final class WatermarkAssigner {
 
-		private @Nullable AssignerWithPeriodicWatermarks<SqlRow> periodicAssigner;
+		private @Nullable AssignerWithPeriodicWatermarks<RowData> periodicAssigner;
 
-		private @Nullable AssignerWithPunctuatedWatermarks<SqlRow> punctuatedAssigner;
+		private @Nullable AssignerWithPunctuatedWatermarks<RowData> punctuatedAssigner;
 
 		private WatermarkAssigner(
-				@Nullable AssignerWithPeriodicWatermarks<SqlRow> periodicAssigner,
-				@Nullable AssignerWithPunctuatedWatermarks<SqlRow> punctuatedAssigner) {
+				@Nullable AssignerWithPeriodicWatermarks<RowData> periodicAssigner,
+				@Nullable AssignerWithPunctuatedWatermarks<RowData> punctuatedAssigner) {
 			this.periodicAssigner = periodicAssigner;
 			this.punctuatedAssigner = punctuatedAssigner;
 		}
 
-		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<SqlRow> periodicWatermarks) {
+		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<RowData> periodicWatermarks) {
 			return new WatermarkAssigner(periodicWatermarks, null);
 		}
 
-		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<SqlRow> punctuatedWatermarks) {
+		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<RowData> punctuatedWatermarks) {
 			return new WatermarkAssigner(null, punctuatedWatermarks);
 		}
 
@@ -66,11 +66,11 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 			return periodicAssigner == null && punctuatedAssigner == null;
 		}
 
-		public Optional<AssignerWithPeriodicWatermarks<SqlRow>> getPeriodicAssigner() {
+		public Optional<AssignerWithPeriodicWatermarks<RowData>> getPeriodicAssigner() {
 			return Optional.ofNullable(periodicAssigner);
 		}
 
-		public Optional<AssignerWithPunctuatedWatermarks<SqlRow>> getPunctuatedAssigner() {
+		public Optional<AssignerWithPunctuatedWatermarks<RowData>> getPunctuatedAssigner() {
 			return Optional.ofNullable(punctuatedAssigner);
 		}
 	}

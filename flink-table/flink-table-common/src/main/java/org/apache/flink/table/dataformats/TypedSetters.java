@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 
 /**
  * Provide type specialized setters to reduce if/else and eliminate box and unbox. This is mainly
- * used on the binary format such as {@link BinaryRow}.
+ * used on the binary format such as {@link BinaryRowData}.
  */
 @Internal
 public interface TypedSetters {
@@ -75,7 +75,7 @@ public interface TypedSetters {
 	 * Precision is not compact: can not call setNullAt when decimal is null, must call
 	 * setDecimal(i, null, precision) because we need update var-length-part.
 	 */
-	void setDecimal(int i, SqlDecimal value, int precision);
+	void setDecimal(int i, DecimalData value, int precision);
 
 	/**
 	 * Set Timestamp value.
@@ -85,5 +85,5 @@ public interface TypedSetters {
 	 * Otherwise: can not call setNullAt when SqlTimestamp value is null, must call
 	 * setTimestamp(ordinal, null, precision) because we need to update var-length-part.
 	 */
-	void setTimestamp(int ordinal, SqlTimestamp value, int precision);
+	void setTimestamp(int ordinal, TimestampData value, int precision);
 }

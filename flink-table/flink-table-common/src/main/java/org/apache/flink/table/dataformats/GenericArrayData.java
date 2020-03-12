@@ -27,7 +27,7 @@ import java.util.Objects;
  * It can be considered as a wrapper class of the normal java array.
  */
 @PublicEvolving
-public final class GenericArray implements SqlArray {
+public final class GenericArrayData implements ArrayData {
 
 	private static final long serialVersionUID = 1L;
 
@@ -35,38 +35,38 @@ public final class GenericArray implements SqlArray {
 	private final int numElements;
 	private final boolean isPrimitiveArray;
 
-	public GenericArray(Object[] array) {
+	public GenericArrayData(Object[] array) {
 		this(array, array.length, false);
 	}
 
-	public GenericArray(int[] primitiveArray) {
+	public GenericArrayData(int[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	public GenericArray(long[] primitiveArray) {
+	public GenericArrayData(long[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	public GenericArray(float[] primitiveArray) {
+	public GenericArrayData(float[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true); }
 
-	public GenericArray(double[] primitiveArray) {
+	public GenericArrayData(double[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	public GenericArray(short[] primitiveArray) {
+	public GenericArrayData(short[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	public GenericArray(byte[] primitiveArray) {
+	public GenericArrayData(byte[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	public GenericArray(boolean[] primitiveArray) {
+	public GenericArrayData(boolean[] primitiveArray) {
 		this(primitiveArray, primitiveArray.length, true);
 	}
 
-	private GenericArray(Object arr, int numElements, boolean isPrimitiveArray) {
+	private GenericArrayData(Object arr, int numElements, boolean isPrimitiveArray) {
 		this.arr = arr;
 		this.numElements = numElements;
 		this.isPrimitiveArray = isPrimitiveArray;
@@ -166,39 +166,39 @@ public final class GenericArray implements SqlArray {
 	}
 
 	@Override
-	public SqlString getString(int pos) {
-		return (SqlString) getObject(pos);
+	public StringData getString(int pos) {
+		return (StringData) getObject(pos);
 	}
 
 	@Override
-	public SqlDecimal getDecimal(int pos, int precision, int scale) {
-		return (SqlDecimal) getObject(pos);
+	public DecimalData getDecimal(int pos, int precision, int scale) {
+		return (DecimalData) getObject(pos);
 	}
 
 	@Override
-	public SqlTimestamp getTimestamp(int pos, int precision) {
-		return (SqlTimestamp) getObject(pos);
+	public TimestampData getTimestamp(int pos, int precision) {
+		return (TimestampData) getObject(pos);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> SqlRawValue<T> getGeneric(int pos) {
-		return (SqlRawValue<T>) getObject(pos);
+	public <T> RawValueData<T> getGeneric(int pos) {
+		return (RawValueData<T>) getObject(pos);
 	}
 
 	@Override
-	public SqlRow getRow(int pos, int numFields) {
-		return (SqlRow) getObject(pos);
+	public RowData getRow(int pos, int numFields) {
+		return (RowData) getObject(pos);
 	}
 
 	@Override
-	public SqlArray getArray(int pos) {
-		return (SqlArray) getObject(pos);
+	public ArrayData getArray(int pos) {
+		return (ArrayData) getObject(pos);
 	}
 
 	@Override
-	public SqlMap getMap(int pos) {
-		return (SqlMap) getObject(pos);
+	public MapData getMap(int pos) {
+		return (MapData) getObject(pos);
 	}
 
 	private Object getObject(int pos) {
@@ -209,7 +209,7 @@ public final class GenericArray implements SqlArray {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		GenericArray that = (GenericArray) o;
+		GenericArrayData that = (GenericArrayData) o;
 		return numElements == that.numElements &&
 			isPrimitiveArray == that.isPrimitiveArray &&
 			Objects.equals(arr, that.arr);

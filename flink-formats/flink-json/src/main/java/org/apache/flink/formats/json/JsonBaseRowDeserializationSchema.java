@@ -22,19 +22,19 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.GenericArray;
-import org.apache.flink.table.dataformats.GenericMap;
-import org.apache.flink.table.dataformats.GenericRow;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.GenericArrayData;
+import org.apache.flink.table.dataformats.GenericMapData;
+import org.apache.flink.table.dataformats.GenericRowData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
-import org.apache.flink.table.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.RowDataTypeInfo;
 import org.apache.flink.util.WrappingRuntimeException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,23 +84,23 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 	}
 
 	@Override
-	public SqlRow deserialize(byte[] message) throws IOException {
+	public RowData deserialize(byte[] message) throws IOException {
 		try {
 			final JsonNode root = objectMapper.readTree(message);
-			return (GenericRow) runtimeConverter.convert(root);
+			return (GenericRowData) runtimeConverter.convert(root);
 		} catch (Throwable t) {
 			throw new IOException("Failed to deserialize JSON object.", t);
 		}
 	}
 
 	@Override
-	public boolean isEndOfStream(SqlRow nextElement) {
+	public boolean isEndOfStream(RowData nextElement) {
 		return false;
 	}
 
 	@Override
-	public TypeInformation<SqlRow> getProducedType() {
-		return new BaseRowTypeInfo(rowType);
+	public TypeInformation<RowData> getProducedType() {
+		return new RowDataTypeInfo(rowType);
 	}
 
 	@Override
@@ -192,7 +192,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 		return localTime.toSecondOfDay();
 	}
 
-	private SqlTimestamp convertToInternalTimestamp(JsonNode jsonNode) {
+	private TimestampData convertToInternalTimestamp(JsonNode jsonNode) {
 		// according to RFC 3339 every date-time must have a timezone;
 		// until we have full timezone support, we only support UTC;
 		// users can parse their time as string as a workaround
@@ -209,12 +209,12 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 		LocalTime localTime = parsedTimestamp.query(TemporalQueries.localTime());
 		LocalDate localDate = parsedTimestamp.query(TemporalQueries.localDate());
 
-		return SqlTimestamp.fromLocalDateTime(LocalDateTime.of(localDate, localTime));
+		return TimestampData.fromLocalDateTime(LocalDateTime.of(localDate, localTime));
 	}
 
-	private SqlDecimal convertToInternalDecimal(JsonNode jsonNode, DecimalType decimalType) {
+	private DecimalData convertToInternalDecimal(JsonNode jsonNode, DecimalType decimalType) {
 		BigDecimal bigDecimal = jsonNode.decimalValue();
-		return SqlDecimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
+		return DecimalData.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
 	}
 
 	private byte[] convertToBytes(JsonNode jsonNode) {
@@ -236,7 +236,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 				final JsonNode innerNode = node.get(i);
 				array[i] = elementConverter.convert(innerNode);
 			}
-			return new GenericArray(array);
+			return new GenericArrayData(array);
 		};
 	}
 
@@ -253,7 +253,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 				Object value = valueConverter.convert(entry.getValue());
 				result.put(key, value);
 			}
-			return new GenericMap(result);
+			return new GenericMapData(result);
 		};
 	}
 
@@ -266,7 +266,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 		return jsonNode -> {
 			ObjectNode node = (ObjectNode) jsonNode;
 			int arity = fieldNames.length;
-			GenericRow row = new GenericRow(arity);
+			GenericRowData row = new GenericRowData(arity);
 			for (int i = 0; i < arity; i++) {
 				JsonNode field = node.get(fieldNames[i]);
 				row.setField(i, fieldConverters[i].convert(field));

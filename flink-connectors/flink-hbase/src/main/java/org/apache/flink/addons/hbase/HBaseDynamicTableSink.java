@@ -22,7 +22,7 @@ import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 import org.apache.flink.table.connectors.sinks.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
-import org.apache.flink.table.dataformats.ChangelogKind;
+import org.apache.flink.table.dataformats.RowKind;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -49,9 +49,9 @@ public class HBaseDynamicTableSink implements DynamicTableSink, SupportsChangelo
 			return requestedMode;
 		} else {
 			return ChangelogMode.newBuilder()
-				.addSupportedKind(ChangelogKind.INSERT)
-				.addSupportedKind(ChangelogKind.DELETE)
-				.addSupportedKind(ChangelogKind.UPDATE_AFTER)
+				.addSupportedKind(RowKind.INSERT)
+				.addSupportedKind(RowKind.DELETE)
+				.addSupportedKind(RowKind.UPDATE_AFTER)
 				.build();
 		}
 	}

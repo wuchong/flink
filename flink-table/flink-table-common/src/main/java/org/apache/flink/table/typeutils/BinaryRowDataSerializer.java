@@ -27,7 +27,7 @@ import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.core.memory.MemorySegmentWritable;
-import org.apache.flink.table.dataformats.BinaryRow;
+import org.apache.flink.table.dataformats.BinaryRowData;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
@@ -35,10 +35,10 @@ import java.io.IOException;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * Serializer for {@link BinaryRow}.
+ * Serializer for {@link BinaryRowData}.
  */
 @Internal
-public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
+public class BinaryRowDataSerializer extends TypeSerializer<BinaryRowData> {
 
 	private static final long serialVersionUID = 1L;
 	public static final int LENGTH_SIZE_IN_BYTES = 4;
@@ -46,9 +46,9 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	private final int numFields;
 	private final int fixedLengthPartSize;
 
-	public BinaryRowSerializer(int numFields) {
+	public BinaryRowDataSerializer(int numFields) {
 		this.numFields = numFields;
-		this.fixedLengthPartSize = BinaryRow.calculateFixPartSizeInBytes(numFields);
+		this.fixedLengthPartSize = BinaryRowData.calculateFixPartSizeInBytes(numFields);
 	}
 
 	@Override
@@ -57,22 +57,22 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	@Override
-	public TypeSerializer<BinaryRow> duplicate() {
-		return new BinaryRowSerializer(numFields);
+	public TypeSerializer<BinaryRowData> duplicate() {
+		return new BinaryRowDataSerializer(numFields);
 	}
 
 	@Override
-	public BinaryRow createInstance() {
-		return new BinaryRow(numFields);
+	public BinaryRowData createInstance() {
+		return new BinaryRowData(numFields);
 	}
 
 	@Override
-	public BinaryRow copy(BinaryRow from) {
-		return copy(from, new BinaryRow(numFields));
+	public BinaryRowData copy(BinaryRowData from) {
+		return copy(from, new BinaryRowData(numFields));
 	}
 
 	@Override
-	public BinaryRow copy(BinaryRow from, BinaryRow reuse) {
+	public BinaryRowData copy(BinaryRowData from, BinaryRowData reuse) {
 		return from.copy(reuse);
 	}
 
@@ -82,7 +82,7 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	@Override
-	public void serialize(BinaryRow record, DataOutputView target) throws IOException {
+	public void serialize(BinaryRowData record, DataOutputView target) throws IOException {
 		target.writeInt(record.getSizeInBytes());
 		if (target instanceof MemorySegmentWritable) {
 			serializeWithoutLength(record, (MemorySegmentWritable) target);
@@ -94,8 +94,8 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	@Override
-	public BinaryRow deserialize(DataInputView source) throws IOException {
-		BinaryRow row = new BinaryRow(numFields);
+	public BinaryRowData deserialize(DataInputView source) throws IOException {
+		BinaryRowData row = new BinaryRowData(numFields);
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
@@ -104,7 +104,7 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	@Override
-	public BinaryRow deserialize(BinaryRow reuse, DataInputView source) throws IOException {
+	public BinaryRowData deserialize(BinaryRowData reuse, DataInputView source) throws IOException {
 		MemorySegment[] segments = reuse.getSegments();
 		checkArgument(segments == null || (segments.length == 1 && reuse.getOffset() == 0),
 				"Reuse BinaryRow should have no segments or only one segment and offset start at 0.");
@@ -123,7 +123,7 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	private static void serializeWithoutLength(
-			BinaryRow record, MemorySegmentWritable writable) throws IOException {
+		BinaryRowData record, MemorySegmentWritable writable) throws IOException {
 		if (record.getSegments().length == 1) {
 			writable.write(record.getSegments()[0], record.getOffset(), record.getSizeInBytes());
 		} else {
@@ -132,7 +132,7 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	public static void serializeWithoutLengthSlow(
-			BinaryRow record, MemorySegmentWritable out) throws IOException {
+		BinaryRowData record, MemorySegmentWritable out) throws IOException {
 		int remainSize = record.getSizeInBytes();
 		int posInSegOfRecord = record.getOffset();
 		int segmentSize = record.getSegments()[0].size();
@@ -171,8 +171,8 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof BinaryRowSerializer
-				&& numFields == ((BinaryRowSerializer) obj).numFields;
+		return obj instanceof BinaryRowDataSerializer
+				&& numFields == ((BinaryRowDataSerializer) obj).numFields;
 	}
 
 	@Override
@@ -181,15 +181,15 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<BinaryRow> snapshotConfiguration() {
+	public TypeSerializerSnapshot<BinaryRowData> snapshotConfiguration() {
 		return new BinaryRowSerializerSnapshot(numFields);
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link BinaryRowSerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link BinaryRowDataSerializer}.
 	 */
 	public static final class BinaryRowSerializerSnapshot
-			implements TypeSerializerSnapshot<BinaryRow> {
+			implements TypeSerializerSnapshot<BinaryRowData> {
 		private static final int CURRENT_VERSION = 3;
 
 		private int previousNumFields;
@@ -220,19 +220,19 @@ public class BinaryRowSerializer extends TypeSerializer<BinaryRow> {
 		}
 
 		@Override
-		public TypeSerializer<BinaryRow> restoreSerializer() {
-			return new BinaryRowSerializer(previousNumFields);
+		public TypeSerializer<BinaryRowData> restoreSerializer() {
+			return new BinaryRowDataSerializer(previousNumFields);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<BinaryRow> resolveSchemaCompatibility(
-				TypeSerializer<BinaryRow> newSerializer) {
-			if (!(newSerializer instanceof BinaryRowSerializer)) {
+		public TypeSerializerSchemaCompatibility<BinaryRowData> resolveSchemaCompatibility(
+				TypeSerializer<BinaryRowData> newSerializer) {
+			if (!(newSerializer instanceof BinaryRowDataSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			BinaryRowSerializer newBinaryRowSerializer = (BinaryRowSerializer) newSerializer;
-			if (previousNumFields != newBinaryRowSerializer.numFields) {
+			BinaryRowDataSerializer newBinaryRowDataSerializer = (BinaryRowDataSerializer) newSerializer;
+			if (previousNumFields != newBinaryRowDataSerializer.numFields) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			} else {
 				return TypeSerializerSchemaCompatibility.compatibleAsIs();

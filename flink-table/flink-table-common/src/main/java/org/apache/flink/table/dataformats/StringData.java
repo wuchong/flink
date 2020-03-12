@@ -24,11 +24,11 @@ import org.apache.flink.table.types.logical.CharType;
 import java.io.Serializable;
 
 /**
- * {@link SqlString} is a data structure represents data of type {@link VarCharType} and {@link CharType}
+ * {@link StringData} is a data structure represents data of type {@link VarCharType} and {@link CharType}
  * in table internal implementation.
  */
 @PublicEvolving
-public interface SqlString extends Comparable<SqlString>, Serializable {
+public interface StringData extends Comparable<StringData>, Serializable {
 
 	/**
 	 * Get the underlying UTF-8 byte array, the returned bytes may be reused.
@@ -36,7 +36,7 @@ public interface SqlString extends Comparable<SqlString>, Serializable {
 	byte[] getBytes();
 
 	/**
-	 * Converts this {@link SqlString} object to a Java {@link String}.
+	 * Converts this {@link StringData} object to a Java {@link String}.
 	 */
 	String getJavaString();
 
@@ -47,21 +47,21 @@ public interface SqlString extends Comparable<SqlString>, Serializable {
 	/**
 	 * Creates an BinaryString from given java String.
 	 */
-	static SqlString fromString(String str) {
-		return LazyBinaryString.fromString(str);
+	static StringData fromString(String str) {
+		return BinaryStringData.fromString(str);
 	}
 
 	/**
-	 * Creates a {@link SqlString} from the given UTF-8 bytes.
+	 * Creates a {@link StringData} from the given UTF-8 bytes.
 	 */
-	static SqlString fromBytes(byte[] bytes) {
-		return LazyBinaryString.fromBytes(bytes);
+	static StringData fromBytes(byte[] bytes) {
+		return BinaryStringData.fromBytes(bytes);
 	}
 
 	/**
-	 * Creates a {@link SqlString} from the given UTF-8 bytes with offset and number of bytes.
+	 * Creates a {@link StringData} from the given UTF-8 bytes with offset and number of bytes.
 	 */
-	static SqlString fromBytes(byte[] bytes, int offset, int numBytes) {
-		return LazyBinaryString.fromBytes(bytes, offset, numBytes);
+	static StringData fromBytes(byte[] bytes, int offset, int numBytes) {
+		return BinaryStringData.fromBytes(bytes, offset, numBytes);
 	}
 }

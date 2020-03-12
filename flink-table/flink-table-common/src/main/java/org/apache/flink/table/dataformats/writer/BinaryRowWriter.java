@@ -19,26 +19,26 @@ package org.apache.flink.table.dataformats.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryRow;
-import org.apache.flink.table.dataformats.ChangelogKind;
+import org.apache.flink.table.dataformats.BinaryRowData;
+import org.apache.flink.table.dataformats.RowKind;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**
- * Writer for {@link BinaryRow}.
+ * Writer for {@link BinaryRowData}.
  */
 @Internal
 public final class BinaryRowWriter extends AbstractBinaryWriter {
 
 	private final int nullBitsSizeInBytes;
-	private final BinaryRow row;
+	private final BinaryRowData row;
 	private final int fixedSize;
 
-	public BinaryRowWriter(BinaryRow row) {
+	public BinaryRowWriter(BinaryRowData row) {
 		this(row, 0);
 	}
 
-	public BinaryRowWriter(BinaryRow row, int initialSize) {
-		this.nullBitsSizeInBytes = BinaryRow.calculateBitSetWidthInBytes(row.getArity());
+	public BinaryRowWriter(BinaryRowData row, int initialSize) {
+		this.nullBitsSizeInBytes = BinaryRowData.calculateBitSetWidthInBytes(row.getArity());
 		this.fixedSize = row.getFixedLengthPartSize();
 		this.cursor = fixedSize;
 
@@ -69,10 +69,10 @@ public final class BinaryRowWriter extends AbstractBinaryWriter {
 
 	@Override
 	public void setNullBit(int pos) {
-		SegmentsUtil.bitSet(segment, 0, pos + BinaryRow.HEADER_SIZE_IN_BITS);
+		SegmentsUtil.bitSet(segment, 0, pos + BinaryRowData.HEADER_SIZE_IN_BITS);
 	}
 
-	public void writeChangelogKind(ChangelogKind kind) {
+	public void writeChangelogKind(RowKind kind) {
 		segment.put(0, kind.getValue());
 	}
 

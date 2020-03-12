@@ -20,7 +20,7 @@ package org.apache.flink.table.factories;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  * Factory for creating configured instances of {@link ChangelogSerializationSchema}.
  */
 @PublicEvolving
-public interface ChangelogSerializationSchemaFactory extends TableFormatFactory<SqlRow> {
+public interface ChangelogSerializationSchemaFactory extends TableFormatFactory<RowData> {
 
 	/**
 	 * Creates and configures a {@link ChangelogSerializationSchema} using the given properties.

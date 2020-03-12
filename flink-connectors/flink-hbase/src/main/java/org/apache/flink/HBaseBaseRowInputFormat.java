@@ -24,7 +24,7 @@ import org.apache.flink.addons.hbase.HBaseTableSchema;
 import org.apache.flink.addons.hbase.util.HBaseSerde;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -40,9 +40,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * {@link InputFormat} subclass that wraps the access for HTables. Returns the result as {@link SqlRow}
+ * {@link InputFormat} subclass that wraps the access for HTables. Returns the result as {@link RowData}
  */
-public class HBaseBaseRowInputFormat extends AbstractTableInputFormat<SqlRow> {
+public class HBaseBaseRowInputFormat extends AbstractTableInputFormat<RowData> {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOG = LoggerFactory.getLogger(HBaseRowInputFormat.class);
 
@@ -77,7 +77,7 @@ public class HBaseBaseRowInputFormat extends AbstractTableInputFormat<SqlRow> {
 	}
 
 	@Override
-	protected SqlRow mapResultToOutType(Result res) {
+	protected RowData mapResultToOutType(Result res) {
 		return serde.convertToRow(res);
 	}
 

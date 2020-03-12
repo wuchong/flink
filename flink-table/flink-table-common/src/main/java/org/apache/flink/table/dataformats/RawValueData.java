@@ -25,15 +25,15 @@ import org.apache.flink.table.types.logical.RawType;
 import java.io.Serializable;
 
 /**
- * {@link SqlRawValue} is a data structure represents data of type {@link RawType}
+ * {@link RawValueData} is a data structure represents data of type {@link RawType}
  * in table internal implementation. This class is used to encapsulate "raw value",
  * the "raw value" might be in binary format, i.e. byte[], or in Java object.
  */
 @PublicEvolving
-public interface SqlRawValue<T> extends Serializable {
+public interface RawValueData<T> extends Serializable {
 
 	/**
-	 * Converts a {@link SqlRawValue} into a Java object, the {@code serializer} is required because
+	 * Converts a {@link RawValueData} into a Java object, the {@code serializer} is required because
 	 * the "raw value" might be in binary format which can be deserialized by the {@code serializer}.
 	 *
 	 * Note: the returned Java object may be reused.
@@ -41,7 +41,7 @@ public interface SqlRawValue<T> extends Serializable {
 	T getJavaObject(TypeSerializer<T> serializer);
 
 	/**
-	 * Converts a {@link SqlRawValue} into a byte array, the {@code serializer} is required because
+	 * Converts a {@link RawValueData} into a byte array, the {@code serializer} is required because
 	 * the "raw value" might be in Java object format which can be serialized by the {@code serializer}.
 	 *
 	 * Note: the returned bytes may be reused.
@@ -53,10 +53,10 @@ public interface SqlRawValue<T> extends Serializable {
 	// ------------------------------------------------------------------------------------------
 
 	/**
-	 * Creates a {@link SqlRawValue} instance from a java object.
+	 * Creates a {@link RawValueData} instance from a java object.
 	 */
-	static <T> SqlRawValue<T> fromJavaObject(T javaObject) {
-		return new LazyBinaryRawValue<>(javaObject);
+	static <T> RawValueData<T> fromJavaObject(T javaObject) {
+		return new BinaryRawValueData<>(javaObject);
 	}
 
 }

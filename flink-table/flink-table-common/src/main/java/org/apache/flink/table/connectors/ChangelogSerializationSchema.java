@@ -19,15 +19,15 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.ChangelogKind;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.RowKind;
 
-public interface ChangelogSerializationSchema extends SerializationSchema<SqlRow> {
+public interface ChangelogSerializationSchema extends SerializationSchema<RowData> {
 
 	/**
 	 * Returns what kind of changes are supported by this {@link SerializationSchema}.
 	 *
-	 * @see ChangelogKind
+	 * @see RowKind
 	 */
 	ChangelogMode supportedChangelogMode();
 }

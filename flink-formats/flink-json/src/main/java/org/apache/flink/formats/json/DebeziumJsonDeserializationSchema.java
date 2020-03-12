@@ -23,11 +23,11 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.ChangelogKind;
-import org.apache.flink.table.dataformats.GenericRow;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.dataformats.GenericRowData;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.table.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.RowDataTypeInfo;
 
 import java.io.IOException;
 
@@ -48,19 +48,19 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public SqlRow deserialize(byte[] message) throws IOException {
-		GenericRow row = (GenericRow) jsonDeserializer.deserialize(message);
-		GenericRow before = (GenericRow) row.getField(0);
-		GenericRow after = (GenericRow) row.getField(1);
+	public RowData deserialize(byte[] message) throws IOException {
+		GenericRowData row = (GenericRowData) jsonDeserializer.deserialize(message);
+		GenericRowData before = (GenericRowData) row.getField(0);
+		GenericRowData after = (GenericRowData) row.getField(1);
 		String op = row.getField(2).toString();
 		if (OP_CREATE.equals(op)){
-			after.setChangelogKind(ChangelogKind.INSERT);
+			after.setChangelogKind(RowKind.INSERT);
 			return after;
 		} if (OP_UPDATE.equals(op)) {
-			after.setChangelogKind(ChangelogKind.UPDATE_AFTER);
+			after.setChangelogKind(RowKind.UPDATE_AFTER);
 			return after;
 		} else if (OP_DELETE.equals(op)) {
-			before.setChangelogKind(ChangelogKind.DELETE);
+			before.setChangelogKind(RowKind.DELETE);
 			return before;
 		} else {
 			throw new RuntimeException("Unsupported operation type: " + op);
@@ -68,7 +68,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public boolean isEndOfStream(SqlRow nextElement) {
+	public boolean isEndOfStream(RowData nextElement) {
 		return false;
 	}
 
@@ -84,17 +84,17 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public TypeInformation<SqlRow> getProducedType() {
+	public TypeInformation<RowData> getProducedType() {
 		RowType rowType = (RowType) schema.toRowDataType().getLogicalType();
-		return new BaseRowTypeInfo(rowType);
+		return new RowDataTypeInfo(rowType);
 	}
 
 	@Override
 	public ChangelogMode producedChangelogMode() {
 		return ChangelogMode.newBuilder()
-			.addSupportedKind(ChangelogKind.INSERT)
-			.addSupportedKind(ChangelogKind.UPDATE_AFTER)
-			.addSupportedKind(ChangelogKind.DELETE)
+			.addSupportedKind(RowKind.INSERT)
+			.addSupportedKind(RowKind.UPDATE_AFTER)
+			.addSupportedKind(RowKind.DELETE)
 			.build();
 	}
 }

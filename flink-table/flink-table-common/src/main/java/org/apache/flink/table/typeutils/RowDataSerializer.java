@@ -29,9 +29,9 @@ import org.apache.flink.api.java.typeutils.runtime.DataInputViewStream;
 import org.apache.flink.api.java.typeutils.runtime.DataOutputViewStream;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.BinaryRow;
-import org.apache.flink.table.dataformats.GenericRow;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.BinaryRowData;
+import org.apache.flink.table.dataformats.GenericRowData;
 import org.apache.flink.table.dataformats.writer.BinaryRowWriter;
 import org.apache.flink.table.dataformats.writer.BinaryWriter;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -46,111 +46,111 @@ import java.util.Arrays;
  * Serializer for BaseRow.
  */
 @Internal
-public class BaseRowSerializer extends TypeSerializer<SqlRow> {
+public class RowDataSerializer extends TypeSerializer<RowData> {
 	private static final long serialVersionUID = 1L;
 
-	private BinaryRowSerializer binarySerializer;
+	private BinaryRowDataSerializer binarySerializer;
 	private final LogicalType[] types;
 	private final TypeSerializer[] fieldSerializers;
 
-	private transient BinaryRow reuseRow;
+	private transient BinaryRowData reuseRow;
 	private transient BinaryRowWriter reuseWriter;
 
-	public BaseRowSerializer(ExecutionConfig config, RowType rowType) {
+	public RowDataSerializer(ExecutionConfig config, RowType rowType) {
 		this(rowType.getChildren().toArray(new LogicalType[0]),
 			rowType.getChildren().stream()
 				.map((LogicalType type) -> LogicalTypeUtils.internalTypeSerializer(type, config))
 				.toArray(TypeSerializer[]::new));
 	}
 
-	public BaseRowSerializer(ExecutionConfig config, LogicalType... types) {
+	public RowDataSerializer(ExecutionConfig config, LogicalType... types) {
 		this(types, Arrays.stream(types)
 			.map((LogicalType type) -> LogicalTypeUtils.internalTypeSerializer(type, config))
 			.toArray(TypeSerializer[]::new));
 	}
 
-	public BaseRowSerializer(LogicalType[] types, TypeSerializer<?>[] fieldSerializers) {
+	public RowDataSerializer(LogicalType[] types, TypeSerializer<?>[] fieldSerializers) {
 		this.types = types;
 		this.fieldSerializers = fieldSerializers;
-		this.binarySerializer = new BinaryRowSerializer(types.length);
+		this.binarySerializer = new BinaryRowDataSerializer(types.length);
 	}
 
 	@Override
-	public TypeSerializer<SqlRow> duplicate() {
+	public TypeSerializer<RowData> duplicate() {
 		TypeSerializer<?>[] duplicateFieldSerializers = new TypeSerializer[fieldSerializers.length];
 		for (int i = 0; i < fieldSerializers.length; i++) {
 			duplicateFieldSerializers[i] = fieldSerializers[i].duplicate();
 		}
-		return new BaseRowSerializer(types, duplicateFieldSerializers);
+		return new RowDataSerializer(types, duplicateFieldSerializers);
 	}
 
 	@Override
-	public SqlRow createInstance() {
+	public RowData createInstance() {
 		// default use binary row to deserializer
-		return new BinaryRow(types.length);
+		return new BinaryRowData(types.length);
 	}
 
 	@Override
-	public void serialize(SqlRow row, DataOutputView target) throws IOException {
+	public void serialize(RowData row, DataOutputView target) throws IOException {
 		binarySerializer.serialize(toBinaryRow(row), target);
 	}
 
 	@Override
-	public SqlRow deserialize(DataInputView source) throws IOException {
+	public RowData deserialize(DataInputView source) throws IOException {
 		return binarySerializer.deserialize(source);
 	}
 
 	@Override
-	public SqlRow deserialize(SqlRow reuse, DataInputView source) throws IOException {
-		if (reuse instanceof BinaryRow) {
-			return binarySerializer.deserialize((BinaryRow) reuse, source);
+	public RowData deserialize(RowData reuse, DataInputView source) throws IOException {
+		if (reuse instanceof BinaryRowData) {
+			return binarySerializer.deserialize((BinaryRowData) reuse, source);
 		} else {
 			return binarySerializer.deserialize(source);
 		}
 	}
 
 	@Override
-	public SqlRow copy(SqlRow from) {
+	public RowData copy(RowData from) {
 		if (from.getArity() != types.length) {
 			throw new IllegalArgumentException("Row arity: " + from.getArity() +
 					", but serializer arity: " + types.length);
 		}
-		if (from instanceof BinaryRow) {
-			return ((BinaryRow) from).copy();
+		if (from instanceof BinaryRowData) {
+			return ((BinaryRowData) from).copy();
 		} else {
-			return copyBaseRow(from, new GenericRow(from.getArity()));
+			return copyBaseRow(from, new GenericRowData(from.getArity()));
 		}
 	}
 
 	@Override
-	public SqlRow copy(SqlRow from, SqlRow reuse) {
+	public RowData copy(RowData from, RowData reuse) {
 		if (from.getArity() != types.length || reuse.getArity() != types.length) {
 			throw new IllegalArgumentException("Row arity: " + from.getArity() +
 					", Ruese Row arity: " + reuse.getArity() +
 					", but serializer arity: " + types.length);
 		}
-		if (from instanceof BinaryRow) {
-			return reuse instanceof BinaryRow
-					? ((BinaryRow) from).copy((BinaryRow) reuse)
-					: ((BinaryRow) from).copy();
+		if (from instanceof BinaryRowData) {
+			return reuse instanceof BinaryRowData
+					? ((BinaryRowData) from).copy((BinaryRowData) reuse)
+					: ((BinaryRowData) from).copy();
 		} else {
 			return copyBaseRow(from, reuse);
 		}
 	}
 
-	private SqlRow copyBaseRow(SqlRow from, SqlRow reuse) {
-		GenericRow ret;
-		if (reuse instanceof GenericRow) {
-			ret = (GenericRow) reuse;
+	private RowData copyBaseRow(RowData from, RowData reuse) {
+		GenericRowData ret;
+		if (reuse instanceof GenericRowData) {
+			ret = (GenericRowData) reuse;
 		} else {
-			ret = new GenericRow(from.getArity());
+			ret = new GenericRowData(from.getArity());
 		}
 		ret.setChangelogKind(from.getChangelogKind());
 		for (int i = 0; i < from.getArity(); i++) {
 			if (!from.isNullAt(i)) {
 				ret.setField(
 						i,
-						fieldSerializers[i].copy((SqlRow.get(from, i, types[i])))
+						fieldSerializers[i].copy((RowData.get(from, i, types[i])))
 				);
 			} else {
 				ret.setField(i, null);
@@ -172,12 +172,12 @@ public class BaseRowSerializer extends TypeSerializer<SqlRow> {
 	 * Convert base row to binary row.
 	 * TODO modify it to code gen.
 	 */
-	public BinaryRow toBinaryRow(SqlRow row) {
-		if (row instanceof BinaryRow) {
-			return (BinaryRow) row;
+	public BinaryRowData toBinaryRow(RowData row) {
+		if (row instanceof BinaryRowData) {
+			return (BinaryRowData) row;
 		}
 		if (reuseRow == null) {
-			reuseRow = new BinaryRow(types.length);
+			reuseRow = new BinaryRowData(types.length);
 			reuseWriter = new BinaryRowWriter(reuseRow);
 		}
 		reuseWriter.reset();
@@ -186,7 +186,7 @@ public class BaseRowSerializer extends TypeSerializer<SqlRow> {
 			if (row.isNullAt(i)) {
 				reuseWriter.setNullAt(i);
 			} else {
-				BinaryWriter.write(reuseWriter, i, SqlRow.get(row, i, types[i]), types[i]);
+				BinaryWriter.write(reuseWriter, i, RowData.get(row, i, types[i]), types[i]);
 			}
 		}
 		reuseWriter.complete();
@@ -195,8 +195,8 @@ public class BaseRowSerializer extends TypeSerializer<SqlRow> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof BaseRowSerializer) {
-			BaseRowSerializer other = (BaseRowSerializer) obj;
+		if (obj instanceof RowDataSerializer) {
+			RowDataSerializer other = (RowDataSerializer) obj;
 			return Arrays.equals(types, other.types);
 		}
 
@@ -219,14 +219,14 @@ public class BaseRowSerializer extends TypeSerializer<SqlRow> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlRow> snapshotConfiguration() {
+	public TypeSerializerSnapshot<RowData> snapshotConfiguration() {
 		return new BaseRowSerializerSnapshot(types, fieldSerializers);
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link BinaryRowSerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link BinaryRowDataSerializer}.
 	 */
-	public static final class BaseRowSerializerSnapshot implements TypeSerializerSnapshot<SqlRow> {
+	public static final class BaseRowSerializerSnapshot implements TypeSerializerSnapshot<RowData> {
 		private static final int CURRENT_VERSION = 3;
 
 		private LogicalType[] previousTypes;
@@ -282,32 +282,32 @@ public class BaseRowSerializer extends TypeSerializer<SqlRow> {
 		}
 
 		@Override
-		public BaseRowSerializer restoreSerializer() {
-			return new BaseRowSerializer(
+		public RowDataSerializer restoreSerializer() {
+			return new RowDataSerializer(
 					previousTypes,
 					nestedSerializersSnapshotDelegate.getRestoredNestedSerializers()
 			);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<SqlRow> resolveSchemaCompatibility(TypeSerializer<SqlRow> newSerializer) {
-			if (!(newSerializer instanceof BaseRowSerializer)) {
+		public TypeSerializerSchemaCompatibility<RowData> resolveSchemaCompatibility(TypeSerializer<RowData> newSerializer) {
+			if (!(newSerializer instanceof RowDataSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			BaseRowSerializer newRowSerializer = (BaseRowSerializer) newSerializer;
+			RowDataSerializer newRowSerializer = (RowDataSerializer) newSerializer;
 			if (!Arrays.equals(previousTypes, newRowSerializer.types)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			CompositeTypeSerializerUtil.IntermediateCompatibilityResult<SqlRow> intermediateResult =
+			CompositeTypeSerializerUtil.IntermediateCompatibilityResult<RowData> intermediateResult =
 					CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
 							newRowSerializer.fieldSerializers,
 							nestedSerializersSnapshotDelegate.getNestedSerializerSnapshots()
 					);
 
 			if (intermediateResult.isCompatibleWithReconfiguredSerializer()) {
-				BaseRowSerializer reconfiguredCompositeSerializer = restoreSerializer();
+				RowDataSerializer reconfiguredCompositeSerializer = restoreSerializer();
 				return TypeSerializerSchemaCompatibility.compatibleWithReconfiguredSerializer(
 						reconfiguredCompositeSerializer);
 			}

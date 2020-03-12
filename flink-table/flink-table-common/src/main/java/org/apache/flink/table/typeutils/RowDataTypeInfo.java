@@ -25,7 +25,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.CompositeType;
 import org.apache.flink.api.common.typeutils.TypeComparator;
 import org.apache.flink.api.java.typeutils.TupleTypeInfoBase;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
@@ -42,7 +42,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * Base row type info.
  */
 @Internal
-public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
+public class RowDataTypeInfo extends TupleTypeInfoBase<RowData> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -56,18 +56,18 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 	private final String[] fieldNames;
 	private final LogicalType[] logicalTypes;
 
-	public BaseRowTypeInfo(RowType rowType) {
+	public RowDataTypeInfo(RowType rowType) {
 		this(
 			rowType.getFields().stream().map(RowType.RowField::getType).toArray(LogicalType[]::new),
 			rowType.getFieldNames().toArray(new String[0]));
 	}
 
-	public BaseRowTypeInfo(LogicalType... logicalTypes) {
+	public RowDataTypeInfo(LogicalType... logicalTypes) {
 		this(logicalTypes, generateDefaultFieldNames(logicalTypes.length));
 	}
 
-	public BaseRowTypeInfo(LogicalType[] logicalTypes, String[] fieldNames) {
-		super(SqlRow.class, Arrays.stream(logicalTypes)
+	public RowDataTypeInfo(LogicalType[] logicalTypes, String[] fieldNames) {
+		super(RowData.class, Arrays.stream(logicalTypes)
 				.map(LogicalTypeUtils::internalTypeInfo)
 				.toArray(TypeInformation[]::new));
 		this.logicalTypes = logicalTypes;
@@ -128,7 +128,7 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 	}
 
 	@Override
-	public TypeComparator<SqlRow> createComparator(
+	public TypeComparator<RowData> createComparator(
 		int[] logicalKeyFields,
 		boolean[] orders,
 		int logicalFieldOffset,
@@ -154,7 +154,7 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 
 	@Override
 	public boolean canEqual(Object obj) {
-		return obj instanceof BaseRowTypeInfo;
+		return obj instanceof RowDataTypeInfo;
 	}
 
 	@Override
@@ -195,13 +195,13 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 	}
 
 	@Override
-	public TypeComparatorBuilder<SqlRow> createTypeComparatorBuilder() {
+	public TypeComparatorBuilder<RowData> createTypeComparatorBuilder() {
 		throw new UnsupportedOperationException("Not support!");
 	}
 
 	@Override
-	public BaseRowSerializer createSerializer(ExecutionConfig config) {
-		return new BaseRowSerializer(config, logicalTypes);
+	public RowDataSerializer createSerializer(ExecutionConfig config) {
+		return new RowDataSerializer(config, logicalTypes);
 	}
 
 	public LogicalType[] getLogicalTypes() {
@@ -212,8 +212,8 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 		return RowType.of(logicalTypes, fieldNames);
 	}
 
-	public static BaseRowTypeInfo of(RowType rowType) {
-		return new BaseRowTypeInfo(
+	public static RowDataTypeInfo of(RowType rowType) {
+		return new RowDataTypeInfo(
 				rowType.getChildren().toArray(new LogicalType[0]),
 				rowType.getFieldNames().toArray(new String[0]));
 	}

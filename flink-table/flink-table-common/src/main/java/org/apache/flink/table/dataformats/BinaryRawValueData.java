@@ -34,20 +34,20 @@ import java.io.Serializable;
  * @param <T> the java type of the raw value.
  */
 @Internal
-public final class LazyBinaryRawValue<T> extends LazyBinaryFormat<T>
-		implements SqlRawValue<T>, Serializable {
+public final class BinaryRawValueData<T> extends LazyBinaryFormat<T>
+		implements RawValueData<T>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public LazyBinaryRawValue(T javaObject) {
+	public BinaryRawValueData(T javaObject) {
 		super(javaObject);
 	}
 
-	public LazyBinaryRawValue(MemorySegment[] segments, int offset, int sizeInBytes) {
+	public BinaryRawValueData(MemorySegment[] segments, int offset, int sizeInBytes) {
 		super(segments, offset, sizeInBytes);
 	}
 
-	public LazyBinaryRawValue(MemorySegment[] segments, int offset, int sizeInBytes, T javaObject) {
+	public BinaryRawValueData(MemorySegment[] segments, int offset, int sizeInBytes, T javaObject) {
 		super(segments, offset, sizeInBytes, javaObject);
 	}
 
@@ -104,10 +104,10 @@ public final class LazyBinaryRawValue<T> extends LazyBinaryFormat<T>
 		}
 	}
 
-	static <T> LazyBinaryRawValue<T> fromAddress(
+	static <T> BinaryRawValueData<T> fromAddress(
 		MemorySegment[] segments, int baseOffset, long offsetAndSize) {
 		final int size = ((int) offsetAndSize);
 		int offset = (int) (offsetAndSize >> 32);
-		return new LazyBinaryRawValue<>(segments, offset + baseOffset, size, null);
+		return new BinaryRawValueData<>(segments, offset + baseOffset, size, null);
 	}
 }

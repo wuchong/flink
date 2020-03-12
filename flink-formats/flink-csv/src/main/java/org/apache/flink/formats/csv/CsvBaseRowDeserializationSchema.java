@@ -22,15 +22,15 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.GenericRow;
-import org.apache.flink.table.dataformats.SqlString;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.GenericRowData;
+import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.table.typeutils.BaseRowTypeInfo;
+import org.apache.flink.table.typeutils.RowDataTypeInfo;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -75,9 +75,9 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 	}
 
 	@Override
-	public SqlRow deserialize(byte[] message) throws IOException {
+	public RowData deserialize(byte[] message) throws IOException {
 		int startPos = 0;
-		GenericRow row = new GenericRow(fieldCount);
+		GenericRowData row = new GenericRowData(fieldCount);
 		BytesInputView bytesView = new BytesInputView(message);
 		for (int index = 0; index < fieldCount; index++) {
 			// parse field
@@ -88,13 +88,13 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 	}
 
 	@Override
-	public boolean isEndOfStream(SqlRow nextElement) {
+	public boolean isEndOfStream(RowData nextElement) {
 		return false;
 	}
 
 	@Override
-	public TypeInformation<SqlRow> getProducedType() {
-		return new BaseRowTypeInfo(rowType);
+	public TypeInformation<RowData> getProducedType() {
+		return new RowDataTypeInfo(rowType);
 	}
 
 	@Override
@@ -185,18 +185,18 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 		return Time.valueOf(text).toLocalTime().toSecondOfDay();
 	}
 
-	private SqlTimestamp convertToInternalTimestamp(BytesInputView bytesView) {
+	private TimestampData convertToInternalTimestamp(BytesInputView bytesView) {
 		String text = readNextString(bytesView, delimiter);
-		return SqlTimestamp.fromTimestamp(Timestamp.valueOf(text));
+		return TimestampData.fromTimestamp(Timestamp.valueOf(text));
 	}
 
-	private SqlDecimal convertToInternalDecimal(BytesInputView bytesView, DecimalType decimalType) {
+	private DecimalData convertToInternalDecimal(BytesInputView bytesView, DecimalType decimalType) {
 		String text = readNextString(bytesView, delimiter);
 		BigDecimal bigDecimal = new BigDecimal(text);
-		return SqlDecimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
+		return DecimalData.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
 	}
 
-	private SqlString parseToInternalString(BytesInputView bytesView) {
+	private StringData parseToInternalString(BytesInputView bytesView) {
 		int offset = bytesView.currentPos;
 		byte[] bytes = bytesView.bytes;
 		int limit = bytes.length;
@@ -205,7 +205,7 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 		// update current offset
 		bytesView.currentPos = (endPos == limit) ? limit : endPos + delimiter.length;
 		// creates SqlString without memory copying
-		return SqlString.fromBytes(bytes, offset, length);
+		return StringData.fromBytes(bytes, offset, length);
 	}
 
 	private static String readNextString(BytesInputView bytesView, byte[] delimiter) {

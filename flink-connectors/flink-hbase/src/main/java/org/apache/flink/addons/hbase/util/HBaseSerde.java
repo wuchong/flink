@@ -19,11 +19,11 @@
 package org.apache.flink.addons.hbase.util;
 
 import org.apache.flink.addons.hbase.HBaseTableSchema;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.SqlDecimal;
-import org.apache.flink.table.dataformats.GenericRow;
-import org.apache.flink.table.dataformats.SqlString;
-import org.apache.flink.table.dataformats.SqlTimestamp;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.DecimalData;
+import org.apache.flink.table.dataformats.GenericRowData;
+import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.dataformats.TimestampData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -53,8 +53,8 @@ public class HBaseSerde {
 
 	private final int fieldLength;
 
-	private GenericRow reusedRow;
-	private GenericRow[] reusedFamilyRows;
+	private GenericRowData reusedRow;
+	private GenericRowData[] reusedFamilyRows;
 	
 	public HBaseSerde(HBaseTableSchema hbaseSchema) {
 		this.families = hbaseSchema.getFamilyKeys();
@@ -66,8 +66,8 @@ public class HBaseSerde {
 		this.fieldLength = families.length + 1;
 
 		// prepare output rows
-		this.reusedRow = new GenericRow(fieldLength);
-		this.reusedFamilyRows = new GenericRow[families.length];
+		this.reusedRow = new GenericRowData(fieldLength);
+		this.reusedFamilyRows = new GenericRowData[families.length];
 
 		this.qualifiers = new byte[families.length][][];
 		this.qualifierTypes = new LogicalType[families.length][];
@@ -78,7 +78,7 @@ public class HBaseSerde {
 			this.qualifierTypes[f] = Arrays.stream(dataTypes)
 				.map(DataType::getLogicalType)
 				.toArray(LogicalType[]::new);
-			this.reusedFamilyRows[f] = new GenericRow(dataTypes.length);
+			this.reusedFamilyRows[f] = new GenericRowData(dataTypes.length);
 		}
 	}
 
@@ -87,7 +87,7 @@ public class HBaseSerde {
 	 *
 	 * @return The appropriate instance of Put for this use case.
 	 */
-	public Put createPutMutation(SqlRow row) {
+	public Put createPutMutation(RowData row) {
 		assert rowkeyIndex != -1;
 		byte[] rowkey = serializeField(row, rowkeyIndex, rowkeyType);
 		// upsert
@@ -97,7 +97,7 @@ public class HBaseSerde {
 				int f = i > rowkeyIndex ? i - 1 : i;
 				// get family key
 				byte[] familyKey = families[f];
-				SqlRow familyRow = row.getRow(i, qualifiers[f].length);
+				RowData familyRow = row.getRow(i, qualifiers[f].length);
 				for (int q = 0; q < this.qualifiers[f].length; q++) {
 					// get quantifier key
 					byte[] qualifier = qualifiers[f][q];
@@ -117,7 +117,7 @@ public class HBaseSerde {
 	 *
 	 * @return The appropriate instance of Delete for this use case.
 	 */
-	public Delete createDeleteMutation(SqlRow row) {
+	public Delete createDeleteMutation(RowData row) {
 		byte[] rowkey = serializeField(row, rowkeyIndex, rowkeyType);
 		// delete
 		Delete delete = new Delete(rowkey);
@@ -154,9 +154,9 @@ public class HBaseSerde {
 	}
 
 	/**
-	 * Converts HBase {@link Result} into {@link SqlRow}.
+	 * Converts HBase {@link Result} into {@link RowData}.
 	 */
-	public SqlRow convertToRow(Result result) {
+	public RowData convertToRow(Result result) {
 		Object rowkey = deserializeField(result.getRow(), rowkeyType);
 		for (int i = 0; i < fieldLength; i++) {
 			if (rowkeyIndex == i) {
@@ -165,7 +165,7 @@ public class HBaseSerde {
 				int f = (rowkeyIndex != -1 && i > rowkeyIndex) ? i - 1 : i;
 				// get family key
 				byte[] familyKey = families[f];
-				GenericRow familyRow = reusedFamilyRows[f];
+				GenericRowData familyRow = reusedFamilyRows[f];
 				for (int q = 0; q < this.qualifiers[f].length; q++) {
 					// get quantifier key
 					byte[] qualifier = qualifiers[f][q];
@@ -185,7 +185,7 @@ public class HBaseSerde {
 
 	private static final byte[] EMPTY_BYTES = new byte[]{};
 
-	private static byte[] serializeField(SqlRow row, int ordinal, LogicalType type) {
+	private static byte[] serializeField(RowData row, int ordinal, LogicalType type) {
 		if (row.isNullAt(ordinal)) {
 			return EMPTY_BYTES;
 		}
@@ -254,7 +254,7 @@ public class HBaseSerde {
 			case TIMESTAMP_WITH_TIME_ZONE:
 				// TODO: support higher precision
 				long milliseconds = Bytes.toLong(value);
-				return SqlTimestamp.fromEpochMillis(milliseconds);
+				return TimestampData.fromEpochMillis(milliseconds);
 			case FLOAT:
 				return Bytes.toFloat(value);
 			case DOUBLE:
@@ -262,11 +262,11 @@ public class HBaseSerde {
 			case CHAR:
 			case VARCHAR:
 				// reuse bytes
-				return SqlString.fromBytes(value);
+				return StringData.fromBytes(value);
 			case DECIMAL:
 				BigDecimal decimal = Bytes.toBigDecimal(value);
 				DecimalType decimalType = (DecimalType) type;
-				return SqlDecimal.fromBigDecimal(decimal, decimalType.getPrecision(), decimalType.getScale());
+				return DecimalData.fromBigDecimal(decimal, decimalType.getPrecision(), decimalType.getScale());
 			case BINARY:
 			case VARBINARY:
 				return value;

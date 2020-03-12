@@ -38,7 +38,7 @@ import java.time.LocalTime;
  * nano-of-millisecond, which should between 0 - 999_999.
  */
 @PublicEvolving
-public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializable {
+public final class TimestampData implements Comparable<TimestampData>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -51,14 +51,14 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	// this field holds the nano-of-millisecond
 	private final int nanoOfMillisecond;
 
-	private SqlTimestamp(long millisecond, int nanoOfMillisecond) {
+	private TimestampData(long millisecond, int nanoOfMillisecond) {
 		Preconditions.checkArgument(nanoOfMillisecond >= 0 && nanoOfMillisecond <= 999_999);
 		this.millisecond = millisecond;
 		this.nanoOfMillisecond = nanoOfMillisecond;
 	}
 
 	@Override
-	public int compareTo(SqlTimestamp that) {
+	public int compareTo(TimestampData that) {
 		int cmp = Long.compare(this.millisecond, that.millisecond);
 		if (cmp == 0) {
 			cmp = this.nanoOfMillisecond - that.nanoOfMillisecond;
@@ -68,10 +68,10 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof SqlTimestamp)) {
+		if (!(obj instanceof TimestampData)) {
 			return false;
 		}
-		SqlTimestamp that = (SqlTimestamp) obj;
+		TimestampData that = (TimestampData) obj;
 		return this.millisecond == that.millisecond &&
 				this.nanoOfMillisecond == that.nanoOfMillisecond;
 	}
@@ -106,8 +106,8 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 *                    January 1, 1970, 00:00:00 GMT
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp fromEpochMillis(long millisecond) {
-		return new SqlTimestamp(millisecond, 0);
+	public static TimestampData fromEpochMillis(long millisecond) {
+		return new TimestampData(millisecond, 0);
 	}
 
 	/**
@@ -121,8 +121,8 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 * @param nanoOfMillisecond the nanosecond within the millisecond, from 0 to 999,999
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp fromEpochMillis(long millisecond, int nanoOfMillisecond) {
-		return new SqlTimestamp(millisecond, nanoOfMillisecond);
+	public static TimestampData fromEpochMillis(long millisecond, int nanoOfMillisecond) {
+		return new TimestampData(millisecond, nanoOfMillisecond);
 	}
 
 	/**
@@ -142,7 +142,7 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 * @param ts an instance of {@link Timestamp}
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp fromTimestamp(Timestamp ts) {
+	public static TimestampData fromTimestamp(Timestamp ts) {
 		return fromLocalDateTime(ts.toLocalDateTime());
 	}
 
@@ -172,14 +172,14 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 * @param dateTime an instance of {@link LocalDateTime}
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp fromLocalDateTime(LocalDateTime dateTime) {
+	public static TimestampData fromLocalDateTime(LocalDateTime dateTime) {
 		long epochDay = dateTime.toLocalDate().toEpochDay();
 		long nanoOfDay = dateTime.toLocalTime().toNanoOfDay();
 
 		long millisecond = epochDay * MILLIS_PER_DAY + nanoOfDay / 1_000_000;
 		int nanoOfMillisecond = (int) (nanoOfDay % 1_000_000);
 
-		return new SqlTimestamp(millisecond, nanoOfMillisecond);
+		return new TimestampData(millisecond, nanoOfMillisecond);
 	}
 
 	/**
@@ -206,14 +206,14 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 * @param instant an instance of {@link Instant}
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp fromInstant(Instant instant) {
+	public static TimestampData fromInstant(Instant instant) {
 		long epochSecond = instant.getEpochSecond();
 		int nanoSecond = instant.getNano();
 
 		long millisecond = epochSecond * 1_000 + nanoSecond / 1_000_000;
 		int nanoOfMillisecond = nanoSecond % 1_000_000;
 
-		return new SqlTimestamp(millisecond, nanoOfMillisecond);
+		return new TimestampData(millisecond, nanoOfMillisecond);
 	}
 
 	/**
@@ -235,11 +235,11 @@ public final class SqlTimestamp implements Comparable<SqlTimestamp>, Serializabl
 	 * @param offsetAndNanos the offset of millseconds part and nanoseconds
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static SqlTimestamp readTimestampFieldFromSegments(
+	public static TimestampData readTimestampFieldFromSegments(
 			MemorySegment[] segments, int baseOffset, long offsetAndNanos) {
 		final int nanoOfMillisecond = (int) offsetAndNanos;
 		final int subOffset = (int) (offsetAndNanos >> 32);
 		final long millisecond = SegmentsUtil.getLong(segments, baseOffset + subOffset);
-		return SqlTimestamp.fromEpochMillis(millisecond, nanoOfMillisecond);
+		return TimestampData.fromEpochMillis(millisecond, nanoOfMillisecond);
 	}
 }

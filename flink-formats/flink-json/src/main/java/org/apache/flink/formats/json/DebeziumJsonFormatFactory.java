@@ -21,7 +21,7 @@ package org.apache.flink.formats.json;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DebeziumJsonFormatFactory extends TableFormatFactoryBase<SqlRow>
+public class DebeziumJsonFormatFactory extends TableFormatFactoryBase<RowData>
 		implements ChangelogDeserializationSchemaFactory, ChangelogSerializationSchemaFactory {
 
 	public DebeziumJsonFormatFactory() {

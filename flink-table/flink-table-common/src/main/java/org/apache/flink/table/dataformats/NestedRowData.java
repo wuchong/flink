@@ -22,36 +22,36 @@ import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
 import org.apache.flink.table.utils.SegmentsUtil;
 
-import static org.apache.flink.table.dataformats.BinaryRow.calculateBitSetWidthInBytes;
+import static org.apache.flink.table.dataformats.BinaryRowData.calculateBitSetWidthInBytes;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * Its memory storage structure is exactly the same with {@link BinaryRow}.
- * The only different is that, as {@link NestedRow} is used
- * to store row value in the variable-length part of {@link BinaryRow},
- * every field (including both fixed-length part and variable-length part) of {@link NestedRow}
- * has a possibility to cross the boundary of a segment, while the fixed-length part of {@link BinaryRow}
+ * Its memory storage structure is exactly the same with {@link BinaryRowData}.
+ * The only different is that, as {@link NestedRowData} is used
+ * to store row value in the variable-length part of {@link BinaryRowData},
+ * every field (including both fixed-length part and variable-length part) of {@link NestedRowData}
+ * has a possibility to cross the boundary of a segment, while the fixed-length part of {@link BinaryRowData}
  * must fit into its first memory segment.
  */
 @Internal
-public final class NestedRow extends BinarySection implements SqlRow, TypedSetters {
+public final class NestedRowData extends BinarySection implements RowData, TypedSetters {
 
 	private static final long serialVersionUID = 1L;
 
 	private final int arity;
 	private final int nullBitsSizeInBytes;
 
-	public NestedRow(int arity) {
+	public NestedRowData(int arity) {
 		checkArgument(arity >= 0);
 		this.arity = arity;
 		this.nullBitsSizeInBytes = calculateBitSetWidthInBytes(arity);
 	}
 
-	static NestedRow readNestedRowFieldFromSegments(
+	static NestedRowData readNestedRowFieldFromSegments(
 			MemorySegment[] segments, int numFields, int baseOffset, long offsetAndSize) {
 		final int size = ((int) offsetAndSize);
 		int offset = (int) (offsetAndSize >> 32);
-		NestedRow row = new NestedRow(numFields);
+		NestedRowData row = new NestedRowData(numFields);
 		row.pointTo(segments, offset + baseOffset, size);
 		return row;
 	}
@@ -71,13 +71,13 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public ChangelogKind getChangelogKind() {
+	public RowKind getChangelogKind() {
 		byte header = SegmentsUtil.getByte(segments, offset);
-		return ChangelogKind.valueOf(header);
+		return RowKind.valueOf(header);
 	}
 
 	@Override
-	public void setChangelogKind(ChangelogKind kind) {
+	public void setChangelogKind(RowKind kind) {
 		SegmentsUtil.setByte(segments, offset, kind.getValue());
 	}
 
@@ -87,7 +87,7 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	/**
-	 * See {@link BinaryRow#setNullAt(int)}.
+	 * See {@link BinaryRowData#setNullAt(int)}.
 	 */
 	@Override
 	public void setNullAt(int i) {
@@ -118,10 +118,10 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public void setDecimal(int pos, SqlDecimal value, int precision) {
+	public void setDecimal(int pos, DecimalData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlDecimal.isCompact(precision)) {
+		if (DecimalData.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -149,10 +149,10 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public void setTimestamp(int pos, SqlTimestamp value, int precision) {
+	public void setTimestamp(int pos, TimestampData value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
+		if (TimestampData.isCompact(precision)) {
 			setLong(pos, value.getMillisecond());
 		} else {
 			int fieldOffset = getFieldOffset(pos);
@@ -250,7 +250,7 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlString getString(int pos) {
+	public StringData getString(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndLen = SegmentsUtil.getLong(segments, fieldOffset);
@@ -258,36 +258,36 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlDecimal getDecimal(int pos, int precision, int scale) {
+	public DecimalData getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
 
-		if (SqlDecimal.isCompact(precision)) {
-			return SqlDecimal.fromUnscaledLong(precision, scale,
+		if (DecimalData.isCompact(precision)) {
+			return DecimalData.fromUnscaledLong(precision, scale,
 					SegmentsUtil.getLong(segments, getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return DecimalData.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
-	public SqlTimestamp getTimestamp(int pos, int precision) {
+	public TimestampData getTimestamp(int pos, int precision) {
 		assertIndexIsValid(pos);
 
-		if (SqlTimestamp.isCompact(precision)) {
-			return SqlTimestamp.fromEpochMillis(SegmentsUtil.getLong(segments, getFieldOffset(pos)));
+		if (TimestampData.isCompact(precision)) {
+			return TimestampData.fromEpochMillis(SegmentsUtil.getLong(segments, getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndNanoOfMilli = SegmentsUtil.getLong(segments, fieldOffset);
-		return SqlTimestamp.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
+		return TimestampData.readTimestampFieldFromSegments(segments, offset, offsetAndNanoOfMilli);
 	}
 
 	@Override
-	public <T> SqlRawValue<T> getGeneric(int pos) {
+	public <T> RawValueData<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return LazyBinaryRawValue.fromAddress(segments, offset, getLong(pos));
+		return BinaryRawValueData.fromAddress(segments, offset, getLong(pos));
 	}
 
 	@Override
@@ -299,32 +299,32 @@ public final class NestedRow extends BinarySection implements SqlRow, TypedSette
 	}
 
 	@Override
-	public SqlRow getRow(int pos, int numFields) {
+	public RowData getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
-		return NestedRow.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
+		return NestedRowData.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlArray getArray(int pos) {
+	public ArrayData getArray(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryArrayData.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public SqlMap getMap(int pos) {
+	public MapData getMap(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
+		return BinaryMapData.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
 
-	public NestedRow copy() {
-		return copy(new NestedRow(arity));
+	public NestedRowData copy() {
+		return copy(new NestedRowData(arity));
 	}
 
-	public NestedRow copy(SqlRow reuse) {
-		return copyInternal((NestedRow) reuse);
+	public NestedRowData copy(RowData reuse) {
+		return copyInternal((NestedRowData) reuse);
 	}
 
-	private NestedRow copyInternal(NestedRow reuse) {
+	private NestedRowData copyInternal(NestedRowData reuse) {
 		byte[] bytes = SegmentsUtil.copyToBytes(segments, offset, sizeInBytes);
 		reuse.pointTo(MemorySegmentFactory.wrap(bytes), 0, sizeInBytes);
 		return reuse;

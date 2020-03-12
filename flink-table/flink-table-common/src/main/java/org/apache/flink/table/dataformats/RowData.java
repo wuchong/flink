@@ -26,20 +26,20 @@ import java.io.Serializable;
  * An interface for row used internally in Flink Table/SQL, which only contains the columns as
  * internal types.
  *
- * <p>A {@link SqlRow} also contains {@link ChangelogKind} which is a metadata information of
- * this row, not a column of this row. The {@link ChangelogKind} represents the changelog operation
+ * <p>A {@link RowData} also contains {@link RowKind} which is a metadata information of
+ * this row, not a column of this row. The {@link RowKind} represents the changelog operation
  * kind: INSERT/DELETE/UPDATE_BEFORE/UPDATE_AFTER.
  *
  * <p>TODO: add a list and description for all internal formats
  *
  * <p>There are different implementations depending on the scenario. For example, the binary-orient
- * implementation {@link BinaryRow} and the object-orient implementation {@link GenericRow}. All
+ * implementation {@link BinaryRowData} and the object-orient implementation {@link GenericRowData}. All
  * the different implementations have the same binary format after serialization.
  *
  * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
  */
 @PublicEvolving
-public interface SqlRow extends TypedGetters, Serializable {
+public interface RowData extends TypedGetters, Serializable {
 
 	/**
 	 * Get the number of fields in the BaseRow.
@@ -51,16 +51,16 @@ public interface SqlRow extends TypedGetters, Serializable {
 	/**
 	 * Gets the changelog kind of this row, it is a metadata of this row, not a column of this row.
 	 */
-	ChangelogKind getChangelogKind();
+	RowKind getChangelogKind();
 
 	/**
 	 * Sets the changelog kind of this row, it is a metadata of this row, not a column of this row.
 	 */
-	void setChangelogKind(ChangelogKind kind);
+	void setChangelogKind(RowKind kind);
 
 	// ------------------------------------------------------------------------------------------
 
-	static Object get(SqlRow row, int ordinal, LogicalType type) {
+	static Object get(RowData row, int ordinal, LogicalType type) {
 		return TypedGetters.get(row, ordinal, type);
 	}
 }

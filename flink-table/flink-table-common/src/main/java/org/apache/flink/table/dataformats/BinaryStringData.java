@@ -41,22 +41,22 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * <p>{@code LazyBinarySqlString} are influenced by Apache Spark UTF8String.
  */
 @Internal
-public final class LazyBinaryString extends LazyBinaryFormat<String> implements SqlString {
+public final class BinaryStringData extends LazyBinaryFormat<String> implements StringData {
 	private static final long serialVersionUID = 1L;
 
-	public static final LazyBinaryString EMPTY_UTF8 = LazyBinaryString.fromBytes(StringUtf8Utils.encodeUTF8(""));
+	public static final BinaryStringData EMPTY_UTF8 = BinaryStringData.fromBytes(StringUtf8Utils.encodeUTF8(""));
 
-	public LazyBinaryString() {}
+	public BinaryStringData() {}
 
-	public LazyBinaryString(String javaObject) {
+	public BinaryStringData(String javaObject) {
 		super(javaObject);
 	}
 
-	public LazyBinaryString(MemorySegment[] segments, int offset, int sizeInBytes) {
+	public BinaryStringData(MemorySegment[] segments, int offset, int sizeInBytes) {
 		super(segments, offset, sizeInBytes);
 	}
 
-	public LazyBinaryString(MemorySegment[] segments, int offset, int sizeInBytes, String javaObject) {
+	public BinaryStringData(MemorySegment[] segments, int offset, int sizeInBytes, String javaObject) {
 		super(segments, offset, sizeInBytes, javaObject);
 	}
 
@@ -67,41 +67,41 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	/**
 	 * Creates an LazyBinarySqlString from given address (base and offset) and length.
 	 */
-	public static LazyBinaryString fromAddress(
+	public static BinaryStringData fromAddress(
 		MemorySegment[] segments, int offset, int numBytes) {
-		return new LazyBinaryString(segments, offset, numBytes);
+		return new BinaryStringData(segments, offset, numBytes);
 	}
 
 	/**
 	 * Creates an LazyBinarySqlString from given java String.
 	 */
-	public static LazyBinaryString fromString(String str) {
+	public static BinaryStringData fromString(String str) {
 		if (str == null) {
 			return null;
 		} else {
-			return new LazyBinaryString(str);
+			return new BinaryStringData(str);
 		}
 	}
 
 	/**
 	 * Creates an LazyBinarySqlString from given UTF-8 bytes.
 	 */
-	public static LazyBinaryString fromBytes(byte[] bytes) {
+	public static BinaryStringData fromBytes(byte[] bytes) {
 		return fromBytes(bytes, 0, bytes.length);
 	}
 
 	/**
 	 * Creates an LazyBinarySqlString from given UTF-8 bytes with offset and number of bytes.
 	 */
-	public static LazyBinaryString fromBytes(byte[] bytes, int offset, int numBytes) {
-		return new LazyBinaryString(
+	public static BinaryStringData fromBytes(byte[] bytes, int offset, int numBytes) {
+		return new BinaryStringData(
 			new MemorySegment[] {MemorySegmentFactory.wrap(bytes)}, offset, numBytes);
 	}
 
 	/**
 	 * Creates an LazyBinarySqlString that contains `length` spaces.
 	 */
-	public static LazyBinaryString blankString(int length) {
+	public static BinaryStringData blankString(int length) {
 		byte[] spaces = new byte[length];
 		Arrays.fill(spaces, (byte) ' ');
 		return fromBytes(spaces);
@@ -127,8 +127,8 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 
 	@Override
 	public boolean equals(Object o) {
-		if (o instanceof LazyBinaryString) {
-			LazyBinaryString other = (LazyBinaryString) o;
+		if (o instanceof BinaryStringData) {
+			BinaryStringData other = (BinaryStringData) o;
 			if (javaObject != null && other.javaObject != null) {
 				return javaObject.equals(other.javaObject);
 			}
@@ -165,9 +165,9 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 * So we just compare the binary.
 	 */
 	@Override
-	public int compareTo(@Nonnull SqlString o) {
+	public int compareTo(@Nonnull StringData o) {
 		// LazyBinarySqlString is the only implementation of SqlString
-		LazyBinaryString other = (LazyBinaryString) o;
+		BinaryStringData other = (BinaryStringData) o;
 		if (javaObject != null && other.javaObject != null) {
 			return javaObject.compareTo(other.javaObject);
 		}
@@ -197,7 +197,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	/**
 	 * Find the boundaries of segments, and then compare MemorySegment.
 	 */
-	private int compareMultiSegments(LazyBinaryString other) {
+	private int compareMultiSegments(BinaryStringData other) {
 
 		if (binarySection.sizeInBytes == 0 || other.binarySection.sizeInBytes == 0) {
 			return binarySection.sizeInBytes - other.binarySection.sizeInBytes;
@@ -297,7 +297,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	private int numCharsMultiSegs() {
 		int len = 0;
 		int segSize = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset index = firstSegmentAndOffset(segSize);
+		BinaryStringData.SegmentAndOffset index = firstSegmentAndOffset(segSize);
 		int i = 0;
 		while (i < binarySection.sizeInBytes) {
 			int charBytes = numBytesForFirstByte(index.value());
@@ -368,10 +368,10 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	/**
 	 * Copy a new {@code LazyBinarySqlString}.
 	 */
-	public LazyBinaryString copy() {
+	public BinaryStringData copy() {
 		ensureMaterialized();
 		byte[] copy = SegmentsUtil.copyToBytes(binarySection.segments, binarySection.offset, binarySection.sizeInBytes);
-		return new LazyBinaryString(new MemorySegment[] {MemorySegmentFactory.wrap(copy)},
+		return new BinaryStringData(new MemorySegment[] {MemorySegmentFactory.wrap(copy)},
 			0, binarySection.sizeInBytes, javaObject);
 	}
 
@@ -392,7 +392,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 * @return the specified substring, return EMPTY_UTF8 when index out of bounds
 	 * instead of StringIndexOutOfBoundsException.
 	 */
-	public LazyBinaryString substring(int beginIndex, int endIndex) {
+	public BinaryStringData substring(int beginIndex, int endIndex) {
 		ensureMaterialized();
 		if (endIndex <= beginIndex || beginIndex >= binarySection.sizeInBytes) {
 			return EMPTY_UTF8;
@@ -424,9 +424,9 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		}
 	}
 
-	private LazyBinaryString substringMultiSegs(final int start, final int until) {
+	private BinaryStringData substringMultiSegs(final int start, final int until) {
 		int segSize = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset index = firstSegmentAndOffset(segSize);
+		BinaryStringData.SegmentAndOffset index = firstSegmentAndOffset(segSize);
 		int i = 0;
 		int c = 0;
 		while (i < binarySection.sizeInBytes && c < start) {
@@ -458,7 +458,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 * @param s the sequence to search for
 	 * @return true if this LazyBinarySqlString contains {@code s}, false otherwise
 	 */
-	public boolean contains(final LazyBinaryString s) {
+	public boolean contains(final BinaryStringData s) {
 		ensureMaterialized();
 		s.ensureMaterialized();
 		if (s.binarySection.sizeInBytes == 0) {
@@ -479,7 +479,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *          will be returned if the argument is an empty LazyBinarySqlString or is equal to this
 	 *          {@code LazyBinarySqlString} object as determined by the {@link #equals(Object)} method.
 	 */
-	public boolean startsWith(final LazyBinaryString prefix) {
+	public boolean startsWith(final BinaryStringData prefix) {
 		ensureMaterialized();
 		prefix.ensureMaterialized();
 		return matchAt(prefix, 0);
@@ -494,7 +494,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *          be {@code true} if the argument is the empty string or is equal to this
 	 *          {@code LazyBinarySqlString} object as determined by the {@link #equals(Object)} method.
 	 */
-	public boolean endsWith(final LazyBinaryString suffix) {
+	public boolean endsWith(final BinaryStringData suffix) {
 		ensureMaterialized();
 		suffix.ensureMaterialized();
 		return matchAt(suffix, binarySection.sizeInBytes - suffix.binarySection.sizeInBytes);
@@ -508,7 +508,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *          space removed, or this string if it has no leading or
 	 *          trailing white space.
 	 */
-	public LazyBinaryString trim() {
+	public BinaryStringData trim() {
 		ensureMaterialized();
 		if (inFirstSegment()) {
 			int s = 0;
@@ -532,17 +532,17 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		}
 	}
 
-	private LazyBinaryString trimMultiSegs() {
+	private BinaryStringData trimMultiSegs() {
 		int s = 0;
 		int e = this.binarySection.sizeInBytes - 1;
 		int segSize = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset front = firstSegmentAndOffset(segSize);
+		BinaryStringData.SegmentAndOffset front = firstSegmentAndOffset(segSize);
 		// skip all of the space (0x20) in the left side
 		while (s < this.binarySection.sizeInBytes && front.value() == 0x20) {
 			s++;
 			front.nextByte(segSize);
 		}
-		LazyBinaryString.SegmentAndOffset behind = lastSegmentAndOffset(segSize);
+		BinaryStringData.SegmentAndOffset behind = lastSegmentAndOffset(segSize);
 		// skip all of the space (0x20) in the right side
 		while (e >= s && behind.value() == 0x20) {
 			e--;
@@ -566,7 +566,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *          starting at the specified index,
 	 *          or {@code -1} if there is no such occurrence.
 	 */
-	public int indexOf(LazyBinaryString str, int fromIndex) {
+	public int indexOf(BinaryStringData str, int fromIndex) {
 		ensureMaterialized();
 		str.ensureMaterialized();
 		if (str.binarySection.sizeInBytes == 0) {
@@ -599,13 +599,13 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		}
 	}
 
-	private int indexOfMultiSegs(LazyBinaryString str, int fromIndex) {
+	private int indexOfMultiSegs(BinaryStringData str, int fromIndex) {
 		// position in byte
 		int byteIdx = 0;
 		// position is char
 		int charIdx = 0;
 		int segSize = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset index = firstSegmentAndOffset(segSize);
+		BinaryStringData.SegmentAndOffset index = firstSegmentAndOffset(segSize);
 		while (byteIdx < binarySection.sizeInBytes && charIdx < fromIndex) {
 			int charBytes = numBytesForFirstByte(index.value());
 			byteIdx += charBytes;
@@ -634,7 +634,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *
 	 * @return the {@code LazyBinarySqlString}, converted to uppercase.
 	 */
-	public LazyBinaryString toUpperCase() {
+	public BinaryStringData toUpperCase() {
 		if (javaObject != null) {
 			return javaToUpperCase();
 		}
@@ -642,7 +642,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 			return EMPTY_UTF8;
 		}
 		int size = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset segmentAndOffset = startSegmentAndOffset(size);
+		BinaryStringData.SegmentAndOffset segmentAndOffset = startSegmentAndOffset(size);
 		byte[] bytes = new byte[binarySection.sizeInBytes];
 		bytes[0] = (byte) Character.toTitleCase(segmentAndOffset.value());
 		for (int i = 0; i < binarySection.sizeInBytes; i++) {
@@ -662,7 +662,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		return fromBytes(bytes);
 	}
 
-	private LazyBinaryString javaToUpperCase() {
+	private BinaryStringData javaToUpperCase() {
 		return fromString(toString().toUpperCase());
 	}
 
@@ -671,7 +671,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 	 *
 	 * @return the {@code LazyBinarySqlString}, converted to lowercase.
 	 */
-	public LazyBinaryString toLowerCase() {
+	public BinaryStringData toLowerCase() {
 		if (javaObject != null) {
 			return javaToLowerCase();
 		}
@@ -679,7 +679,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 			return EMPTY_UTF8;
 		}
 		int size = binarySection.segments[0].size();
-		LazyBinaryString.SegmentAndOffset segmentAndOffset = startSegmentAndOffset(size);
+		BinaryStringData.SegmentAndOffset segmentAndOffset = startSegmentAndOffset(size);
 		byte[] bytes = new byte[binarySection.sizeInBytes];
 		bytes[0] = (byte) Character.toTitleCase(segmentAndOffset.value());
 		for (int i = 0; i < binarySection.sizeInBytes; i++) {
@@ -699,7 +699,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		return fromBytes(bytes);
 	}
 
-	private LazyBinaryString javaToLowerCase() {
+	private BinaryStringData javaToLowerCase() {
 		return fromString(toString().toLowerCase());
 	}
 
@@ -715,11 +715,11 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 		return binarySection.sizeInBytes + binarySection.offset <= binarySection.segments[0].size();
 	}
 
-	private boolean matchAt(final LazyBinaryString s, int pos) {
+	private boolean matchAt(final BinaryStringData s, int pos) {
 		return (inFirstSegment() && s.inFirstSegment()) ? matchAtOneSeg(s, pos) : matchAtVarSeg(s, pos);
 	}
 
-	private boolean matchAtOneSeg(final LazyBinaryString s, int pos) {
+	private boolean matchAtOneSeg(final BinaryStringData s, int pos) {
 		return s.binarySection.sizeInBytes + pos <= binarySection.sizeInBytes && pos >= 0 &&
 			binarySection.segments[0].equalTo(
 				s.binarySection.segments[0],
@@ -728,7 +728,7 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 				s.binarySection.sizeInBytes);
 	}
 
-	private boolean matchAtVarSeg(final LazyBinaryString s, int pos) {
+	private boolean matchAtVarSeg(final BinaryStringData s, int pos) {
 		return s.binarySection.sizeInBytes + pos <= binarySection.sizeInBytes && pos >= 0 &&
 			SegmentsUtil.equals(
 				binarySection.segments,
@@ -738,32 +738,32 @@ public final class LazyBinaryString extends LazyBinaryFormat<String> implements 
 				s.binarySection.sizeInBytes);
 	}
 
-	LazyBinaryString copyLazyBinarySqlStringInOneSeg(int start, int len) {
+	BinaryStringData copyLazyBinarySqlStringInOneSeg(int start, int len) {
 		byte[] newBytes = new byte[len];
 		binarySection.segments[0].get(binarySection.offset + start, newBytes, 0, len);
 		return fromBytes(newBytes);
 	}
 
-	LazyBinaryString copyLazyBinarySqlString(int start, int end) {
+	BinaryStringData copyLazyBinarySqlString(int start, int end) {
 		int len = end - start + 1;
 		byte[] newBytes = new byte[len];
 		SegmentsUtil.copyToBytes(binarySection.segments, binarySection.offset + start, newBytes, 0, len);
 		return fromBytes(newBytes);
 	}
 
-	LazyBinaryString.SegmentAndOffset firstSegmentAndOffset(int segSize) {
+	BinaryStringData.SegmentAndOffset firstSegmentAndOffset(int segSize) {
 		int segIndex = binarySection.offset / segSize;
-		return new LazyBinaryString.SegmentAndOffset(segIndex, binarySection.offset % segSize);
+		return new BinaryStringData.SegmentAndOffset(segIndex, binarySection.offset % segSize);
 	}
 
-	LazyBinaryString.SegmentAndOffset lastSegmentAndOffset(int segSize) {
+	BinaryStringData.SegmentAndOffset lastSegmentAndOffset(int segSize) {
 		int lastOffset = binarySection.offset + binarySection.sizeInBytes - 1;
 		int segIndex = lastOffset / segSize;
-		return new LazyBinaryString.SegmentAndOffset(segIndex, lastOffset % segSize);
+		return new BinaryStringData.SegmentAndOffset(segIndex, lastOffset % segSize);
 	}
 
-	private LazyBinaryString.SegmentAndOffset startSegmentAndOffset(int segSize) {
-		return inFirstSegment() ? new LazyBinaryString.SegmentAndOffset(0, binarySection.offset) : firstSegmentAndOffset(segSize);
+	private BinaryStringData.SegmentAndOffset startSegmentAndOffset(int segSize) {
+		return inFirstSegment() ? new BinaryStringData.SegmentAndOffset(0, binarySection.offset) : firstSegmentAndOffset(segSize);
 	}
 
 	/**

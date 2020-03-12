@@ -22,6 +22,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.FormatConverter;
+import org.apache.flink.table.dataformats.RowKind;
 import org.apache.flink.table.types.DataType;
 
 import javax.annotation.Nullable;
@@ -35,7 +36,7 @@ public interface SupportsChangelogReading extends ReadingAbility {
 	/**
 	 * Returns what kind of changes are produced by this reader.
 	 *
-	 * @see org.apache.flink.table.dataformats.ChangelogKind
+	 * @see RowKind
 	 */
 	ChangelogMode getChangelogMode();
 

@@ -24,22 +24,22 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.SqlDecimal;
+import org.apache.flink.table.dataformats.DecimalData;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link SqlDecimal}.
+ * Serializer for {@link DecimalData}.
  */
 @Internal
-public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
+public final class DecimalDataSerializer extends TypeSerializer<DecimalData> {
 
 	private static final long serialVersionUID = 1L;
 
 	private final int precision;
 	private final int scale;
 
-	public DecimalSerializer(int precision, int scale) {
+	public DecimalDataSerializer(int precision, int scale) {
 		this.precision = precision;
 		this.scale = scale;
 	}
@@ -50,17 +50,17 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 	}
 
 	@Override
-	public SqlDecimal createInstance() {
-		return SqlDecimal.zero(precision, scale);
+	public DecimalData createInstance() {
+		return DecimalData.zero(precision, scale);
 	}
 
 	@Override
-	public SqlDecimal copy(SqlDecimal from) {
+	public DecimalData copy(DecimalData from) {
 		return from.copy();
 	}
 
 	@Override
-	public SqlDecimal copy(SqlDecimal from, SqlDecimal reuse) {
+	public DecimalData copy(DecimalData from, DecimalData reuse) {
 		return copy(from);
 	}
 
@@ -70,8 +70,8 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 	}
 
 	@Override
-	public void serialize(SqlDecimal record, DataOutputView target) throws IOException {
-		if (SqlDecimal.isCompact(precision)) {
+	public void serialize(DecimalData record, DataOutputView target) throws IOException {
+		if (DecimalData.isCompact(precision)) {
 			assert record.isCompact();
 			target.writeLong(record.toUnscaledLong());
 		} else {
@@ -82,26 +82,26 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 	}
 
 	@Override
-	public SqlDecimal deserialize(DataInputView source) throws IOException {
-		if (SqlDecimal.isCompact(precision)) {
+	public DecimalData deserialize(DataInputView source) throws IOException {
+		if (DecimalData.isCompact(precision)) {
 			long longVal = source.readLong();
-			return SqlDecimal.fromUnscaledLong(precision, scale, longVal);
+			return DecimalData.fromUnscaledLong(precision, scale, longVal);
 		} else {
 			int length = source.readInt();
 			byte[] bytes = new byte[length];
 			source.readFully(bytes);
-			return SqlDecimal.fromUnscaledBytes(precision, scale, bytes);
+			return DecimalData.fromUnscaledBytes(precision, scale, bytes);
 		}
 	}
 
 	@Override
-	public SqlDecimal deserialize(SqlDecimal record, DataInputView source) throws IOException {
+	public DecimalData deserialize(DecimalData record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
 	@Override
 	public void copy(DataInputView source, DataOutputView target) throws IOException {
-		if (SqlDecimal.isCompact(precision)) {
+		if (DecimalData.isCompact(precision)) {
 			target.writeLong(source.readLong());
 		} else {
 			int len = source.readInt();
@@ -111,8 +111,8 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 	}
 
 	@Override
-	public DecimalSerializer duplicate() {
-		return new DecimalSerializer(precision, scale);
+	public DecimalDataSerializer duplicate() {
+		return new DecimalDataSerializer(precision, scale);
 	}
 
 	@Override
@@ -124,7 +124,7 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 			return false;
 		}
 
-		DecimalSerializer that = (DecimalSerializer) o;
+		DecimalDataSerializer that = (DecimalDataSerializer) o;
 
 		return precision == that.precision && scale == that.scale;
 	}
@@ -137,14 +137,14 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlDecimal> snapshotConfiguration() {
+	public TypeSerializerSnapshot<DecimalData> snapshotConfiguration() {
 		return new DecimalSerializerSnapshot(precision, scale);
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link DecimalSerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link DecimalDataSerializer}.
 	 */
-	public static final class DecimalSerializerSnapshot implements TypeSerializerSnapshot<SqlDecimal> {
+	public static final class DecimalSerializerSnapshot implements TypeSerializerSnapshot<DecimalData> {
 
 		private static final int CURRENT_VERSION = 3;
 
@@ -179,19 +179,19 @@ public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 		}
 
 		@Override
-		public TypeSerializer<SqlDecimal> restoreSerializer() {
-			return new DecimalSerializer(previousPrecision, previousScale);
+		public TypeSerializer<DecimalData> restoreSerializer() {
+			return new DecimalDataSerializer(previousPrecision, previousScale);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<SqlDecimal> resolveSchemaCompatibility(TypeSerializer<SqlDecimal> newSerializer) {
-			if (!(newSerializer instanceof DecimalSerializer)) {
+		public TypeSerializerSchemaCompatibility<DecimalData> resolveSchemaCompatibility(TypeSerializer<DecimalData> newSerializer) {
+			if (!(newSerializer instanceof DecimalDataSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			DecimalSerializer newDecimalSerializer = (DecimalSerializer) newSerializer;
-			if (previousPrecision != newDecimalSerializer.precision ||
-					previousScale != newDecimalSerializer.scale) {
+			DecimalDataSerializer newDecimalDataSerializer = (DecimalDataSerializer) newSerializer;
+			if (previousPrecision != newDecimalDataSerializer.precision ||
+					previousScale != newDecimalDataSerializer.scale) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			} else {
 				return TypeSerializerSchemaCompatibility.compatibleAsIs();

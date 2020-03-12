@@ -26,23 +26,23 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.LazyBinaryRawValue;
-import org.apache.flink.table.dataformats.SqlRawValue;
+import org.apache.flink.table.dataformats.BinaryRawValueData;
+import org.apache.flink.table.dataformats.RawValueData;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link SqlRawValue}.
+ * Serializer for {@link RawValueData}.
  */
 @Internal
-public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T>> {
+public final class RawValueDataSerializer<T> extends TypeSerializer<RawValueData<T>> {
 
 	private static final long serialVersionUID = 1L;
 
 	private final TypeSerializer<T> serializer;
 
-	public SqlRawValueSerializer(TypeSerializer<T> serializer) {
+	public RawValueDataSerializer(TypeSerializer<T> serializer) {
 		this.serializer = serializer;
 	}
 
@@ -52,17 +52,17 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	@Override
-	public SqlRawValue<T> createInstance() {
-		return new LazyBinaryRawValue<>(serializer.createInstance());
+	public RawValueData<T> createInstance() {
+		return new BinaryRawValueData<>(serializer.createInstance());
 	}
 
 	@Override
-	public SqlRawValue<T> copy(SqlRawValue<T> from) {
-		LazyBinaryRawValue<T> rawValue = (LazyBinaryRawValue<T>) from;
+	public RawValueData<T> copy(RawValueData<T> from) {
+		BinaryRawValueData<T> rawValue = (BinaryRawValueData<T>) from;
 		rawValue.ensureMaterialized(serializer);
 		byte[] bytes = SegmentsUtil.copyToBytes(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes());
 		T newJavaObject = rawValue.getJavaObject() == null ? null : serializer.copy(rawValue.getJavaObject());
-		return new LazyBinaryRawValue<>(
+		return new BinaryRawValueData<>(
 			new MemorySegment[]{MemorySegmentFactory.wrap(bytes)},
 			0,
 			bytes.length,
@@ -70,7 +70,7 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	@Override
-	public SqlRawValue<T> copy(SqlRawValue<T> from, SqlRawValue<T> reuse) {
+	public RawValueData<T> copy(RawValueData<T> from, RawValueData<T> reuse) {
 		return copy(from);
 	}
 
@@ -80,26 +80,26 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	@Override
-	public void serialize(SqlRawValue<T> record, DataOutputView target) throws IOException {
-		LazyBinaryRawValue<T> rawValue = (LazyBinaryRawValue<T>) record;
+	public void serialize(RawValueData<T> record, DataOutputView target) throws IOException {
+		BinaryRawValueData<T> rawValue = (BinaryRawValueData<T>) record;
 		rawValue.ensureMaterialized(serializer);
 		target.writeInt(rawValue.getSizeInBytes());
 		SegmentsUtil.copyToView(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes(), target);
 	}
 
 	@Override
-	public SqlRawValue<T> deserialize(DataInputView source) throws IOException {
+	public RawValueData<T> deserialize(DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
-		return new LazyBinaryRawValue<>(
+		return new BinaryRawValueData<>(
 				new MemorySegment[] {MemorySegmentFactory.wrap(bytes)},
 				0,
 				bytes.length);
 	}
 
 	@Override
-	public SqlRawValue<T> deserialize(SqlRawValue<T> record, DataInputView source) throws IOException {
+	public RawValueData<T> deserialize(RawValueData<T> record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
@@ -111,8 +111,8 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	@Override
-	public SqlRawValueSerializer<T> duplicate() {
-		return new SqlRawValueSerializer<>(serializer.duplicate());
+	public RawValueDataSerializer<T> duplicate() {
+		return new RawValueDataSerializer<>(serializer.duplicate());
 	}
 
 	@Override
@@ -124,7 +124,7 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 			return false;
 		}
 
-		SqlRawValueSerializer that = (SqlRawValueSerializer) o;
+		RawValueDataSerializer that = (RawValueDataSerializer) o;
 
 		return serializer.equals(that.serializer);
 	}
@@ -135,7 +135,7 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlRawValue<T>> snapshotConfiguration() {
+	public TypeSerializerSnapshot<RawValueData<T>> snapshotConfiguration() {
 		return new SqlRawValueSerializerSnapshot<>(this);
 	}
 
@@ -144,16 +144,16 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link SqlRawValueSerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link RawValueDataSerializer}.
 	 */
-	public static final class SqlRawValueSerializerSnapshot<T> extends CompositeTypeSerializerSnapshot<SqlRawValue<T>, SqlRawValueSerializer<T>> {
+	public static final class SqlRawValueSerializerSnapshot<T> extends CompositeTypeSerializerSnapshot<RawValueData<T>, RawValueDataSerializer<T>> {
 
 		@SuppressWarnings("unused")
 		public SqlRawValueSerializerSnapshot() {
-			super(SqlRawValueSerializer.class);
+			super(RawValueDataSerializer.class);
 		}
 
-		public SqlRawValueSerializerSnapshot(SqlRawValueSerializer<T> serializerInstance) {
+		public SqlRawValueSerializerSnapshot(RawValueDataSerializer<T> serializerInstance) {
 			super(serializerInstance);
 		}
 
@@ -163,14 +163,14 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 		}
 
 		@Override
-		protected TypeSerializer<?>[] getNestedSerializers(SqlRawValueSerializer<T> outerSerializer) {
+		protected TypeSerializer<?>[] getNestedSerializers(RawValueDataSerializer<T> outerSerializer) {
 			return new TypeSerializer[]{outerSerializer.serializer};
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
-		protected SqlRawValueSerializer<T> createOuterSerializerWithNestedSerializers(TypeSerializer<?>[] nestedSerializers) {
-			return new SqlRawValueSerializer<>((TypeSerializer<T>) nestedSerializers[0]);
+		protected RawValueDataSerializer<T> createOuterSerializerWithNestedSerializers(TypeSerializer<?>[] nestedSerializers) {
+			return new RawValueDataSerializer<>((TypeSerializer<T>) nestedSerializers[0]);
 		}
 	}
 }

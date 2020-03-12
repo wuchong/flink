@@ -28,11 +28,11 @@ import java.util.Map;
  * An interface for map used internally in Flink Table/SQL.
  *
  * <p>There are different implementations depending on the scenario:
- * After serialization, it becomes the {@link BinaryMap} format.
- * Convenient updates use the {@link GenericMap} format.
+ * After serialization, it becomes the {@link BinaryMapData} format.
+ * Convenient updates use the {@link GenericMapData} format.
  */
 @PublicEvolving
-public interface SqlMap extends Serializable {
+public interface MapData extends Serializable {
 
 	/**
 	 * Invoke by codeGens.
@@ -45,9 +45,9 @@ public interface SqlMap extends Serializable {
 	 */
 	Map<?, ?> toJavaMap(LogicalType keyType, LogicalType valueType);
 
-	SqlArray keyArray();
+	ArrayData keyArray();
 
-	SqlArray valueArray();
+	ArrayData valueArray();
 
 	// NOTE:
 	//

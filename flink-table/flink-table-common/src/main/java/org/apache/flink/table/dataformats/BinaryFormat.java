@@ -28,7 +28,7 @@ import org.apache.flink.table.utils.SegmentsUtil;
 @Internal
 public interface BinaryFormat {
 	/**
-	 * It decides whether to put data in FixLenPart or VarLenPart. See more in {@link BinaryRow}.
+	 * It decides whether to put data in FixLenPart or VarLenPart. See more in {@link BinaryRowData}.
 	 *
 	 * <p>If len is less than 8, its binary format is:
 	 * 1-bit mark(1) = 1, 7-bits len, and 7-bytes data.
@@ -101,7 +101,7 @@ public interface BinaryFormat {
 	 * @param fieldOffset absolute start offset of 'variablePartOffsetAndLen'.
 	 * @param variablePartOffsetAndLen a long value, real data or offset and len.
 	 */
-	static LazyBinaryString readBinaryStringFieldFromSegments(
+	static BinaryStringData readBinaryStringFieldFromSegments(
 			MemorySegment[] segments,
 			int baseOffset,
 			int fieldOffset,
@@ -110,14 +110,14 @@ public interface BinaryFormat {
 		if (mark == 0) {
 			final int subOffset = (int) (variablePartOffsetAndLen >> 32);
 			final int len = (int) variablePartOffsetAndLen;
-			return LazyBinaryString.fromAddress(segments, baseOffset + subOffset, len);
+			return BinaryStringData.fromAddress(segments, baseOffset + subOffset, len);
 		} else {
 			int len = (int) ((variablePartOffsetAndLen & HIGHEST_SECOND_TO_EIGHTH_BIT) >>> 56);
 			if (SegmentsUtil.LITTLE_ENDIAN) {
-				return LazyBinaryString.fromAddress(segments, fieldOffset, len);
+				return BinaryStringData.fromAddress(segments, fieldOffset, len);
 			} else {
 				// fieldOffset + 1 to skip header.
-				return LazyBinaryString.fromAddress(segments, fieldOffset + 1, len);
+				return BinaryStringData.fromAddress(segments, fieldOffset + 1, len);
 			}
 		}
 	}

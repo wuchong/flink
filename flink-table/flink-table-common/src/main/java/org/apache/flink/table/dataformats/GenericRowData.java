@@ -32,29 +32,29 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * in case of it contains a non-serializable generic fields, the Java serialization will fail.
  */
 @PublicEvolving
-public final class GenericRow implements SqlRow {
+public final class GenericRowData implements RowData {
 
 	private static final long serialVersionUID = 1L;
 
 	/** The array to store the actual internal format values. */
 	private final Object[] fields;
 	/** The changelog kind of this row. */
-	private ChangelogKind kind;
+	private RowKind kind;
 
 	/**
 	 * Create a new GenericRow instance.
 	 * @param arity The number of fields in the GenericRow
 	 */
-	public GenericRow(int arity) {
+	public GenericRowData(int arity) {
 		this.fields = new Object[arity];
-		this.kind = ChangelogKind.INSERT; // INSERT as default
+		this.kind = RowKind.INSERT; // INSERT as default
 	}
 
 	/**
 	 * Sets the field at the specified ordinal.
 	 *
-	 * <p>Note: the given field value must in internal format, otherwise the {@link GenericRow} is
-	 * corrupted, and may throw exception when processing. See the description of {@link SqlRow}
+	 * <p>Note: the given field value must in internal format, otherwise the {@link GenericRowData} is
+	 * corrupted, and may throw exception when processing. See the description of {@link RowData}
 	 * for more information about internal format.
 	 *
 	 * @param ordinal The ordinal of the field, 0-based.
@@ -68,7 +68,7 @@ public final class GenericRow implements SqlRow {
 	/**
 	 * Gets the field at the specified ordinal.
 	 *
-	 * <p>Note: the returned value is in internal format. See the description of {@link SqlRow}
+	 * <p>Note: the returned value is in internal format. See the description of {@link RowData}
 	 * for more information about internal format.
 	 *
 	 * @param ordinal The ordinal of the field, 0-based.
@@ -85,12 +85,12 @@ public final class GenericRow implements SqlRow {
 	}
 
 	@Override
-	public ChangelogKind getChangelogKind() {
+	public RowKind getChangelogKind() {
 		return kind;
 	}
 
 	@Override
-	public void setChangelogKind(ChangelogKind kind) {
+	public void setChangelogKind(RowKind kind) {
 		checkNotNull(kind);
 		this.kind = kind;
 	}
@@ -136,24 +136,24 @@ public final class GenericRow implements SqlRow {
 	}
 
 	@Override
-	public SqlString getString(int ordinal) {
-		return (SqlString) this.fields[ordinal];
+	public StringData getString(int ordinal) {
+		return (StringData) this.fields[ordinal];
 	}
 
 	@Override
-	public SqlDecimal getDecimal(int ordinal, int precision, int scale) {
-		return (SqlDecimal) this.fields[ordinal];
+	public DecimalData getDecimal(int ordinal, int precision, int scale) {
+		return (DecimalData) this.fields[ordinal];
 	}
 
 	@Override
-	public SqlTimestamp getTimestamp(int ordinal, int precision) {
-		return (SqlTimestamp) this.fields[ordinal];
+	public TimestampData getTimestamp(int ordinal, int precision) {
+		return (TimestampData) this.fields[ordinal];
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> SqlRawValue<T> getGeneric(int ordinal) {
-		return (SqlRawValue<T>) this.fields[ordinal];
+	public <T> RawValueData<T> getGeneric(int ordinal) {
+		return (RawValueData<T>) this.fields[ordinal];
 	}
 
 	@Override
@@ -162,18 +162,18 @@ public final class GenericRow implements SqlRow {
 	}
 
 	@Override
-	public SqlArray getArray(int ordinal) {
-		return (SqlArray) this.fields[ordinal];
+	public ArrayData getArray(int ordinal) {
+		return (ArrayData) this.fields[ordinal];
 	}
 
 	@Override
-	public SqlMap getMap(int ordinal) {
-		return (SqlMap) this.fields[ordinal];
+	public MapData getMap(int ordinal) {
+		return (MapData) this.fields[ordinal];
 	}
 
 	@Override
-	public SqlRow getRow(int ordinal, int numFields) {
-		return (SqlRow) this.fields[ordinal];
+	public RowData getRow(int ordinal, int numFields) {
+		return (RowData) this.fields[ordinal];
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -182,12 +182,12 @@ public final class GenericRow implements SqlRow {
 
 	/**
 	 * Creates a GenericRow with the given internal format values and a default
-	 * {@link ChangelogKind#INSERT}.
+	 * {@link RowKind#INSERT}.
 	 *
 	 * @param values internal format values
 	 */
-	public static GenericRow of(Object... values) {
-		GenericRow row = new GenericRow(values.length);
+	public static GenericRowData of(Object... values) {
+		GenericRowData row = new GenericRowData(values.length);
 
 		for (int i = 0; i < values.length; ++i) {
 			row.setField(i, values[i]);

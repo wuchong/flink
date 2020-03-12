@@ -29,9 +29,9 @@ import org.apache.flink.api.java.typeutils.runtime.DataOutputViewStream;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.SqlArray;
-import org.apache.flink.table.dataformats.BinaryArray;
-import org.apache.flink.table.dataformats.GenericArray;
+import org.apache.flink.table.dataformats.ArrayData;
+import org.apache.flink.table.dataformats.BinaryArrayData;
+import org.apache.flink.table.dataformats.GenericArrayData;
 import org.apache.flink.table.dataformats.writer.BinaryArrayWriter;
 import org.apache.flink.table.dataformats.writer.BinaryWriter;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
@@ -44,25 +44,25 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
- * Serializer for {@link SqlArray}.
+ * Serializer for {@link ArrayData}.
  */
 @Internal
-public class BaseArraySerializer extends TypeSerializer<SqlArray> {
+public class ArrayDataSerializer extends TypeSerializer<ArrayData> {
 	private static final long serialVersionUID = 1L;
 
 	private final LogicalType eleType;
 	private final TypeSerializer<Object> eleSer;
 
-	private transient BinaryArray reuseArray;
+	private transient BinaryArrayData reuseArray;
 	private transient BinaryArrayWriter reuseWriter;
 
 	@SuppressWarnings("unchecked")
-	public BaseArraySerializer(LogicalType eleType, ExecutionConfig conf) {
+	public ArrayDataSerializer(LogicalType eleType, ExecutionConfig conf) {
 		this.eleType = eleType;
 		this.eleSer = (TypeSerializer<Object>) LogicalTypeUtils.internalTypeSerializer(eleType, conf);
 	}
 
-	private BaseArraySerializer(LogicalType eleType, TypeSerializer<Object> eleSer) {
+	private ArrayDataSerializer(LogicalType eleType, TypeSerializer<Object> eleSer) {
 		this.eleType = eleType;
 		this.eleSer = eleSer;
 	}
@@ -73,44 +73,44 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 	}
 
 	@Override
-	public TypeSerializer<SqlArray> duplicate() {
-		return new BaseArraySerializer(eleType, eleSer.duplicate());
+	public TypeSerializer<ArrayData> duplicate() {
+		return new ArrayDataSerializer(eleType, eleSer.duplicate());
 	}
 
 	@Override
-	public SqlArray createInstance() {
-		return new BinaryArray();
+	public ArrayData createInstance() {
+		return new BinaryArrayData();
 	}
 
 	@Override
-	public SqlArray copy(SqlArray from) {
-		return from instanceof GenericArray ?
-				copyGenericArray((GenericArray) from) :
-				((BinaryArray) from).copy();
+	public ArrayData copy(ArrayData from) {
+		return from instanceof GenericArrayData ?
+				copyGenericArray((GenericArrayData) from) :
+				((BinaryArrayData) from).copy();
 	}
 
 	@Override
-	public SqlArray copy(SqlArray from, SqlArray reuse) {
+	public ArrayData copy(ArrayData from, ArrayData reuse) {
 		return copy(from);
 	}
 
-	private GenericArray copyGenericArray(GenericArray array) {
+	private GenericArrayData copyGenericArray(GenericArrayData array) {
 		if (array.isPrimitiveArray()) {
 			switch (eleType.getTypeRoot()) {
 				case BOOLEAN:
-					return new GenericArray(Arrays.copyOf((boolean[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((boolean[]) array.getArray(), array.numElements()));
 				case TINYINT:
-					return new GenericArray(Arrays.copyOf((byte[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((byte[]) array.getArray(), array.numElements()));
 				case SMALLINT:
-					return new GenericArray(Arrays.copyOf((short[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((short[]) array.getArray(), array.numElements()));
 				case INTEGER:
-					return new GenericArray(Arrays.copyOf((int[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((int[]) array.getArray(), array.numElements()));
 				case BIGINT:
-					return new GenericArray(Arrays.copyOf((long[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((long[]) array.getArray(), array.numElements()));
 				case FLOAT:
-					return new GenericArray(Arrays.copyOf((float[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((float[]) array.getArray(), array.numElements()));
 				case DOUBLE:
-					return new GenericArray(Arrays.copyOf((double[]) array.getArray(), array.numElements()));
+					return new GenericArrayData(Arrays.copyOf((double[]) array.getArray(), array.numElements()));
 				default:
 					throw new RuntimeException("Unknown type: " + eleType);
 			}
@@ -122,7 +122,7 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 			for (int i = 0; i < array.numElements(); i++) {
 				newArray[i] = eleSer.copy(objectArray[i]);
 			}
-			return new GenericArray(newArray);
+			return new GenericArrayData(newArray);
 		}
 	}
 
@@ -132,24 +132,24 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 	}
 
 	@Override
-	public void serialize(SqlArray record, DataOutputView target) throws IOException {
-		BinaryArray binaryArray = toBinaryArray(record);
+	public void serialize(ArrayData record, DataOutputView target) throws IOException {
+		BinaryArrayData binaryArray = toBinaryArray(record);
 		target.writeInt(binaryArray.getSizeInBytes());
 		SegmentsUtil.copyToView(binaryArray.getSegments(), binaryArray.getOffset(), binaryArray.getSizeInBytes(), target);
 	}
 
-	public BinaryArray toBinaryArray(SqlArray from) {
-		if (from instanceof BinaryArray) {
-			return (BinaryArray) from;
+	public BinaryArrayData toBinaryArray(ArrayData from) {
+		if (from instanceof BinaryArrayData) {
+			return (BinaryArrayData) from;
 		}
 
 		int numElements = from.numElements();
 		if (reuseArray == null) {
-			reuseArray = new BinaryArray();
+			reuseArray = new BinaryArrayData();
 		}
 		if (reuseWriter == null || reuseWriter.getNumElements() != numElements) {
 			reuseWriter = new BinaryArrayWriter(
-					reuseArray, numElements, BinaryArray.calculateFixLengthPartSize(eleType));
+					reuseArray, numElements, BinaryArrayData.calculateFixLengthPartSize(eleType));
 		} else {
 			reuseWriter.reset();
 		}
@@ -158,7 +158,7 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 			if (from.isNullAt(i)) {
 				reuseWriter.setNullAt(i, eleType);
 			} else {
-				BinaryWriter.write(reuseWriter, i, SqlArray.get(from, i, eleType), eleType);
+				BinaryWriter.write(reuseWriter, i, ArrayData.get(from, i, eleType), eleType);
 			}
 		}
 		reuseWriter.complete();
@@ -167,16 +167,16 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 	}
 
 	@Override
-	public SqlArray deserialize(DataInputView source) throws IOException {
-		return deserializeReuse(new BinaryArray(), source);
+	public ArrayData deserialize(DataInputView source) throws IOException {
+		return deserializeReuse(new BinaryArrayData(), source);
 	}
 
 	@Override
-	public SqlArray deserialize(SqlArray reuse, DataInputView source) throws IOException {
-		return deserializeReuse(reuse instanceof GenericArray ? new BinaryArray() : (BinaryArray) reuse, source);
+	public ArrayData deserialize(ArrayData reuse, DataInputView source) throws IOException {
+		return deserializeReuse(reuse instanceof GenericArrayData ? new BinaryArrayData() : (BinaryArrayData) reuse, source);
 	}
 
-	private BinaryArray deserializeReuse(BinaryArray reuse, DataInputView source) throws IOException {
+	private BinaryArrayData deserializeReuse(BinaryArrayData reuse, DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
@@ -200,7 +200,7 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 			return false;
 		}
 
-		BaseArraySerializer that = (BaseArraySerializer) o;
+		ArrayDataSerializer that = (ArrayDataSerializer) o;
 
 		return eleType.equals(that.eleType);
 	}
@@ -216,14 +216,14 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<SqlArray> snapshotConfiguration() {
+	public TypeSerializerSnapshot<ArrayData> snapshotConfiguration() {
 		return new BaseArraySerializerSnapshot(eleType, eleSer);
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link BaseArraySerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link ArrayDataSerializer}.
 	 */
-	public static final class BaseArraySerializerSnapshot implements TypeSerializerSnapshot<SqlArray> {
+	public static final class BaseArraySerializerSnapshot implements TypeSerializerSnapshot<ArrayData> {
 		private static final int CURRENT_VERSION = 3;
 
 		private LogicalType previousType;
@@ -263,19 +263,19 @@ public class BaseArraySerializer extends TypeSerializer<SqlArray> {
 		}
 
 		@Override
-		public TypeSerializer<SqlArray> restoreSerializer() {
-			return new BaseArraySerializer(previousType, previousEleSer);
+		public TypeSerializer<ArrayData> restoreSerializer() {
+			return new ArrayDataSerializer(previousType, previousEleSer);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<SqlArray> resolveSchemaCompatibility(TypeSerializer<SqlArray> newSerializer) {
-			if (!(newSerializer instanceof BaseArraySerializer)) {
+		public TypeSerializerSchemaCompatibility<ArrayData> resolveSchemaCompatibility(TypeSerializer<ArrayData> newSerializer) {
+			if (!(newSerializer instanceof ArrayDataSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
 
-			BaseArraySerializer newBaseArraySerializer = (BaseArraySerializer) newSerializer;
-			if (!previousType.equals(newBaseArraySerializer.eleType) ||
-				!previousEleSer.equals(newBaseArraySerializer.eleSer)) {
+			ArrayDataSerializer newArrayDataSerializer = (ArrayDataSerializer) newSerializer;
+			if (!previousType.equals(newArrayDataSerializer.eleType) ||
+				!previousEleSer.equals(newArrayDataSerializer.eleSer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			} else {
 				return TypeSerializerSchemaCompatibility.compatibleAsIs();

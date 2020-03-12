@@ -19,14 +19,15 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.RowKind;
 
-public interface ChangelogDeserializationSchema extends DeserializationSchema<SqlRow> {
+public interface ChangelogDeserializationSchema extends DeserializationSchema<RowData> {
 
 	/**
 	 * Returns what kind of changes are produced by this {@link DeserializationSchema}.
 	 *
-	 * @see org.apache.flink.table.dataformats.ChangelogKind
+	 * @see RowKind
 	 */
 	ChangelogMode producedChangelogMode();
 

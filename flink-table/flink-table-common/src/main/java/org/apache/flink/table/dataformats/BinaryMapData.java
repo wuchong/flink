@@ -36,16 +36,16 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * <p>{@code BinaryMap} are influenced by Apache Spark UnsafeMapData.
  */
 @Internal
-public final class BinaryMap extends BinarySection implements SqlMap {
+public final class BinaryMapData extends BinarySection implements MapData {
 
 	private static final long serialVersionUID = 1L;
 
-	private final BinaryArray keys;
-	private final BinaryArray values;
+	private final BinaryArrayData keys;
+	private final BinaryArrayData values;
 
-	public BinaryMap() {
-		keys = new BinaryArray();
-		values = new BinaryArray();
+	public BinaryMapData() {
+		keys = new BinaryArrayData();
+		values = new BinaryArrayData();
 	}
 
 	public int numElements() {
@@ -70,11 +70,11 @@ public final class BinaryMap extends BinarySection implements SqlMap {
 		this.sizeInBytes = sizeInBytes;
 	}
 
-	public BinaryArray keyArray() {
+	public BinaryArrayData keyArray() {
 		return keys;
 	}
 
-	public BinaryArray valueArray() {
+	public BinaryArrayData valueArray() {
 		return values;
 	}
 
@@ -90,11 +90,11 @@ public final class BinaryMap extends BinarySection implements SqlMap {
 		return map;
 	}
 
-	public BinaryMap copy() {
-		return copy(new BinaryMap());
+	public BinaryMapData copy() {
+		return copy(new BinaryMapData());
 	}
 
-	public BinaryMap copy(BinaryMap reuse) {
+	public BinaryMapData copy(BinaryMapData reuse) {
 		byte[] bytes = SegmentsUtil.copyToBytes(segments, offset, sizeInBytes);
 		reuse.pointTo(MemorySegmentFactory.wrap(bytes), 0, sizeInBytes);
 		return reuse;
@@ -105,7 +105,7 @@ public final class BinaryMap extends BinarySection implements SqlMap {
 		return SegmentsUtil.hashByWords(segments, offset, sizeInBytes);
 	}
 
-	public static BinaryMap valueOf(BinaryArray key, BinaryArray value) {
+	public static BinaryMapData valueOf(BinaryArrayData key, BinaryArrayData value) {
 		checkArgument(key.segments.length == 1 && value.getSegments().length == 1);
 		byte[] bytes = new byte[4 + key.sizeInBytes + value.sizeInBytes];
 		MemorySegment segment = MemorySegmentFactory.wrap(bytes);
@@ -113,16 +113,16 @@ public final class BinaryMap extends BinarySection implements SqlMap {
 		key.getSegments()[0].copyTo(key.getOffset(), segment, 4, key.sizeInBytes);
 		value.getSegments()[0].copyTo(
 				value.getOffset(), segment, 4 + key.sizeInBytes, value.sizeInBytes);
-		BinaryMap map = new BinaryMap();
+		BinaryMapData map = new BinaryMapData();
 		map.pointTo(segment, 0, bytes.length);
 		return map;
 	}
 
-	public static BinaryMap readBinaryMapFieldFromSegments(
+	public static BinaryMapData readBinaryMapFieldFromSegments(
 			MemorySegment[] segments, int baseOffset, long offsetAndSize) {
 		final int size = ((int) offsetAndSize);
 		int offset = (int) (offsetAndSize >> 32);
-		BinaryMap map = new BinaryMap();
+		BinaryMapData map = new BinaryMapData();
 		map.pointTo(segments, offset + baseOffset, size);
 		return map;
 	}

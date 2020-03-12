@@ -27,7 +27,7 @@ import org.apache.flink.table.types.logical.TimestampType;
 
 /**
  * Provide type specialized getters to reduce if/else and eliminate box and unbox. This is mainly
- * used on the binary format such as {@link BinaryRow}.
+ * used on the binary format such as {@link BinaryRowData}.
  */
 @PublicEvolving
 public interface TypedGetters {
@@ -78,22 +78,22 @@ public interface TypedGetters {
 	/**
 	 * Get string value, internal format is BinaryString.
 	 */
-	SqlString getString(int ordinal);
+	StringData getString(int ordinal);
 
 	/**
 	 * Get decimal value, internal format is Decimal.
 	 */
-	SqlDecimal getDecimal(int ordinal, int precision, int scale);
+	DecimalData getDecimal(int ordinal, int precision, int scale);
 
 	/**
 	 * Get Timestamp value, internal format is SqlTimestamp.
 	 */
-	SqlTimestamp getTimestamp(int ordinal, int precision);
+	TimestampData getTimestamp(int ordinal, int precision);
 
 	/**
 	 * Get generic value, internal format is BinaryGeneric.
 	 */
-	<T> SqlRawValue<T> getGeneric(int ordinal);
+	<T> RawValueData<T> getGeneric(int ordinal);
 
 	/**
 	 * Get binary value, internal format is byte[].
@@ -103,17 +103,17 @@ public interface TypedGetters {
 	/**
 	 * Get array value, internal format is BaseArray.
 	 */
-	SqlArray getArray(int ordinal);
+	ArrayData getArray(int ordinal);
 
 	/**
 	 * Get map value, internal format is BaseMap.
 	 */
-	SqlMap getMap(int ordinal);
+	MapData getMap(int ordinal);
 
 	/**
 	 * Get row value, internal format is BaseRow.
 	 */
-	SqlRow getRow(int ordinal, int numFields);
+	RowData getRow(int ordinal, int numFields);
 
 	// ------------------------------------------------------------------------------------------
 

@@ -19,16 +19,16 @@
 package org.apache.flink.table.connectors.sinks;
 
 import org.apache.flink.api.common.io.OutputFormat;
-import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.RowData;
 
 /**
  * {@link SupportsChangelogWriting} by using a {@link OutputFormat} during runtime.
  */
 public interface OutputFormatChangelogWriter extends SupportsChangelogWriting.ChangelogWriter {
 
-	OutputFormat<SqlRow> createOutputFunction();
+	OutputFormat<RowData> createOutputFunction();
 
-	static OutputFormatChangelogWriter of(OutputFormat<SqlRow> outputFormat) {
+	static OutputFormatChangelogWriter of(OutputFormat<RowData> outputFormat) {
 		return () -> outputFormat;
 	}
 }

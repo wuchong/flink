@@ -22,23 +22,18 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.SqlTimestamp;
-
-import java.util.Objects;
+import org.apache.flink.table.dataformats.StringData;
 
 /**
- * TypeInformation of {@link SqlTimestamp}.
+ * TypeInfo for SqlString.
  */
 @Internal
-public class SqlTimestampTypeInfo extends TypeInformation<SqlTimestamp> {
+public class StringDataTypeInfo extends TypeInformation<StringData> {
 
 	private static final long serialVersionUID = 1L;
+	public static final StringDataTypeInfo INSTANCE = new StringDataTypeInfo();
 
-	private final int precision;
-
-	public SqlTimestampTypeInfo(int precision) {
-		this.precision = precision;
-	}
+	private StringDataTypeInfo() {}
 
 	@Override
 	public boolean isBasicType() {
@@ -61,8 +56,8 @@ public class SqlTimestampTypeInfo extends TypeInformation<SqlTimestamp> {
 	}
 
 	@Override
-	public Class<SqlTimestamp> getTypeClass() {
-		return SqlTimestamp.class;
+	public Class<StringData> getTypeClass() {
+		return StringData.class;
 	}
 
 	@Override
@@ -71,36 +66,27 @@ public class SqlTimestampTypeInfo extends TypeInformation<SqlTimestamp> {
 	}
 
 	@Override
-	public TypeSerializer<SqlTimestamp> createSerializer(ExecutionConfig config) {
-		return new SqlTimestampSerializer(precision);
+	public TypeSerializer<StringData> createSerializer(ExecutionConfig config) {
+		return StringDataSerializer.INSTANCE;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("Timestamp(%d)", precision);
+		return "SqlString";
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof SqlTimestampTypeInfo)) {
-			return false;
-		}
-
-		SqlTimestampTypeInfo that = (SqlTimestampTypeInfo) obj;
-		return this.precision == that.precision;
+		return obj instanceof StringDataTypeInfo;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.getClass().getCanonicalName(), precision);
+		return 0;
 	}
 
 	@Override
 	public boolean canEqual(Object obj) {
-		return obj instanceof SqlTimestampTypeInfo;
-	}
-
-	public int getPrecision() {
-		return precision;
+		return obj instanceof StringDataTypeInfo;
 	}
 }

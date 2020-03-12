@@ -19,13 +19,13 @@
 package org.apache.flink.addons.hbase;
 
 import org.apache.flink.addons.hbase.util.HBaseSerde;
-import org.apache.flink.table.dataformats.SqlRow;
-import org.apache.flink.table.dataformats.ChangelogKind;
+import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.dataformats.RowKind;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Mutation;
 
-public class HBaseSinkFunction extends AbstractHBaseSinkFunction<SqlRow> {
+public class HBaseSinkFunction extends AbstractHBaseSinkFunction<RowData> {
 
 	private static final long serialVersionUID = -4440024315087689066L;
 
@@ -43,9 +43,9 @@ public class HBaseSinkFunction extends AbstractHBaseSinkFunction<SqlRow> {
 	}
 
 	@Override
-	public Mutation createMutation(SqlRow row) {
-		if (row.getChangelogKind() == ChangelogKind.INSERT
-				|| row.getChangelogKind() == ChangelogKind.UPDATE_AFTER) {
+	public Mutation createMutation(RowData row) {
+		if (row.getChangelogKind() == RowKind.INSERT
+				|| row.getChangelogKind() == RowKind.UPDATE_AFTER) {
 			// INSERT or UPDATE_AFTER
 			return serde.createPutMutation(row);
 		} else {
