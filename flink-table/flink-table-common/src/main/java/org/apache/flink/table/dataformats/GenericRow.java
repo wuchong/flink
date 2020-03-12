@@ -136,8 +136,8 @@ public final class GenericRow implements BaseRow {
 	}
 
 	@Override
-	public BinaryString getString(int ordinal) {
-		return (BinaryString) this.fields[ordinal];
+	public SqlString getString(int ordinal) {
+		return (SqlString) this.fields[ordinal];
 	}
 
 	@Override
@@ -152,8 +152,8 @@ public final class GenericRow implements BaseRow {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> BinaryGeneric<T> getGeneric(int ordinal) {
-		return (BinaryGeneric<T>) this.fields[ordinal];
+	public <T> SqlRawValue<T> getGeneric(int ordinal) {
+		return (SqlRawValue<T>) this.fields[ordinal];
 	}
 
 	@Override

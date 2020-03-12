@@ -250,7 +250,7 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public BinaryString getString(int pos) {
+	public SqlString getString(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndLen = SegmentsUtil.getLong(segments, fieldOffset);
@@ -285,9 +285,9 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public <T> BinaryGeneric<T> getGeneric(int pos) {
+	public <T> SqlRawValue<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryGeneric.readBinaryGenericFieldFromSegments(segments, offset, getLong(pos));
+		return LazyBinarySqlRawValue.fromAddress(segments, offset, getLong(pos));
 	}
 
 	@Override

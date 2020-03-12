@@ -19,15 +19,13 @@
 package org.apache.flink.formats.csv;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.BinaryString;
-import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.dataformats.Decimal;
 import org.apache.flink.table.dataformats.GenericRow;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -198,7 +196,7 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 		return Decimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
 	}
 
-	private BinaryString parseToInternalString(BytesInputView bytesView) {
+	private SqlString parseToInternalString(BytesInputView bytesView) {
 		int offset = bytesView.currentPos;
 		byte[] bytes = bytesView.bytes;
 		int limit = bytes.length;
@@ -206,8 +204,8 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 		int length = endPos - offset;
 		// update current offset
 		bytesView.currentPos = (endPos == limit) ? limit : endPos + delimiter.length;
-		// creates BinaryString without memory copying
-		return BinaryString.fromBytes(bytes, offset, length);
+		// creates SqlString without memory copying
+		return SqlString.fromBytes(bytes, offset, length);
 	}
 
 	private static String readNextString(BytesInputView bytesView, byte[] delimiter) {

@@ -22,17 +22,18 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformats.SqlString;
 
 /**
- * TypeInfo for BinaryString.
+ * TypeInfo for SqlString.
  */
 @Internal
-public class BinaryStringTypeInfo extends TypeInformation<BinaryString> {
+public class SqlStringTypeInfo extends TypeInformation<SqlString> {
 
-	public static final BinaryStringTypeInfo INSTANCE = new BinaryStringTypeInfo();
+	private static final long serialVersionUID = 1L;
+	public static final SqlStringTypeInfo INSTANCE = new SqlStringTypeInfo();
 
-	private BinaryStringTypeInfo() {}
+	private SqlStringTypeInfo() {}
 
 	@Override
 	public boolean isBasicType() {
@@ -55,8 +56,8 @@ public class BinaryStringTypeInfo extends TypeInformation<BinaryString> {
 	}
 
 	@Override
-	public Class<BinaryString> getTypeClass() {
-		return BinaryString.class;
+	public Class<SqlString> getTypeClass() {
+		return SqlString.class;
 	}
 
 	@Override
@@ -65,18 +66,18 @@ public class BinaryStringTypeInfo extends TypeInformation<BinaryString> {
 	}
 
 	@Override
-	public TypeSerializer<BinaryString> createSerializer(ExecutionConfig config) {
-		return BinaryStringSerializer.INSTANCE;
+	public TypeSerializer<SqlString> createSerializer(ExecutionConfig config) {
+		return SqlStringSerializer.INSTANCE;
 	}
 
 	@Override
 	public String toString() {
-		return "BinaryString";
+		return "SqlString";
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof BinaryStringTypeInfo;
+		return obj instanceof SqlStringTypeInfo;
 	}
 
 	@Override
@@ -86,6 +87,6 @@ public class BinaryStringTypeInfo extends TypeInformation<BinaryString> {
 
 	@Override
 	public boolean canEqual(Object obj) {
-		return obj instanceof BinaryStringTypeInfo;
+		return obj instanceof SqlStringTypeInfo;
 	}
 }

@@ -20,9 +20,9 @@ package org.apache.flink.addons.hbase.util;
 
 import org.apache.flink.addons.hbase.HBaseTableSchema;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.BinaryString;
 import org.apache.flink.table.dataformats.Decimal;
 import org.apache.flink.table.dataformats.GenericRow;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -262,7 +262,7 @@ public class HBaseSerde {
 			case CHAR:
 			case VARCHAR:
 				// reuse bytes
-				return BinaryString.fromBytes(value);
+				return SqlString.fromBytes(value);
 			case DECIMAL:
 				BigDecimal decimal = Bytes.toBigDecimal(value);
 				DecimalType decimalType = (DecimalType) type;

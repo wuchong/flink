@@ -72,10 +72,10 @@ public interface BinaryFormat {
 	 * @param variablePartOffsetAndLen a long value, real data or offset and len.
 	 */
 	static byte[] readBinaryFieldFromSegments(
-		MemorySegment[] segments,
-		int baseOffset,
-		int fieldOffset,
-		long variablePartOffsetAndLen) {
+			MemorySegment[] segments,
+			int baseOffset,
+			int fieldOffset,
+			long variablePartOffsetAndLen) {
 		long mark = variablePartOffsetAndLen & HIGHEST_FIRST_BIT;
 		if (mark == 0) {
 			final int subOffset = (int) (variablePartOffsetAndLen >> 32);
@@ -101,23 +101,23 @@ public interface BinaryFormat {
 	 * @param fieldOffset absolute start offset of 'variablePartOffsetAndLen'.
 	 * @param variablePartOffsetAndLen a long value, real data or offset and len.
 	 */
-	static BinaryString readBinaryStringFieldFromSegments(
-		MemorySegment[] segments,
-		int baseOffset,
-		int fieldOffset,
-		long variablePartOffsetAndLen) {
+	static LazyBinarySqlString readBinaryStringFieldFromSegments(
+			MemorySegment[] segments,
+			int baseOffset,
+			int fieldOffset,
+			long variablePartOffsetAndLen) {
 		long mark = variablePartOffsetAndLen & HIGHEST_FIRST_BIT;
 		if (mark == 0) {
 			final int subOffset = (int) (variablePartOffsetAndLen >> 32);
 			final int len = (int) variablePartOffsetAndLen;
-			return BinaryString.fromAddress(segments, baseOffset + subOffset, len);
+			return LazyBinarySqlString.fromAddress(segments, baseOffset + subOffset, len);
 		} else {
 			int len = (int) ((variablePartOffsetAndLen & HIGHEST_SECOND_TO_EIGHTH_BIT) >>> 56);
 			if (SegmentsUtil.LITTLE_ENDIAN) {
-				return BinaryString.fromAddress(segments, fieldOffset, len);
+				return LazyBinarySqlString.fromAddress(segments, fieldOffset, len);
 			} else {
 				// fieldOffset + 1 to skip header.
-				return BinaryString.fromAddress(segments, fieldOffset + 1, len);
+				return LazyBinarySqlString.fromAddress(segments, fieldOffset + 1, len);
 			}
 		}
 	}

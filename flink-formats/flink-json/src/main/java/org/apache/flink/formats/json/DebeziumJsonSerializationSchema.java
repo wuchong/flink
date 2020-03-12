@@ -23,16 +23,16 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.BinaryString;
 import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.dataformats.GenericRow;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.types.logical.RowType;
 
 public class DebeziumJsonSerializationSchema implements ChangelogSerializationSchema {
 	private static final long serialVersionUID = 1L;
 
-	private static final BinaryString OP_CREATE = BinaryString.fromString("c");
-	private static final BinaryString OP_DELETE = BinaryString.fromString("d");
+	private static final SqlString OP_CREATE = SqlString.fromString("c");
+	private static final SqlString OP_DELETE = SqlString.fromString("d");
 
 	private final JsonBaseRowSerializationSchema jsonSerializer;
 

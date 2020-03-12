@@ -25,9 +25,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.table.dataformats.BaseArray;
 import org.apache.flink.table.dataformats.BaseMap;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.BinaryGeneric;
-import org.apache.flink.table.dataformats.BinaryString;
 import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlRawValue;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -74,7 +74,7 @@ public final class LogicalTypeUtils {
 				return Double.class;
 			case CHAR:
 			case VARCHAR:
-				return BinaryString.class;
+				return SqlString.class;
 			case DECIMAL:
 				return Decimal.class;
 			case ARRAY:
@@ -88,7 +88,7 @@ public final class LogicalTypeUtils {
 			case VARBINARY:
 				return byte[].class;
 			case RAW:
-				return BinaryGeneric.class;
+				return SqlRawValue.class;
 			default:
 				throw new RuntimeException("Not support type: " + type);
 		}

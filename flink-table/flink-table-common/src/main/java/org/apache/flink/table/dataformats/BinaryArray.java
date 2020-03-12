@@ -167,7 +167,7 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 	}
 
 	@Override
-	public BinaryString getString(int pos) {
+	public SqlString getString(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
@@ -203,12 +203,11 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 	}
 
 	@Override
-	public <T> BinaryGeneric<T> getGeneric(int pos) {
+	public <T> SqlRawValue<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return BinaryGeneric.readBinaryGenericFieldFromSegments(
-			segments, offset, offsetAndSize);
+		return LazyBinarySqlRawValue.fromAddress(segments, offset, offsetAndSize);
 	}
 
 	@Override

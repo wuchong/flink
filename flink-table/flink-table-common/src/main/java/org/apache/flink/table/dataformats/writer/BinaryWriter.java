@@ -21,9 +21,9 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.table.dataformats.BaseArray;
 import org.apache.flink.table.dataformats.BaseMap;
 import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.BinaryGeneric;
-import org.apache.flink.table.dataformats.BinaryString;
 import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlRawValue;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -67,7 +67,7 @@ public interface BinaryWriter {
 
 	void writeDouble(int pos, double value);
 
-	void writeString(int pos, BinaryString value);
+	void writeString(int pos, SqlString value);
 
 	void writeBinary(int pos, byte[] bytes);
 
@@ -81,7 +81,7 @@ public interface BinaryWriter {
 
 	void writeRow(int pos, BaseRow value, RowType type);
 
-	void writeGeneric(int pos, BinaryGeneric<?> value, RawType<?> type);
+	void writeGeneric(int pos, SqlRawValue<?> value, RawType<?> type);
 
 	/**
 	 * Finally, complete write to set real size to binary.
@@ -125,7 +125,7 @@ public interface BinaryWriter {
 				break;
 			case CHAR:
 			case VARCHAR:
-				writer.writeString(pos, (BinaryString) o);
+				writer.writeString(pos, (SqlString) o);
 				break;
 			case DECIMAL:
 				DecimalType decimalType = (DecimalType) type;
@@ -142,7 +142,7 @@ public interface BinaryWriter {
 				writer.writeRow(pos, (BaseRow) o, (RowType) type);
 				break;
 			case RAW:
-				writer.writeGeneric(pos, (BinaryGeneric<?>) o, (RawType<?>) type);
+				writer.writeGeneric(pos, (SqlRawValue<?>) o, (RawType<?>) type);
 				break;
 			case BINARY:
 			case VARBINARY:

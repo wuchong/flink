@@ -24,22 +24,23 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.BinaryString;
+import org.apache.flink.table.dataformats.LazyBinarySqlString;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link BinaryString}.
+ * Serializer for {@link SqlString}.
  */
 @Internal
-public final class BinaryStringSerializer extends TypeSerializerSingleton<BinaryString> {
+public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString> {
 
 	private static final long serialVersionUID = 1L;
 
-	public static final BinaryStringSerializer INSTANCE = new BinaryStringSerializer();
+	public static final SqlStringSerializer INSTANCE = new SqlStringSerializer();
 
-	private BinaryStringSerializer() {}
+	private SqlStringSerializer() {}
 
 	@Override
 	public boolean isImmutableType() {
@@ -47,18 +48,18 @@ public final class BinaryStringSerializer extends TypeSerializerSingleton<Binary
 	}
 
 	@Override
-	public BinaryString createInstance() {
-		return BinaryString.fromString("");
+	public SqlString createInstance() {
+		return SqlString.fromString("");
 	}
 
 	@Override
-	public BinaryString copy(BinaryString from) {
-		return from.copy();
+	public SqlString copy(SqlString from) {
+		return ((LazyBinarySqlString) from).copy();
 	}
 
 	@Override
-	public BinaryString copy(BinaryString from, BinaryString reuse) {
-		return from.copy();
+	public SqlString copy(SqlString from, SqlString reuse) {
+		return ((LazyBinarySqlString) from).copy();
 	}
 
 	@Override
@@ -67,26 +68,27 @@ public final class BinaryStringSerializer extends TypeSerializerSingleton<Binary
 	}
 
 	@Override
-	public void serialize(BinaryString record, DataOutputView target) throws IOException {
-		record.ensureMaterialized();
-		target.writeInt(record.getSizeInBytes());
-		SegmentsUtil.copyToView(record.getSegments(), record.getOffset(), record.getSizeInBytes(), target);
+	public void serialize(SqlString record, DataOutputView target) throws IOException {
+		LazyBinarySqlString sqlString = (LazyBinarySqlString) record;
+		sqlString.ensureMaterialized();
+		target.writeInt(sqlString.getSizeInBytes());
+		SegmentsUtil.copyToView(sqlString.getSegments(), sqlString.getOffset(), sqlString.getSizeInBytes(), target);
 	}
 
 	@Override
-	public BinaryString deserialize(DataInputView source) throws IOException {
+	public SqlString deserialize(DataInputView source) throws IOException {
 		return deserializeInternal(source);
 	}
 
-	public static BinaryString deserializeInternal(DataInputView source) throws IOException {
+	public static SqlString deserializeInternal(DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
-		return BinaryString.fromBytes(bytes);
+		return SqlString.fromBytes(bytes);
 	}
 
 	@Override
-	public BinaryString deserialize(BinaryString record, DataInputView source) throws IOException {
+	public SqlString deserialize(SqlString record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
@@ -98,17 +100,17 @@ public final class BinaryStringSerializer extends TypeSerializerSingleton<Binary
 	}
 
 	@Override
-	public TypeSerializerSnapshot<BinaryString> snapshotConfiguration() {
-		return new BinaryStringSerializerSnapshot();
+	public TypeSerializerSnapshot<SqlString> snapshotConfiguration() {
+		return new SqlStringSerializerSnapshot();
 	}
 
 	/**
 	 * Serializer configuration snapshot for compatibility and format evolution.
 	 */
 	@SuppressWarnings("WeakerAccess")
-	public static final class BinaryStringSerializerSnapshot extends SimpleTypeSerializerSnapshot<BinaryString> {
+	public static final class SqlStringSerializerSnapshot extends SimpleTypeSerializerSnapshot<SqlString> {
 
-		public BinaryStringSerializerSnapshot() {
+		public SqlStringSerializerSnapshot() {
 			super(() -> INSTANCE);
 		}
 	}

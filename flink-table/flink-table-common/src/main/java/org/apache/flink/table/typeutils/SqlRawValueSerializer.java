@@ -26,22 +26,23 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryGeneric;
+import org.apache.flink.table.dataformats.LazyBinarySqlRawValue;
+import org.apache.flink.table.dataformats.SqlRawValue;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link BinaryGeneric}.
+ * Serializer for {@link SqlRawValue}.
  */
 @Internal
-public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGeneric<T>> {
+public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T>> {
 
 	private static final long serialVersionUID = 1L;
 
 	private final TypeSerializer<T> serializer;
 
-	public BinaryGenericSerializer(TypeSerializer<T> serializer) {
+	public SqlRawValueSerializer(TypeSerializer<T> serializer) {
 		this.serializer = serializer;
 	}
 
@@ -51,16 +52,17 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	@Override
-	public BinaryGeneric<T> createInstance() {
-		return new BinaryGeneric<>(serializer.createInstance());
+	public SqlRawValue<T> createInstance() {
+		return new LazyBinarySqlRawValue<>(serializer.createInstance());
 	}
 
 	@Override
-	public BinaryGeneric<T> copy(BinaryGeneric<T> from) {
-		from.ensureMaterialized(serializer);
-		byte[] bytes = SegmentsUtil.copyToBytes(from.getSegments(), from.getOffset(), from.getSizeInBytes());
-		T newJavaObject = from.getJavaObject() == null ? null : serializer.copy(from.getJavaObject());
-		return new BinaryGeneric<>(
+	public SqlRawValue<T> copy(SqlRawValue<T> from) {
+		LazyBinarySqlRawValue<T> rawValue = (LazyBinarySqlRawValue<T>) from;
+		rawValue.ensureMaterialized(serializer);
+		byte[] bytes = SegmentsUtil.copyToBytes(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes());
+		T newJavaObject = rawValue.getJavaObject() == null ? null : serializer.copy(rawValue.getJavaObject());
+		return new LazyBinarySqlRawValue<>(
 			new MemorySegment[]{MemorySegmentFactory.wrap(bytes)},
 			0,
 			bytes.length,
@@ -68,7 +70,7 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	@Override
-	public BinaryGeneric<T> copy(BinaryGeneric<T> from, BinaryGeneric<T> reuse) {
+	public SqlRawValue<T> copy(SqlRawValue<T> from, SqlRawValue<T> reuse) {
 		return copy(from);
 	}
 
@@ -78,25 +80,26 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	@Override
-	public void serialize(BinaryGeneric<T> record, DataOutputView target) throws IOException {
-		record.ensureMaterialized(serializer);
-		target.writeInt(record.getSizeInBytes());
-		SegmentsUtil.copyToView(record.getSegments(), record.getOffset(), record.getSizeInBytes(), target);
+	public void serialize(SqlRawValue<T> record, DataOutputView target) throws IOException {
+		LazyBinarySqlRawValue<T> rawValue = (LazyBinarySqlRawValue<T>) record;
+		rawValue.ensureMaterialized(serializer);
+		target.writeInt(rawValue.getSizeInBytes());
+		SegmentsUtil.copyToView(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes(), target);
 	}
 
 	@Override
-	public BinaryGeneric<T> deserialize(DataInputView source) throws IOException {
+	public SqlRawValue<T> deserialize(DataInputView source) throws IOException {
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
-		return new BinaryGeneric<>(
+		return new LazyBinarySqlRawValue<>(
 				new MemorySegment[] {MemorySegmentFactory.wrap(bytes)},
 				0,
 				bytes.length);
 	}
 
 	@Override
-	public BinaryGeneric<T> deserialize(BinaryGeneric<T> record, DataInputView source) throws IOException {
+	public SqlRawValue<T> deserialize(SqlRawValue<T> record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
@@ -108,8 +111,8 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	@Override
-	public BinaryGenericSerializer<T> duplicate() {
-		return new BinaryGenericSerializer<>(serializer.duplicate());
+	public SqlRawValueSerializer<T> duplicate() {
+		return new SqlRawValueSerializer<>(serializer.duplicate());
 	}
 
 	@Override
@@ -121,7 +124,7 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 			return false;
 		}
 
-		BinaryGenericSerializer that = (BinaryGenericSerializer) o;
+		SqlRawValueSerializer that = (SqlRawValueSerializer) o;
 
 		return serializer.equals(that.serializer);
 	}
@@ -132,8 +135,8 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	@Override
-	public TypeSerializerSnapshot<BinaryGeneric<T>> snapshotConfiguration() {
-		return new BinaryGenericSerializerSnapshot<>(this);
+	public TypeSerializerSnapshot<SqlRawValue<T>> snapshotConfiguration() {
+		return new SqlRawValueSerializerSnapshot<>(this);
 	}
 
 	public TypeSerializer<T> getInnerSerializer() {
@@ -141,16 +144,16 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 	}
 
 	/**
-	 * {@link TypeSerializerSnapshot} for {@link BinaryGenericSerializer}.
+	 * {@link TypeSerializerSnapshot} for {@link SqlRawValueSerializer}.
 	 */
-	public static final class BinaryGenericSerializerSnapshot<T> extends CompositeTypeSerializerSnapshot<BinaryGeneric<T>, BinaryGenericSerializer<T>> {
+	public static final class SqlRawValueSerializerSnapshot<T> extends CompositeTypeSerializerSnapshot<SqlRawValue<T>, SqlRawValueSerializer<T>> {
 
 		@SuppressWarnings("unused")
-		public BinaryGenericSerializerSnapshot() {
-			super(BinaryGenericSerializer.class);
+		public SqlRawValueSerializerSnapshot() {
+			super(SqlRawValueSerializer.class);
 		}
 
-		public BinaryGenericSerializerSnapshot(BinaryGenericSerializer<T> serializerInstance) {
+		public SqlRawValueSerializerSnapshot(SqlRawValueSerializer<T> serializerInstance) {
 			super(serializerInstance);
 		}
 
@@ -160,14 +163,14 @@ public final class BinaryGenericSerializer<T> extends TypeSerializer<BinaryGener
 		}
 
 		@Override
-		protected TypeSerializer<?>[] getNestedSerializers(BinaryGenericSerializer<T> outerSerializer) {
+		protected TypeSerializer<?>[] getNestedSerializers(SqlRawValueSerializer<T> outerSerializer) {
 			return new TypeSerializer[]{outerSerializer.serializer};
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
-		protected BinaryGenericSerializer<T> createOuterSerializerWithNestedSerializers(TypeSerializer<?>[] nestedSerializers) {
-			return new BinaryGenericSerializer<>((TypeSerializer<T>) nestedSerializers[0]);
+		protected SqlRawValueSerializer<T> createOuterSerializerWithNestedSerializers(TypeSerializer<?>[] nestedSerializers) {
+			return new SqlRawValueSerializer<>((TypeSerializer<T>) nestedSerializers[0]);
 		}
 	}
 }

@@ -27,10 +27,12 @@ import org.apache.flink.table.dataformats.BaseMap;
 import org.apache.flink.table.dataformats.BaseRow;
 import org.apache.flink.table.dataformats.BinaryArray;
 import org.apache.flink.table.dataformats.BinaryFormat;
-import org.apache.flink.table.dataformats.BinaryGeneric;
 import org.apache.flink.table.dataformats.BinaryRow;
-import org.apache.flink.table.dataformats.BinaryString;
 import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.LazyBinarySqlRawValue;
+import org.apache.flink.table.dataformats.LazyBinarySqlString;
+import org.apache.flink.table.dataformats.SqlRawValue;
+import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -92,21 +94,22 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 	protected abstract void setNullBit(int ordinal);
 
 	/**
-	 * See {@link BinaryString#readBinaryStringFieldFromSegments}.
+	 * See {@link LazyBinarySqlString#readBinaryStringFieldFromSegments}.
 	 */
 	@Override
-	public void writeString(int pos, BinaryString input) {
-		if (input.getSegments() == null) {
-			String javaObject = input.getJavaObject();
+	public void writeString(int pos, SqlString input) {
+		LazyBinarySqlString sqlString = (LazyBinarySqlString) input;
+		if (sqlString.getSegments() == null) {
+			String javaObject = sqlString.getJavaString();
 			writeBytes(pos, javaObject.getBytes(StandardCharsets.UTF_8));
 		} else {
-			int len = input.getSizeInBytes();
+			int len = sqlString.getSizeInBytes();
 			if (len <= 7) {
 				byte[] bytes = SegmentsUtil.allocateReuseBytes(len);
-				SegmentsUtil.copyToBytes(input.getSegments(), input.getOffset(), bytes, 0, len);
+				SegmentsUtil.copyToBytes(sqlString.getSegments(), sqlString.getOffset(), bytes, 0, len);
 				writeBytesToFixLenPart(segment, getFieldOffset(pos), bytes, len);
 			} else {
-				writeSegmentsToVarLenPart(pos, input.getSegments(), input.getOffset(), len);
+				writeSegmentsToVarLenPart(pos, sqlString.getSegments(), sqlString.getOffset(), len);
 			}
 		}
 	}
@@ -142,10 +145,11 @@ abstract class AbstractBinaryWriter implements BinaryWriter {
 
 	@Override
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public void writeGeneric(int pos, BinaryGeneric<?> input, RawType<?> type) {
+	public void writeGeneric(int pos, SqlRawValue<?> input, RawType<?> type) {
 		TypeSerializer innerSerializer = type.getTypeSerializer();
-		input.ensureMaterialized(innerSerializer);
-		writeSegmentsToVarLenPart(pos, input.getSegments(), input.getOffset(), input.getSizeInBytes());
+		LazyBinarySqlRawValue rawValue = (LazyBinarySqlRawValue) input;
+		rawValue.ensureMaterialized(innerSerializer);
+		writeSegmentsToVarLenPart(pos, rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes());
 	}
 
 	@Override

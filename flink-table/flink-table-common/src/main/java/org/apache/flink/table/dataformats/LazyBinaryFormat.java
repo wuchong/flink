@@ -45,19 +45,11 @@ import java.io.IOException;
 @Internal
 abstract class LazyBinaryFormat<T> implements BinaryFormat {
 
-	T javaObject;
-	BinarySection binarySection;
+	protected T javaObject;
+	protected BinarySection binarySection;
 
 	public LazyBinaryFormat() {
 		this(null, -1, -1, null);
-	}
-
-	public LazyBinaryFormat(MemorySegment[] segments, int offset, int sizeInBytes, T javaObject) {
-		this(javaObject, new BinarySection(segments, offset, sizeInBytes));
-	}
-
-	public LazyBinaryFormat(MemorySegment[] segments, int offset, int sizeInBytes) {
-		this(null, new BinarySection(segments, offset, sizeInBytes));
 	}
 
 	public LazyBinaryFormat(T javaObject) {
@@ -67,6 +59,16 @@ abstract class LazyBinaryFormat<T> implements BinaryFormat {
 	public LazyBinaryFormat(T javaObject, BinarySection binarySection) {
 		this.javaObject = javaObject;
 		this.binarySection = binarySection;
+	}
+
+	// package visible
+	LazyBinaryFormat(MemorySegment[] segments, int offset, int sizeInBytes, T javaObject) {
+		this(javaObject, new BinarySection(segments, offset, sizeInBytes));
+	}
+
+	// package visible
+	LazyBinaryFormat(MemorySegment[] segments, int offset, int sizeInBytes) {
+		this(null, new BinarySection(segments, offset, sizeInBytes));
 	}
 
 	public T getJavaObject() {

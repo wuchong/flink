@@ -27,7 +27,7 @@ import java.util.Objects;
  * It can be considered as a wrapper class of the normal java array.
  */
 @PublicEvolving
-public class GenericArray implements BaseArray {
+public final class GenericArray implements BaseArray {
 
 	private static final long serialVersionUID = 1L;
 
@@ -166,8 +166,8 @@ public class GenericArray implements BaseArray {
 	}
 
 	@Override
-	public BinaryString getString(int pos) {
-		return (BinaryString) getObject(pos);
+	public SqlString getString(int pos) {
+		return (SqlString) getObject(pos);
 	}
 
 	@Override
@@ -180,9 +180,10 @@ public class GenericArray implements BaseArray {
 		return (SqlTimestamp) getObject(pos);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <T> BinaryGeneric<T> getGeneric(int pos) {
-		return (BinaryGeneric) getObject(pos);
+	public <T> SqlRawValue<T> getGeneric(int pos) {
+		return (SqlRawValue<T>) getObject(pos);
 	}
 
 	@Override
