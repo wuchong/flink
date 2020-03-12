@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats;
+package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegment;

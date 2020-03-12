@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.datastructures.StringData;
 
 /**
  * TypeInfo for SqlString.

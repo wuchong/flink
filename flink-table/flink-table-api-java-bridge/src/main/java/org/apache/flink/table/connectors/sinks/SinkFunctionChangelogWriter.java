@@ -19,7 +19,7 @@
 package org.apache.flink.table.connectors.sinks;
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 /**
  * {@link SupportsChangelogWriting} by using a {@link SinkFunction} during runtime.

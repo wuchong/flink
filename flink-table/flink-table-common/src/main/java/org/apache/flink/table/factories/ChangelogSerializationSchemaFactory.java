@@ -20,7 +20,7 @@ package org.apache.flink.table.factories;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 import java.util.Map;
 

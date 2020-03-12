@@ -22,7 +22,7 @@ import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 import org.apache.flink.table.connectors.sinks.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
-import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.datastructures.RowKind;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;

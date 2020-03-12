@@ -19,8 +19,8 @@
 package org.apache.flink.addons.hbase;
 
 import org.apache.flink.addons.hbase.util.HBaseSerde;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.RowKind;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Mutation;

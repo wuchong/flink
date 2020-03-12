@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats.writer;
+package org.apache.flink.table.datastructures.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BinaryRowData;
-import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.datastructures.BinaryRowData;
+import org.apache.flink.table.datastructures.RowKind;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 /**

@@ -24,7 +24,7 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
 import org.apache.flink.table.factories.ChangelogSerializationSchemaFactory;

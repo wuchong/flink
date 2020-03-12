@@ -19,8 +19,8 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.RowKind;
 
 public interface ChangelogSerializationSchema extends SerializationSchema<RowData> {
 

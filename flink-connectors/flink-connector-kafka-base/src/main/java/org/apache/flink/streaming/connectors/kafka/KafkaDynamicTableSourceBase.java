@@ -28,7 +28,7 @@ import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.sources.DynamicTableSource;
 import org.apache.flink.table.connectors.sources.SourceFunctionChangelogReader;
 import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 import java.util.Map;
 import java.util.Properties;

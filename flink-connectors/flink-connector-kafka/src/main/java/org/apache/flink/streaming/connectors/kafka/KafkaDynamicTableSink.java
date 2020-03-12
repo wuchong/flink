@@ -23,7 +23,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.internals.KeyedSerializationSchemaWrapper;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 import java.util.Properties;
 

@@ -26,7 +26,7 @@ import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 import org.apache.flink.table.connectors.sinks.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.utils.TableSchemaUtils;
 import org.apache.flink.util.Preconditions;

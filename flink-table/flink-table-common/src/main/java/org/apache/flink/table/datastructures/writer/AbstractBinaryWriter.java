@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats.writer;
+package org.apache.flink.table.datastructures.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.ArrayData;
-import org.apache.flink.table.dataformats.MapData;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.BinaryArrayData;
-import org.apache.flink.table.dataformats.BinaryFormat;
-import org.apache.flink.table.dataformats.BinaryRowData;
-import org.apache.flink.table.dataformats.DecimalData;
-import org.apache.flink.table.dataformats.BinaryRawValueData;
-import org.apache.flink.table.dataformats.BinaryStringData;
-import org.apache.flink.table.dataformats.RawValueData;
-import org.apache.flink.table.dataformats.StringData;
-import org.apache.flink.table.dataformats.TimestampData;
+import org.apache.flink.table.datastructures.ArrayData;
+import org.apache.flink.table.datastructures.MapData;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.BinaryArrayData;
+import org.apache.flink.table.datastructures.BinaryFormat;
+import org.apache.flink.table.datastructures.BinaryRowData;
+import org.apache.flink.table.datastructures.DecimalData;
+import org.apache.flink.table.datastructures.BinaryRawValueData;
+import org.apache.flink.table.datastructures.BinaryStringData;
+import org.apache.flink.table.datastructures.RawValueData;
+import org.apache.flink.table.datastructures.StringData;
+import org.apache.flink.table.datastructures.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;

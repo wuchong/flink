@@ -24,7 +24,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.TimestampData;
+import org.apache.flink.table.datastructures.TimestampData;
 
 import java.io.IOException;
 

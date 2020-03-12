@@ -24,7 +24,7 @@ import org.apache.flink.addons.hbase.HBaseTableSchema;
 import org.apache.flink.addons.hbase.util.HBaseSerde;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;

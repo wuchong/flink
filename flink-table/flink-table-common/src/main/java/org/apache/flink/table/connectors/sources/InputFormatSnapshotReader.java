@@ -19,7 +19,7 @@
 package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.api.common.io.InputFormat;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 /**
  * {@link SupportsSnapshotReading.SnapshotReader} by using a {@link InputFormat} during runtime.

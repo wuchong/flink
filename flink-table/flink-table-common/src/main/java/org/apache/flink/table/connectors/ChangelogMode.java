@@ -21,7 +21,7 @@ package org.apache.flink.table.connectors;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 import org.apache.flink.table.connectors.sources.DynamicTableSource;
-import org.apache.flink.table.dataformats.RowKind;
+import org.apache.flink.table.datastructures.RowKind;
 import org.apache.flink.util.Preconditions;
 
 import java.util.Collections;

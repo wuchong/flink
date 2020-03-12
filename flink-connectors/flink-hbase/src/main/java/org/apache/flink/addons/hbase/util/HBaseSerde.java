@@ -19,11 +19,11 @@
 package org.apache.flink.addons.hbase.util;
 
 import org.apache.flink.addons.hbase.HBaseTableSchema;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.DecimalData;
-import org.apache.flink.table.dataformats.GenericRowData;
-import org.apache.flink.table.dataformats.StringData;
-import org.apache.flink.table.dataformats.TimestampData;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.DecimalData;
+import org.apache.flink.table.datastructures.GenericRowData;
+import org.apache.flink.table.datastructures.StringData;
+import org.apache.flink.table.datastructures.TimestampData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;

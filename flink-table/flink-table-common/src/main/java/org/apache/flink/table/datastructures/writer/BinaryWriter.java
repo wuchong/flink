@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.dataformats.writer;
+package org.apache.flink.table.datastructures.writer;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.table.dataformats.ArrayData;
-import org.apache.flink.table.dataformats.MapData;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.DecimalData;
-import org.apache.flink.table.dataformats.RawValueData;
-import org.apache.flink.table.dataformats.StringData;
-import org.apache.flink.table.dataformats.TimestampData;
+import org.apache.flink.table.datastructures.ArrayData;
+import org.apache.flink.table.datastructures.MapData;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.DecimalData;
+import org.apache.flink.table.datastructures.RawValueData;
+import org.apache.flink.table.datastructures.StringData;
+import org.apache.flink.table.datastructures.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;

@@ -22,10 +22,10 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.RowData;
-import org.apache.flink.table.dataformats.RowKind;
-import org.apache.flink.table.dataformats.GenericRowData;
-import org.apache.flink.table.dataformats.StringData;
+import org.apache.flink.table.datastructures.RowData;
+import org.apache.flink.table.datastructures.RowKind;
+import org.apache.flink.table.datastructures.GenericRowData;
+import org.apache.flink.table.datastructures.StringData;
 import org.apache.flink.table.types.logical.RowType;
 
 public class DebeziumJsonSerializationSchema implements ChangelogSerializationSchema {

@@ -19,7 +19,7 @@
 package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 /**
  * {@link SupportsChangelogReading.ChangelogReader} by using a {@link SourceFunction} during runtime.

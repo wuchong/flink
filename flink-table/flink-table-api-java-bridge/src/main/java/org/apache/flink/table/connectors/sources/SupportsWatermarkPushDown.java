@@ -21,7 +21,7 @@ package org.apache.flink.table.connectors.sources;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.table.dataformats.RowData;
+import org.apache.flink.table.datastructures.RowData;
 
 import javax.annotation.Nullable;
 
