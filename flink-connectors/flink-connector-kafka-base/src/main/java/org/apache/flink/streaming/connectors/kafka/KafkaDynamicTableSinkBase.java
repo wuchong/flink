@@ -26,7 +26,7 @@ import org.apache.flink.table.connectors.ChangelogSerializationSchema;
 import org.apache.flink.table.connectors.sinks.DynamicTableSink;
 import org.apache.flink.table.connectors.sinks.SinkFunctionChangelogWriter;
 import org.apache.flink.table.connectors.sinks.SupportsChangelogWriting;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.utils.TableSchemaUtils;
 import org.apache.flink.util.Preconditions;
@@ -79,7 +79,7 @@ public abstract class KafkaDynamicTableSinkBase implements DynamicTableSink, Sup
 
 	@Override
 	public ChangelogWriter getChangelogWriter(ChangelogWriterContext context) {
-		final SinkFunction<BaseRow> kafkaProducer = createKafkaProducer(
+		final SinkFunction<SqlRow> kafkaProducer = createKafkaProducer(
 			topic,
 			properties,
 			serializationSchema);
@@ -94,7 +94,7 @@ public abstract class KafkaDynamicTableSinkBase implements DynamicTableSink, Sup
 	 * @param serializationSchema Serialization schema to use to create Kafka records.
 	 * @return The version-specific Kafka producer
 	 */
-	protected abstract SinkFunction<BaseRow> createKafkaProducer(
+	protected abstract SinkFunction<SqlRow> createKafkaProducer(
 		String topic,
 		Properties properties,
 		ChangelogSerializationSchema serializationSchema);

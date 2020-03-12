@@ -24,7 +24,7 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.descriptors.JsonValidator;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
 import org.apache.flink.table.factories.ChangelogSerializationSchemaFactory;
@@ -40,7 +40,7 @@ import java.util.Map;
  * and {@link DeserializationSchema}.
  */
 @PublicEvolving
-public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
+public class JsonBaseRowFormatFactory extends TableFormatFactoryBase<SqlRow>
 		implements ChangelogDeserializationSchemaFactory, ChangelogSerializationSchemaFactory {
 
 	public JsonBaseRowFormatFactory() {

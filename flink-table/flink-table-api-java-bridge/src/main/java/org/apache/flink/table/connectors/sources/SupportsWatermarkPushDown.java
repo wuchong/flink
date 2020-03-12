@@ -21,9 +21,7 @@ package org.apache.flink.table.connectors.sources;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.table.connectors.sources.DynamicTableSource;
-import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 
 import javax.annotation.Nullable;
 
@@ -41,22 +39,22 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 
 	final class WatermarkAssigner {
 
-		private @Nullable AssignerWithPeriodicWatermarks<BaseRow> periodicAssigner;
+		private @Nullable AssignerWithPeriodicWatermarks<SqlRow> periodicAssigner;
 
-		private @Nullable AssignerWithPunctuatedWatermarks<BaseRow> punctuatedAssigner;
+		private @Nullable AssignerWithPunctuatedWatermarks<SqlRow> punctuatedAssigner;
 
 		private WatermarkAssigner(
-				@Nullable AssignerWithPeriodicWatermarks<BaseRow> periodicAssigner,
-				@Nullable AssignerWithPunctuatedWatermarks<BaseRow> punctuatedAssigner) {
+				@Nullable AssignerWithPeriodicWatermarks<SqlRow> periodicAssigner,
+				@Nullable AssignerWithPunctuatedWatermarks<SqlRow> punctuatedAssigner) {
 			this.periodicAssigner = periodicAssigner;
 			this.punctuatedAssigner = punctuatedAssigner;
 		}
 
-		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<BaseRow> periodicWatermarks) {
+		public static WatermarkAssigner periodic(AssignerWithPeriodicWatermarks<SqlRow> periodicWatermarks) {
 			return new WatermarkAssigner(periodicWatermarks, null);
 		}
 
-		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<BaseRow> punctuatedWatermarks) {
+		public static WatermarkAssigner punctuated(AssignerWithPunctuatedWatermarks<SqlRow> punctuatedWatermarks) {
 			return new WatermarkAssigner(null, punctuatedWatermarks);
 		}
 
@@ -68,11 +66,11 @@ public interface SupportsWatermarkPushDown extends SupportsChangelogReading {
 			return periodicAssigner == null && punctuatedAssigner == null;
 		}
 
-		public Optional<AssignerWithPeriodicWatermarks<BaseRow>> getPeriodicAssigner() {
+		public Optional<AssignerWithPeriodicWatermarks<SqlRow>> getPeriodicAssigner() {
 			return Optional.ofNullable(periodicAssigner);
 		}
 
-		public Optional<AssignerWithPunctuatedWatermarks<BaseRow>> getPunctuatedAssigner() {
+		public Optional<AssignerWithPunctuatedWatermarks<SqlRow>> getPunctuatedAssigner() {
 			return Optional.ofNullable(punctuatedAssigner);
 		}
 	}

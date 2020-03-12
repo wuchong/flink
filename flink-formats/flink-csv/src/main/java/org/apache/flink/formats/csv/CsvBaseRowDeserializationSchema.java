@@ -22,8 +22,8 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.GenericRow;
 import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
@@ -75,7 +75,7 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 	}
 
 	@Override
-	public BaseRow deserialize(byte[] message) throws IOException {
+	public SqlRow deserialize(byte[] message) throws IOException {
 		int startPos = 0;
 		GenericRow row = new GenericRow(fieldCount);
 		BytesInputView bytesView = new BytesInputView(message);
@@ -88,12 +88,12 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 	}
 
 	@Override
-	public boolean isEndOfStream(BaseRow nextElement) {
+	public boolean isEndOfStream(SqlRow nextElement) {
 		return false;
 	}
 
 	@Override
-	public TypeInformation<BaseRow> getProducedType() {
+	public TypeInformation<SqlRow> getProducedType() {
 		return new BaseRowTypeInfo(rowType);
 	}
 
@@ -190,10 +190,10 @@ public final class CsvBaseRowDeserializationSchema implements ChangelogDeseriali
 		return SqlTimestamp.fromTimestamp(Timestamp.valueOf(text));
 	}
 
-	private Decimal convertToInternalDecimal(BytesInputView bytesView, DecimalType decimalType) {
+	private SqlDecimal convertToInternalDecimal(BytesInputView bytesView, DecimalType decimalType) {
 		String text = readNextString(bytesView, delimiter);
 		BigDecimal bigDecimal = new BigDecimal(text);
-		return Decimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
+		return SqlDecimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
 	}
 
 	private SqlString parseToInternalString(BytesInputView bytesView) {

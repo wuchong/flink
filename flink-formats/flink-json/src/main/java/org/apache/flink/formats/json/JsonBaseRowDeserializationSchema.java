@@ -19,12 +19,11 @@
 package org.apache.flink.formats.json;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.GenericArray;
 import org.apache.flink.table.dataformats.GenericMap;
 import org.apache.flink.table.dataformats.GenericRow;
@@ -85,7 +84,7 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 	}
 
 	@Override
-	public BaseRow deserialize(byte[] message) throws IOException {
+	public SqlRow deserialize(byte[] message) throws IOException {
 		try {
 			final JsonNode root = objectMapper.readTree(message);
 			return (GenericRow) runtimeConverter.convert(root);
@@ -95,12 +94,12 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 	}
 
 	@Override
-	public boolean isEndOfStream(BaseRow nextElement) {
+	public boolean isEndOfStream(SqlRow nextElement) {
 		return false;
 	}
 
 	@Override
-	public TypeInformation<BaseRow> getProducedType() {
+	public TypeInformation<SqlRow> getProducedType() {
 		return new BaseRowTypeInfo(rowType);
 	}
 
@@ -213,9 +212,9 @@ public class JsonBaseRowDeserializationSchema implements ChangelogDeserializatio
 		return SqlTimestamp.fromLocalDateTime(LocalDateTime.of(localDate, localTime));
 	}
 
-	private Decimal convertToInternalDecimal(JsonNode jsonNode, DecimalType decimalType) {
+	private SqlDecimal convertToInternalDecimal(JsonNode jsonNode, DecimalType decimalType) {
 		BigDecimal bigDecimal = jsonNode.decimalValue();
-		return Decimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
+		return SqlDecimal.fromBigDecimal(bigDecimal, decimalType.getPrecision(), decimalType.getScale());
 	}
 
 	private byte[] convertToBytes(JsonNode jsonNode) {

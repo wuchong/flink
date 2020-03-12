@@ -21,10 +21,10 @@ package org.apache.flink.formats.json;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.BaseArray;
-import org.apache.flink.table.dataformats.BaseMap;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlArray;
+import org.apache.flink.table.dataformats.SqlMap;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.SqlTimestamp;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -84,7 +84,7 @@ public class JsonBaseRowSerializationSchema implements ChangelogSerializationSch
 	}
 
 	@Override
-	public byte[] serialize(BaseRow row) {
+	public byte[] serialize(SqlRow row) {
 		if (node == null) {
 			node = mapper.createObjectNode();
 		}
@@ -160,7 +160,7 @@ public class JsonBaseRowSerializationSchema implements ChangelogSerializationSch
 		int precision = type.getPrecision();
 		int scale = type.getScale();
 		return (mapper, reuse, value) -> {
-			BigDecimal bd = ((Decimal) value).toBigDecimal();
+			BigDecimal bd = ((SqlDecimal) value).toBigDecimal();
 			return mapper.getNodeFactory().numberNode(bd);
 		};
 	}
@@ -202,10 +202,10 @@ public class JsonBaseRowSerializationSchema implements ChangelogSerializationSch
 				node.removeAll();
 			}
 
-			BaseArray array = (BaseArray) value;
+			SqlArray array = (SqlArray) value;
 			int numElements = array.numElements();
 			for (int i = 0; i < numElements; i++) {
-				Object element = BaseArray.get(array, i, elementType);
+				Object element = SqlArray.get(array, i, elementType);
 				node.add(elementConverter.convert(mapper, null, element));
 			}
 
@@ -225,14 +225,14 @@ public class JsonBaseRowSerializationSchema implements ChangelogSerializationSch
 				node = (ObjectNode) reuse;
 			}
 
-			BaseMap map = (BaseMap) object;
-			BaseArray keyArray = map.keyArray();
-			BaseArray valueArray = map.valueArray();
+			SqlMap map = (SqlMap) object;
+			SqlArray keyArray = map.keyArray();
+			SqlArray valueArray = map.valueArray();
 			int numElements = map.numElements();
 
 			for (int i = 0; i < numElements; i++) {
 				String fieldName = keyArray.getString(i).toString(); // key must be string
-				Object value = BaseArray.get(valueArray, i, valueType);
+				Object value = SqlArray.get(valueArray, i, valueType);
 				node.set(fieldName, valueConverter.convert(mapper, node.get(fieldName), value));
 			}
 
@@ -257,10 +257,10 @@ public class JsonBaseRowSerializationSchema implements ChangelogSerializationSch
 			} else {
 				node = (ObjectNode) reuse;
 			}
-			BaseRow row = (BaseRow) value;
+			SqlRow row = (SqlRow) value;
 			for (int i = 0; i < fieldCount; i++) {
 				String fieldName = fieldNames[i];
-				Object field = BaseRow.get(row, i, fieldTypes[i]);
+				Object field = SqlRow.get(row, i, fieldTypes[i]);
 				node.set(fieldName, fieldConverters[i].convert(mapper, node.get(fieldName), field));
 			}
 			return node;

@@ -28,7 +28,7 @@ import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.sources.DynamicTableSource;
 import org.apache.flink.table.connectors.sources.SourceFunctionChangelogReader;
 import org.apache.flink.table.connectors.sources.SupportsChangelogReading;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 
 import java.util.Map;
 import java.util.Properties;
@@ -78,7 +78,7 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 	@Override
 	public ChangelogReader getChangelogReader(ChangelogReaderContext context) {
 		// Version-specific Kafka consumer
-		FlinkKafkaConsumerBase<BaseRow> kafkaConsumer = getKafkaConsumer(
+		FlinkKafkaConsumerBase<SqlRow> kafkaConsumer = getKafkaConsumer(
 			topic,
 			properties,
 			deserializationSchema);
@@ -116,11 +116,11 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 	 * @param deserializationSchema Deserialization schema to use for Kafka records.
 	 * @return The version-specific Kafka consumer
 	 */
-	protected FlinkKafkaConsumerBase<BaseRow> getKafkaConsumer(
+	protected FlinkKafkaConsumerBase<SqlRow> getKafkaConsumer(
 		String topic,
 		Properties properties,
 		ChangelogDeserializationSchema deserializationSchema) {
-		FlinkKafkaConsumerBase<BaseRow> kafkaConsumer =
+		FlinkKafkaConsumerBase<SqlRow> kafkaConsumer =
 			createKafkaConsumer(topic, properties, deserializationSchema);
 		switch (startupMode) {
 			case EARLIEST:
@@ -152,7 +152,7 @@ public abstract class KafkaDynamicTableSourceBase implements DynamicTableSource,
 	 * @param deserializationSchema Deserialization schema to use for Kafka records.
 	 * @return The version-specific Kafka consumer
 	 */
-	protected abstract FlinkKafkaConsumerBase<BaseRow> createKafkaConsumer(
+	protected abstract FlinkKafkaConsumerBase<SqlRow> createKafkaConsumer(
 		String topic,
 		Properties properties,
 		ChangelogDeserializationSchema deserializationSchema);

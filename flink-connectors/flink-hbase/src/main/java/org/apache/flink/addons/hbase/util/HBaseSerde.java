@@ -19,8 +19,8 @@
 package org.apache.flink.addons.hbase.util;
 
 import org.apache.flink.addons.hbase.HBaseTableSchema;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.GenericRow;
 import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
@@ -87,7 +87,7 @@ public class HBaseSerde {
 	 *
 	 * @return The appropriate instance of Put for this use case.
 	 */
-	public Put createPutMutation(BaseRow row) {
+	public Put createPutMutation(SqlRow row) {
 		assert rowkeyIndex != -1;
 		byte[] rowkey = serializeField(row, rowkeyIndex, rowkeyType);
 		// upsert
@@ -97,7 +97,7 @@ public class HBaseSerde {
 				int f = i > rowkeyIndex ? i - 1 : i;
 				// get family key
 				byte[] familyKey = families[f];
-				BaseRow familyRow = row.getRow(i, qualifiers[f].length);
+				SqlRow familyRow = row.getRow(i, qualifiers[f].length);
 				for (int q = 0; q < this.qualifiers[f].length; q++) {
 					// get quantifier key
 					byte[] qualifier = qualifiers[f][q];
@@ -117,7 +117,7 @@ public class HBaseSerde {
 	 *
 	 * @return The appropriate instance of Delete for this use case.
 	 */
-	public Delete createDeleteMutation(BaseRow row) {
+	public Delete createDeleteMutation(SqlRow row) {
 		byte[] rowkey = serializeField(row, rowkeyIndex, rowkeyType);
 		// delete
 		Delete delete = new Delete(rowkey);
@@ -154,9 +154,9 @@ public class HBaseSerde {
 	}
 
 	/**
-	 * Converts HBase {@link Result} into {@link BaseRow}.
+	 * Converts HBase {@link Result} into {@link SqlRow}.
 	 */
-	public BaseRow convertToRow(Result result) {
+	public SqlRow convertToRow(Result result) {
 		Object rowkey = deserializeField(result.getRow(), rowkeyType);
 		for (int i = 0; i < fieldLength; i++) {
 			if (rowkeyIndex == i) {
@@ -185,7 +185,7 @@ public class HBaseSerde {
 
 	private static final byte[] EMPTY_BYTES = new byte[]{};
 
-	private static byte[] serializeField(BaseRow row, int ordinal, LogicalType type) {
+	private static byte[] serializeField(SqlRow row, int ordinal, LogicalType type) {
 		if (row.isNullAt(ordinal)) {
 			return EMPTY_BYTES;
 		}
@@ -266,7 +266,7 @@ public class HBaseSerde {
 			case DECIMAL:
 				BigDecimal decimal = Bytes.toBigDecimal(value);
 				DecimalType decimalType = (DecimalType) type;
-				return Decimal.fromBigDecimal(decimal, decimalType.getPrecision(), decimalType.getScale());
+				return SqlDecimal.fromBigDecimal(decimal, decimalType.getPrecision(), decimalType.getScale());
 			case BINARY:
 			case VARBINARY:
 				return value;

@@ -22,7 +22,7 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
 import org.apache.flink.table.connectors.ChangelogSerializationSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.dataformats.GenericRow;
 import org.apache.flink.table.dataformats.SqlString;
@@ -50,7 +50,7 @@ public class DebeziumJsonSerializationSchema implements ChangelogSerializationSc
 	}
 
 	@Override
-	public byte[] serialize(BaseRow row) {
+	public byte[] serialize(SqlRow row) {
 		// construct a Debezium record
 		GenericRow debezium = new GenericRow(5);
 		debezium.setField(2, "TODO"); // source field

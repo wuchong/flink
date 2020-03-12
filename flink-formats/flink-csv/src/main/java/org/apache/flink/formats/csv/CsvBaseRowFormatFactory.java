@@ -20,19 +20,14 @@ package org.apache.flink.formats.csv;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.descriptors.CsvValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.factories.ChangelogDeserializationSchemaFactory;
-import org.apache.flink.table.factories.DeserializationSchemaFactory;
-import org.apache.flink.table.factories.SerializationSchemaFactory;
 import org.apache.flink.table.factories.TableFormatFactoryBase;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.types.Row;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +37,7 @@ import java.util.Map;
  * Table format factory for providing configured instances of CSV-to-row {@link SerializationSchema}
  * and {@link DeserializationSchema}.
  */
-public final class CsvBaseRowFormatFactory extends TableFormatFactoryBase<BaseRow>
+public final class CsvBaseRowFormatFactory extends TableFormatFactoryBase<SqlRow>
 	implements ChangelogDeserializationSchemaFactory {
 
 	public CsvBaseRowFormatFactory() {

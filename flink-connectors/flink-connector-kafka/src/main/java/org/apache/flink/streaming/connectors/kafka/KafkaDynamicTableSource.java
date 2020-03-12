@@ -22,7 +22,7 @@ import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 
 import java.util.Map;
 import java.util.Properties;
@@ -41,7 +41,7 @@ public class KafkaDynamicTableSource extends KafkaDynamicTableSourceBase {
 	}
 
 	@Override
-	protected FlinkKafkaConsumerBase<BaseRow> createKafkaConsumer(String topic, Properties properties, ChangelogDeserializationSchema deserializationSchema) {
+	protected FlinkKafkaConsumerBase<SqlRow> createKafkaConsumer(String topic, Properties properties, ChangelogDeserializationSchema deserializationSchema) {
 		return new FlinkKafkaConsumer<>(topic, deserializationSchema, properties);
 	}
 }

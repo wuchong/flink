@@ -23,7 +23,7 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connectors.ChangelogDeserializationSchema;
 import org.apache.flink.table.connectors.ChangelogMode;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.dataformats.ChangelogKind;
 import org.apache.flink.table.dataformats.GenericRow;
 import org.apache.flink.table.types.logical.RowType;
@@ -48,7 +48,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public BaseRow deserialize(byte[] message) throws IOException {
+	public SqlRow deserialize(byte[] message) throws IOException {
 		GenericRow row = (GenericRow) jsonDeserializer.deserialize(message);
 		GenericRow before = (GenericRow) row.getField(0);
 		GenericRow after = (GenericRow) row.getField(1);
@@ -68,7 +68,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public boolean isEndOfStream(BaseRow nextElement) {
+	public boolean isEndOfStream(SqlRow nextElement) {
 		return false;
 	}
 
@@ -84,7 +84,7 @@ public class DebeziumJsonDeserializationSchema implements ChangelogDeserializati
 	}
 
 	@Override
-	public TypeInformation<BaseRow> getProducedType() {
+	public TypeInformation<SqlRow> getProducedType() {
 		RowType rowType = (RowType) schema.toRowDataType().getLogicalType();
 		return new BaseRowTypeInfo(rowType);
 	}

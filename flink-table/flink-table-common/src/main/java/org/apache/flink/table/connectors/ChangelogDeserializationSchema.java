@@ -19,9 +19,9 @@
 package org.apache.flink.table.connectors;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 
-public interface ChangelogDeserializationSchema extends DeserializationSchema<BaseRow> {
+public interface ChangelogDeserializationSchema extends DeserializationSchema<SqlRow> {
 
 	/**
 	 * Returns what kind of changes are produced by this {@link DeserializationSchema}.

@@ -19,19 +19,19 @@
 package org.apache.flink.table.connectors.sources;
 
 import org.apache.flink.api.common.io.InputFormat;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 
 /**
  * {@link SupportsChangelogReading} by using a {@link InputFormat} during runtime.
  */
 public interface InputFormatChangelogReader extends SupportsChangelogReading.ChangelogReader {
 
-	InputFormat<BaseRow, ?> createInputFormat();
+	InputFormat<SqlRow, ?> createInputFormat();
 
-	static InputFormatChangelogReader of(InputFormat<BaseRow, ?> inputFormat) {
+	static InputFormatChangelogReader of(InputFormat<SqlRow, ?> inputFormat) {
 		return new InputFormatChangelogReader() {
 			@Override
-			public InputFormat<BaseRow, ?> createInputFormat() {
+			public InputFormat<SqlRow, ?> createInputFormat() {
 				return inputFormat;
 			}
 
