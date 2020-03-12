@@ -75,7 +75,7 @@ public interface TypedSetters {
 	 * Precision is not compact: can not call setNullAt when decimal is null, must call
 	 * setDecimal(i, null, precision) because we need update var-length-part.
 	 */
-	void setDecimal(int i, Decimal value, int precision);
+	void setDecimal(int i, SqlDecimal value, int precision);
 
 	/**
 	 * Set Timestamp value.

@@ -56,7 +56,7 @@ public interface SqlRawValue<T> extends Serializable {
 	 * Creates a {@link SqlRawValue} instance from a java object.
 	 */
 	static <T> SqlRawValue<T> fromJavaObject(T javaObject) {
-		return new LazyBinarySqlRawValue<>(javaObject);
+		return new LazyBinaryRawValue<>(javaObject);
 	}
 
 }

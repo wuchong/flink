@@ -26,7 +26,7 @@ import java.io.Serializable;
  * An interface for row used internally in Flink Table/SQL, which only contains the columns as
  * internal types.
  *
- * <p>A {@link BaseRow} also contains {@link ChangelogKind} which is a metadata information of
+ * <p>A {@link SqlRow} also contains {@link ChangelogKind} which is a metadata information of
  * this row, not a column of this row. The {@link ChangelogKind} represents the changelog operation
  * kind: INSERT/DELETE/UPDATE_BEFORE/UPDATE_AFTER.
  *
@@ -39,7 +39,7 @@ import java.io.Serializable;
  * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
  */
 @PublicEvolving
-public interface BaseRow extends TypedGetters, Serializable {
+public interface SqlRow extends TypedGetters, Serializable {
 
 	/**
 	 * Get the number of fields in the BaseRow.
@@ -60,7 +60,7 @@ public interface BaseRow extends TypedGetters, Serializable {
 
 	// ------------------------------------------------------------------------------------------
 
-	static Object get(BaseRow row, int ordinal, LogicalType type) {
+	static Object get(SqlRow row, int ordinal, LogicalType type) {
 		return TypedGetters.get(row, ordinal, type);
 	}
 }

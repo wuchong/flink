@@ -24,15 +24,15 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlDecimal;
 
 import java.io.IOException;
 
 /**
- * Serializer for {@link Decimal}.
+ * Serializer for {@link SqlDecimal}.
  */
 @Internal
-public final class DecimalSerializer extends TypeSerializer<Decimal> {
+public final class DecimalSerializer extends TypeSerializer<SqlDecimal> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -50,17 +50,17 @@ public final class DecimalSerializer extends TypeSerializer<Decimal> {
 	}
 
 	@Override
-	public Decimal createInstance() {
-		return Decimal.zero(precision, scale);
+	public SqlDecimal createInstance() {
+		return SqlDecimal.zero(precision, scale);
 	}
 
 	@Override
-	public Decimal copy(Decimal from) {
+	public SqlDecimal copy(SqlDecimal from) {
 		return from.copy();
 	}
 
 	@Override
-	public Decimal copy(Decimal from, Decimal reuse) {
+	public SqlDecimal copy(SqlDecimal from, SqlDecimal reuse) {
 		return copy(from);
 	}
 
@@ -70,8 +70,8 @@ public final class DecimalSerializer extends TypeSerializer<Decimal> {
 	}
 
 	@Override
-	public void serialize(Decimal record, DataOutputView target) throws IOException {
-		if (Decimal.isCompact(precision)) {
+	public void serialize(SqlDecimal record, DataOutputView target) throws IOException {
+		if (SqlDecimal.isCompact(precision)) {
 			assert record.isCompact();
 			target.writeLong(record.toUnscaledLong());
 		} else {
@@ -82,26 +82,26 @@ public final class DecimalSerializer extends TypeSerializer<Decimal> {
 	}
 
 	@Override
-	public Decimal deserialize(DataInputView source) throws IOException {
-		if (Decimal.isCompact(precision)) {
+	public SqlDecimal deserialize(DataInputView source) throws IOException {
+		if (SqlDecimal.isCompact(precision)) {
 			long longVal = source.readLong();
-			return Decimal.fromUnscaledLong(precision, scale, longVal);
+			return SqlDecimal.fromUnscaledLong(precision, scale, longVal);
 		} else {
 			int length = source.readInt();
 			byte[] bytes = new byte[length];
 			source.readFully(bytes);
-			return Decimal.fromUnscaledBytes(precision, scale, bytes);
+			return SqlDecimal.fromUnscaledBytes(precision, scale, bytes);
 		}
 	}
 
 	@Override
-	public Decimal deserialize(Decimal record, DataInputView source) throws IOException {
+	public SqlDecimal deserialize(SqlDecimal record, DataInputView source) throws IOException {
 		return deserialize(source);
 	}
 
 	@Override
 	public void copy(DataInputView source, DataOutputView target) throws IOException {
-		if (Decimal.isCompact(precision)) {
+		if (SqlDecimal.isCompact(precision)) {
 			target.writeLong(source.readLong());
 		} else {
 			int len = source.readInt();
@@ -137,14 +137,14 @@ public final class DecimalSerializer extends TypeSerializer<Decimal> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<Decimal> snapshotConfiguration() {
+	public TypeSerializerSnapshot<SqlDecimal> snapshotConfiguration() {
 		return new DecimalSerializerSnapshot(precision, scale);
 	}
 
 	/**
 	 * {@link TypeSerializerSnapshot} for {@link DecimalSerializer}.
 	 */
-	public static final class DecimalSerializerSnapshot implements TypeSerializerSnapshot<Decimal> {
+	public static final class DecimalSerializerSnapshot implements TypeSerializerSnapshot<SqlDecimal> {
 
 		private static final int CURRENT_VERSION = 3;
 
@@ -179,12 +179,12 @@ public final class DecimalSerializer extends TypeSerializer<Decimal> {
 		}
 
 		@Override
-		public TypeSerializer<Decimal> restoreSerializer() {
+		public TypeSerializer<SqlDecimal> restoreSerializer() {
 			return new DecimalSerializer(previousPrecision, previousScale);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<Decimal> resolveSchemaCompatibility(TypeSerializer<Decimal> newSerializer) {
+		public TypeSerializerSchemaCompatibility<SqlDecimal> resolveSchemaCompatibility(TypeSerializer<SqlDecimal> newSerializer) {
 			if (!(newSerializer instanceof DecimalSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}

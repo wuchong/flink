@@ -48,20 +48,20 @@ public interface SqlString extends Comparable<SqlString>, Serializable {
 	 * Creates an BinaryString from given java String.
 	 */
 	static SqlString fromString(String str) {
-		return LazyBinarySqlString.fromString(str);
+		return LazyBinaryString.fromString(str);
 	}
 
 	/**
 	 * Creates a {@link SqlString} from the given UTF-8 bytes.
 	 */
 	static SqlString fromBytes(byte[] bytes) {
-		return LazyBinarySqlString.fromBytes(bytes);
+		return LazyBinaryString.fromBytes(bytes);
 	}
 
 	/**
 	 * Creates a {@link SqlString} from the given UTF-8 bytes with offset and number of bytes.
 	 */
 	static SqlString fromBytes(byte[] bytes, int offset, int numBytes) {
-		return LazyBinarySqlString.fromBytes(bytes, offset, numBytes);
+		return LazyBinaryString.fromBytes(bytes, offset, numBytes);
 	}
 }

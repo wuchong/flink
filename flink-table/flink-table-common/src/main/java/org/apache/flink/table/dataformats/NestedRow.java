@@ -34,7 +34,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * must fit into its first memory segment.
  */
 @Internal
-public final class NestedRow extends BinarySection implements BaseRow, TypedSetters {
+public final class NestedRow extends BinarySection implements SqlRow, TypedSetters {
 
 	private static final long serialVersionUID = 1L;
 
@@ -118,10 +118,10 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public void setDecimal(int pos, Decimal value, int precision) {
+	public void setDecimal(int pos, SqlDecimal value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (Decimal.isCompact(precision)) {
+		if (SqlDecimal.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -258,17 +258,17 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public Decimal getDecimal(int pos, int precision, int scale) {
+	public SqlDecimal getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
 
-		if (Decimal.isCompact(precision)) {
-			return Decimal.fromUnscaledLong(precision, scale,
+		if (SqlDecimal.isCompact(precision)) {
+			return SqlDecimal.fromUnscaledLong(precision, scale,
 					SegmentsUtil.getLong(segments, getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return Decimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
@@ -287,7 +287,7 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	@Override
 	public <T> SqlRawValue<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return LazyBinarySqlRawValue.fromAddress(segments, offset, getLong(pos));
+		return LazyBinaryRawValue.fromAddress(segments, offset, getLong(pos));
 	}
 
 	@Override
@@ -299,19 +299,19 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public BaseRow getRow(int pos, int numFields) {
+	public SqlRow getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
 		return NestedRow.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseArray getArray(int pos) {
+	public SqlArray getArray(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseMap getMap(int pos) {
+	public SqlMap getMap(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
@@ -320,7 +320,7 @@ public final class NestedRow extends BinarySection implements BaseRow, TypedSett
 		return copy(new NestedRow(arity));
 	}
 
-	public NestedRow copy(BaseRow reuse) {
+	public NestedRow copy(SqlRow reuse) {
 		return copyInternal((NestedRow) reuse);
 	}
 

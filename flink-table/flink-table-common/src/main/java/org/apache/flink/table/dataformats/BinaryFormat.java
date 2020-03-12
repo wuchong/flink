@@ -101,7 +101,7 @@ public interface BinaryFormat {
 	 * @param fieldOffset absolute start offset of 'variablePartOffsetAndLen'.
 	 * @param variablePartOffsetAndLen a long value, real data or offset and len.
 	 */
-	static LazyBinarySqlString readBinaryStringFieldFromSegments(
+	static LazyBinaryString readBinaryStringFieldFromSegments(
 			MemorySegment[] segments,
 			int baseOffset,
 			int fieldOffset,
@@ -110,14 +110,14 @@ public interface BinaryFormat {
 		if (mark == 0) {
 			final int subOffset = (int) (variablePartOffsetAndLen >> 32);
 			final int len = (int) variablePartOffsetAndLen;
-			return LazyBinarySqlString.fromAddress(segments, baseOffset + subOffset, len);
+			return LazyBinaryString.fromAddress(segments, baseOffset + subOffset, len);
 		} else {
 			int len = (int) ((variablePartOffsetAndLen & HIGHEST_SECOND_TO_EIGHTH_BIT) >>> 56);
 			if (SegmentsUtil.LITTLE_ENDIAN) {
-				return LazyBinarySqlString.fromAddress(segments, fieldOffset, len);
+				return LazyBinaryString.fromAddress(segments, fieldOffset, len);
 			} else {
 				// fieldOffset + 1 to skip header.
-				return LazyBinarySqlString.fromAddress(segments, fieldOffset + 1, len);
+				return LazyBinaryString.fromAddress(segments, fieldOffset + 1, len);
 			}
 		}
 	}

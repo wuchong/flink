@@ -56,7 +56,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * type can also be placed on a fixed length area (If it's short enough).
  */
 @Internal
-public final class BinaryRow extends BinarySection implements BaseRow, TypedSetters {
+public final class BinaryRow extends BinarySection implements SqlRow, TypedSetters {
 	private static final long serialVersionUID = 1L;
 
 	public static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -90,7 +90,7 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 			case DOUBLE:
 				return true;
 			case DECIMAL:
-				return ((DecimalType) type).getPrecision() <= Decimal.MAX_COMPACT_PRECISION;
+				return ((DecimalType) type).getPrecision() <= SqlDecimal.MAX_COMPACT_PRECISION;
 			case TIMESTAMP_WITHOUT_TIME_ZONE:
 				return SqlTimestamp.isCompact(((TimestampType) type).getPrecision());
 			case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
@@ -189,10 +189,10 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public void setDecimal(int pos, Decimal value, int precision) {
+	public void setDecimal(int pos, SqlDecimal value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (Decimal.isCompact(precision)) {
+		if (SqlDecimal.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -324,17 +324,17 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public Decimal getDecimal(int pos, int precision, int scale) {
+	public SqlDecimal getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
 
-		if (Decimal.isCompact(precision)) {
-			return Decimal.fromUnscaledLong(precision, scale,
+		if (SqlDecimal.isCompact(precision)) {
+			return SqlDecimal.fromUnscaledLong(precision, scale,
 					segments[0].getLong(getFieldOffset(pos)));
 		}
 
 		int fieldOffset = getFieldOffset(pos);
 		final long offsetAndSize = segments[0].getLong(fieldOffset);
-		return Decimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
@@ -353,7 +353,7 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 	@Override
 	public <T> SqlRawValue<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return LazyBinarySqlRawValue.fromAddress(segments, offset, getLong(pos));
+		return LazyBinaryRawValue.fromAddress(segments, offset, getLong(pos));
 	}
 
 	@Override
@@ -365,19 +365,19 @@ public final class BinaryRow extends BinarySection implements BaseRow, TypedSett
 	}
 
 	@Override
-	public BaseArray getArray(int pos) {
+	public SqlArray getArray(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseMap getMap(int pos) {
+	public SqlMap getMap(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseRow getRow(int pos, int numFields) {
+	public SqlRow getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
 		return NestedRow.readNestedRowFieldFromSegments(segments, numFields, offset, getLong(pos));
 	}

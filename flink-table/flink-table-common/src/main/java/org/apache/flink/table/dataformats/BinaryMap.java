@@ -36,7 +36,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * <p>{@code BinaryMap} are influenced by Apache Spark UnsafeMapData.
  */
 @Internal
-public final class BinaryMap extends BinarySection implements BaseMap {
+public final class BinaryMap extends BinarySection implements SqlMap {
 
 	private static final long serialVersionUID = 1L;
 

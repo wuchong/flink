@@ -27,7 +27,7 @@ import java.util.Objects;
  * It can be considered as a wrapper class of the normal java array.
  */
 @PublicEvolving
-public final class GenericArray implements BaseArray {
+public final class GenericArray implements SqlArray {
 
 	private static final long serialVersionUID = 1L;
 
@@ -171,8 +171,8 @@ public final class GenericArray implements BaseArray {
 	}
 
 	@Override
-	public Decimal getDecimal(int pos, int precision, int scale) {
-		return (Decimal) getObject(pos);
+	public SqlDecimal getDecimal(int pos, int precision, int scale) {
+		return (SqlDecimal) getObject(pos);
 	}
 
 	@Override
@@ -187,18 +187,18 @@ public final class GenericArray implements BaseArray {
 	}
 
 	@Override
-	public BaseRow getRow(int pos, int numFields) {
-		return (BaseRow) getObject(pos);
+	public SqlRow getRow(int pos, int numFields) {
+		return (SqlRow) getObject(pos);
 	}
 
 	@Override
-	public BaseArray getArray(int pos) {
-		return (BaseArray) getObject(pos);
+	public SqlArray getArray(int pos) {
+		return (SqlArray) getObject(pos);
 	}
 
 	@Override
-	public BaseMap getMap(int pos) {
-		return (BaseMap) getObject(pos);
+	public SqlMap getMap(int pos) {
+		return (SqlMap) getObject(pos);
 	}
 
 	private Object getObject(int pos) {

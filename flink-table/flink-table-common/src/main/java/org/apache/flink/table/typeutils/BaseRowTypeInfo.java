@@ -25,7 +25,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.CompositeType;
 import org.apache.flink.api.common.typeutils.TypeComparator;
 import org.apache.flink.api.java.typeutils.TupleTypeInfoBase;
-import org.apache.flink.table.dataformats.BaseRow;
+import org.apache.flink.table.dataformats.SqlRow;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
@@ -42,7 +42,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * Base row type info.
  */
 @Internal
-public class BaseRowTypeInfo extends TupleTypeInfoBase<BaseRow> {
+public class BaseRowTypeInfo extends TupleTypeInfoBase<SqlRow> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -67,7 +67,7 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<BaseRow> {
 	}
 
 	public BaseRowTypeInfo(LogicalType[] logicalTypes, String[] fieldNames) {
-		super(BaseRow.class, Arrays.stream(logicalTypes)
+		super(SqlRow.class, Arrays.stream(logicalTypes)
 				.map(LogicalTypeUtils::internalTypeInfo)
 				.toArray(TypeInformation[]::new));
 		this.logicalTypes = logicalTypes;
@@ -128,7 +128,7 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<BaseRow> {
 	}
 
 	@Override
-	public TypeComparator<BaseRow> createComparator(
+	public TypeComparator<SqlRow> createComparator(
 		int[] logicalKeyFields,
 		boolean[] orders,
 		int logicalFieldOffset,
@@ -195,7 +195,7 @@ public class BaseRowTypeInfo extends TupleTypeInfoBase<BaseRow> {
 	}
 
 	@Override
-	public TypeComparatorBuilder<BaseRow> createTypeComparatorBuilder() {
+	public TypeComparatorBuilder<SqlRow> createTypeComparatorBuilder() {
 		throw new UnsupportedOperationException("Not support!");
 	}
 

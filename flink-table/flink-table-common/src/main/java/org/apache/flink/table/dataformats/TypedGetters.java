@@ -83,7 +83,7 @@ public interface TypedGetters {
 	/**
 	 * Get decimal value, internal format is Decimal.
 	 */
-	Decimal getDecimal(int ordinal, int precision, int scale);
+	SqlDecimal getDecimal(int ordinal, int precision, int scale);
 
 	/**
 	 * Get Timestamp value, internal format is SqlTimestamp.
@@ -103,17 +103,17 @@ public interface TypedGetters {
 	/**
 	 * Get array value, internal format is BaseArray.
 	 */
-	BaseArray getArray(int ordinal);
+	SqlArray getArray(int ordinal);
 
 	/**
 	 * Get map value, internal format is BaseMap.
 	 */
-	BaseMap getMap(int ordinal);
+	SqlMap getMap(int ordinal);
 
 	/**
 	 * Get row value, internal format is BaseRow.
 	 */
-	BaseRow getRow(int ordinal, int numFields);
+	SqlRow getRow(int ordinal, int numFields);
 
 	// ------------------------------------------------------------------------------------------
 

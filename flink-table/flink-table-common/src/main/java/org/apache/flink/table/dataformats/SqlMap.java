@@ -32,7 +32,7 @@ import java.util.Map;
  * Convenient updates use the {@link GenericMap} format.
  */
 @PublicEvolving
-public interface BaseMap extends Serializable {
+public interface SqlMap extends Serializable {
 
 	/**
 	 * Invoke by codeGens.
@@ -45,9 +45,9 @@ public interface BaseMap extends Serializable {
 	 */
 	Map<?, ?> toJavaMap(LogicalType keyType, LogicalType valueType);
 
-	BaseArray keyArray();
+	SqlArray keyArray();
 
-	BaseArray valueArray();
+	SqlArray valueArray();
 
 	// NOTE:
 	//

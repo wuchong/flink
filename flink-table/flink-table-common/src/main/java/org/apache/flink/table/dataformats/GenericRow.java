@@ -32,7 +32,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * in case of it contains a non-serializable generic fields, the Java serialization will fail.
  */
 @PublicEvolving
-public final class GenericRow implements BaseRow {
+public final class GenericRow implements SqlRow {
 
 	private static final long serialVersionUID = 1L;
 
@@ -54,7 +54,7 @@ public final class GenericRow implements BaseRow {
 	 * Sets the field at the specified ordinal.
 	 *
 	 * <p>Note: the given field value must in internal format, otherwise the {@link GenericRow} is
-	 * corrupted, and may throw exception when processing. See the description of {@link BaseRow}
+	 * corrupted, and may throw exception when processing. See the description of {@link SqlRow}
 	 * for more information about internal format.
 	 *
 	 * @param ordinal The ordinal of the field, 0-based.
@@ -68,7 +68,7 @@ public final class GenericRow implements BaseRow {
 	/**
 	 * Gets the field at the specified ordinal.
 	 *
-	 * <p>Note: the returned value is in internal format. See the description of {@link BaseRow}
+	 * <p>Note: the returned value is in internal format. See the description of {@link SqlRow}
 	 * for more information about internal format.
 	 *
 	 * @param ordinal The ordinal of the field, 0-based.
@@ -141,8 +141,8 @@ public final class GenericRow implements BaseRow {
 	}
 
 	@Override
-	public Decimal getDecimal(int ordinal, int precision, int scale) {
-		return (Decimal) this.fields[ordinal];
+	public SqlDecimal getDecimal(int ordinal, int precision, int scale) {
+		return (SqlDecimal) this.fields[ordinal];
 	}
 
 	@Override
@@ -162,18 +162,18 @@ public final class GenericRow implements BaseRow {
 	}
 
 	@Override
-	public BaseArray getArray(int ordinal) {
-		return (BaseArray) this.fields[ordinal];
+	public SqlArray getArray(int ordinal) {
+		return (SqlArray) this.fields[ordinal];
 	}
 
 	@Override
-	public BaseMap getMap(int ordinal) {
-		return (BaseMap) this.fields[ordinal];
+	public SqlMap getMap(int ordinal) {
+		return (SqlMap) this.fields[ordinal];
 	}
 
 	@Override
-	public BaseRow getRow(int ordinal, int numFields) {
-		return (BaseRow) this.fields[ordinal];
+	public SqlRow getRow(int ordinal, int numFields) {
+		return (SqlRow) this.fields[ordinal];
 	}
 
 	// ----------------------------------------------------------------------------------------

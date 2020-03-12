@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlDecimal;
 
 import java.util.Arrays;
 
@@ -30,7 +30,7 @@ import java.util.Arrays;
  * TypeInfo for Decimal.
  */
 @Internal
-public class DecimalTypeInfo extends TypeInformation<Decimal> {
+public class DecimalTypeInfo extends TypeInformation<SqlDecimal> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -68,8 +68,8 @@ public class DecimalTypeInfo extends TypeInformation<Decimal> {
 	}
 
 	@Override
-	public Class<Decimal> getTypeClass() {
-		return Decimal.class;
+	public Class<SqlDecimal> getTypeClass() {
+		return SqlDecimal.class;
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public class DecimalTypeInfo extends TypeInformation<Decimal> {
 	}
 
 	@Override
-	public TypeSerializer<Decimal> createSerializer(ExecutionConfig config) {
+	public TypeSerializer<SqlDecimal> createSerializer(ExecutionConfig config) {
 		return new DecimalSerializer(precision, scale);
 	}
 

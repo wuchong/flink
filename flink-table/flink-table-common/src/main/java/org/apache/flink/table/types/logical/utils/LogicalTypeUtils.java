@@ -22,10 +22,10 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.table.dataformats.BaseArray;
-import org.apache.flink.table.dataformats.BaseMap;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlArray;
+import org.apache.flink.table.dataformats.SqlMap;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.SqlRawValue;
 import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
@@ -76,14 +76,14 @@ public final class LogicalTypeUtils {
 			case VARCHAR:
 				return SqlString.class;
 			case DECIMAL:
-				return Decimal.class;
+				return SqlDecimal.class;
 			case ARRAY:
-				return BaseArray.class;
+				return SqlArray.class;
 			case MAP:
 			case MULTISET:
-				return BaseMap.class;
+				return SqlMap.class;
 			case ROW:
-				return BaseRow.class;
+				return SqlRow.class;
 			case BINARY:
 			case VARBINARY:
 				return byte[].class;

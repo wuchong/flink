@@ -29,7 +29,7 @@ import java.util.Objects;
  * It can be considered as a wrapper class of the normal java map.
  */
 @PublicEvolving
-public final class GenericMap implements BaseMap {
+public final class GenericMap implements SqlMap {
 
 	private static final long serialVersionUID = 1L;
 
@@ -54,12 +54,12 @@ public final class GenericMap implements BaseMap {
 	}
 
 	@Override
-	public BaseArray keyArray() {
+	public SqlArray keyArray() {
 		return null;
 	}
 
 	@Override
-	public BaseArray valueArray() {
+	public SqlArray valueArray() {
 		return null;
 	}
 

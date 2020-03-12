@@ -24,7 +24,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.table.dataformats.LazyBinarySqlString;
+import org.apache.flink.table.dataformats.LazyBinaryString;
 import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.utils.SegmentsUtil;
 
@@ -54,12 +54,12 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 
 	@Override
 	public SqlString copy(SqlString from) {
-		return ((LazyBinarySqlString) from).copy();
+		return ((LazyBinaryString) from).copy();
 	}
 
 	@Override
 	public SqlString copy(SqlString from, SqlString reuse) {
-		return ((LazyBinarySqlString) from).copy();
+		return ((LazyBinaryString) from).copy();
 	}
 
 	@Override
@@ -69,7 +69,7 @@ public final class SqlStringSerializer extends TypeSerializerSingleton<SqlString
 
 	@Override
 	public void serialize(SqlString record, DataOutputView target) throws IOException {
-		LazyBinarySqlString sqlString = (LazyBinarySqlString) record;
+		LazyBinaryString sqlString = (LazyBinaryString) record;
 		sqlString.ensureMaterialized();
 		target.writeInt(sqlString.getSizeInBytes());
 		SegmentsUtil.copyToView(sqlString.getSegments(), sqlString.getOffset(), sqlString.getSizeInBytes(), target);

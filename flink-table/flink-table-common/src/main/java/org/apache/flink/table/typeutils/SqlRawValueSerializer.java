@@ -26,7 +26,7 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.LazyBinarySqlRawValue;
+import org.apache.flink.table.dataformats.LazyBinaryRawValue;
 import org.apache.flink.table.dataformats.SqlRawValue;
 import org.apache.flink.table.utils.SegmentsUtil;
 
@@ -53,16 +53,16 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 
 	@Override
 	public SqlRawValue<T> createInstance() {
-		return new LazyBinarySqlRawValue<>(serializer.createInstance());
+		return new LazyBinaryRawValue<>(serializer.createInstance());
 	}
 
 	@Override
 	public SqlRawValue<T> copy(SqlRawValue<T> from) {
-		LazyBinarySqlRawValue<T> rawValue = (LazyBinarySqlRawValue<T>) from;
+		LazyBinaryRawValue<T> rawValue = (LazyBinaryRawValue<T>) from;
 		rawValue.ensureMaterialized(serializer);
 		byte[] bytes = SegmentsUtil.copyToBytes(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes());
 		T newJavaObject = rawValue.getJavaObject() == null ? null : serializer.copy(rawValue.getJavaObject());
-		return new LazyBinarySqlRawValue<>(
+		return new LazyBinaryRawValue<>(
 			new MemorySegment[]{MemorySegmentFactory.wrap(bytes)},
 			0,
 			bytes.length,
@@ -81,7 +81,7 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 
 	@Override
 	public void serialize(SqlRawValue<T> record, DataOutputView target) throws IOException {
-		LazyBinarySqlRawValue<T> rawValue = (LazyBinarySqlRawValue<T>) record;
+		LazyBinaryRawValue<T> rawValue = (LazyBinaryRawValue<T>) record;
 		rawValue.ensureMaterialized(serializer);
 		target.writeInt(rawValue.getSizeInBytes());
 		SegmentsUtil.copyToView(rawValue.getSegments(), rawValue.getOffset(), rawValue.getSizeInBytes(), target);
@@ -92,7 +92,7 @@ public final class SqlRawValueSerializer<T> extends TypeSerializer<SqlRawValue<T
 		int length = source.readInt();
 		byte[] bytes = new byte[length];
 		source.readFully(bytes);
-		return new LazyBinarySqlRawValue<>(
+		return new LazyBinaryRawValue<>(
 				new MemorySegment[] {MemorySegmentFactory.wrap(bytes)},
 				0,
 				bytes.length);

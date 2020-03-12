@@ -37,7 +37,7 @@ import static org.apache.flink.core.memory.MemoryUtils.UNSAFE;
  * <p>{@code BinaryArray} are influenced by Apache Spark UnsafeArrayData.
  */
 @Internal
-public final class BinaryArray extends BinarySection implements BaseArray {
+public final class BinaryArray extends BinarySection implements SqlArray {
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -176,16 +176,16 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 	}
 
 	@Override
-	public Decimal getDecimal(int pos, int precision, int scale) {
+	public SqlDecimal getDecimal(int pos, int precision, int scale) {
 		assertIndexIsValid(pos);
-		if (Decimal.isCompact(precision)) {
-			return Decimal.fromUnscaledLong(precision, scale,
+		if (SqlDecimal.isCompact(precision)) {
+			return SqlDecimal.fromUnscaledLong(precision, scale,
 				SegmentsUtil.getLong(segments, getElementOffset(pos, 8)));
 		}
 
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return Decimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
+		return SqlDecimal.readDecimalFieldFromSegments(segments, offset, offsetAndSize, precision, scale);
 	}
 
 	@Override
@@ -207,7 +207,7 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return LazyBinarySqlRawValue.fromAddress(segments, offset, offsetAndSize);
+		return LazyBinaryRawValue.fromAddress(segments, offset, offsetAndSize);
 	}
 
 	@Override
@@ -220,19 +220,19 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 	}
 
 	@Override
-	public BaseArray getArray(int pos) {
+	public SqlArray getArray(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryArray.readBinaryArrayFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseMap getMap(int pos) {
+	public SqlMap getMap(int pos) {
 		assertIndexIsValid(pos);
 		return BinaryMap.readBinaryMapFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override
-	public BaseRow getRow(int pos, int numFields) {
+	public SqlRow getRow(int pos, int numFields) {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
@@ -330,10 +330,10 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 		SegmentsUtil.setDouble(segments, getElementOffset(pos, 8), 0.0);
 	}
 
-	public void setDecimal(int pos, Decimal value, int precision) {
+	public void setDecimal(int pos, SqlDecimal value, int precision) {
 		assertIndexIsValid(pos);
 
-		if (Decimal.isCompact(precision)) {
+		if (SqlDecimal.isCompact(precision)) {
 			// compact format
 			setLong(pos, value.toUnscaledLong());
 		} else {
@@ -469,7 +469,7 @@ public final class BinaryArray extends BinarySection implements BaseArray {
 		T[] values = (T[]) Array.newInstance(elementClass, size);
 		for (int i = 0; i < size; i++) {
 			if (!isNullAt(i)) {
-				values[i] = (T) BaseArray.get(this, i, elementType);
+				values[i] = (T) SqlArray.get(this, i, elementType);
 			}
 		}
 		return values;

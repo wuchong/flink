@@ -31,7 +31,7 @@ import java.io.Serializable;
  * Convenient updates use the {@link GenericArray} format.
  */
 @PublicEvolving
-public interface BaseArray extends TypedGetters, Serializable {
+public interface SqlArray extends TypedGetters, Serializable {
 
 	int numElements();
 
@@ -51,7 +51,7 @@ public interface BaseArray extends TypedGetters, Serializable {
 
 	// ------------------------------------------------------------------------------------------
 
-	static Object get(BaseArray array, int ordinal, LogicalType type) {
+	static Object get(SqlArray array, int ordinal, LogicalType type) {
 		return TypedGetters.get(array, ordinal, type);
 	}
 }

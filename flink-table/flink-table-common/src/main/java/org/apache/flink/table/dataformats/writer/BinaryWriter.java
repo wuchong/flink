@@ -18,10 +18,10 @@
 package org.apache.flink.table.dataformats.writer;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.table.dataformats.BaseArray;
-import org.apache.flink.table.dataformats.BaseMap;
-import org.apache.flink.table.dataformats.BaseRow;
-import org.apache.flink.table.dataformats.Decimal;
+import org.apache.flink.table.dataformats.SqlArray;
+import org.apache.flink.table.dataformats.SqlMap;
+import org.apache.flink.table.dataformats.SqlRow;
+import org.apache.flink.table.dataformats.SqlDecimal;
 import org.apache.flink.table.dataformats.SqlRawValue;
 import org.apache.flink.table.dataformats.SqlString;
 import org.apache.flink.table.dataformats.SqlTimestamp;
@@ -71,15 +71,15 @@ public interface BinaryWriter {
 
 	void writeBinary(int pos, byte[] bytes);
 
-	void writeDecimal(int pos, Decimal value, int precision);
+	void writeDecimal(int pos, SqlDecimal value, int precision);
 
 	void writeTimestamp(int pos, SqlTimestamp value, int precision);
 
-	void writeArray(int pos, BaseArray value, ArrayType type);
+	void writeArray(int pos, SqlArray value, ArrayType type);
 
-	void writeMap(int pos, BaseMap value, MapType type);
+	void writeMap(int pos, SqlMap value, MapType type);
 
-	void writeRow(int pos, BaseRow value, RowType type);
+	void writeRow(int pos, SqlRow value, RowType type);
 
 	void writeGeneric(int pos, SqlRawValue<?> value, RawType<?> type);
 
@@ -129,17 +129,17 @@ public interface BinaryWriter {
 				break;
 			case DECIMAL:
 				DecimalType decimalType = (DecimalType) type;
-				writer.writeDecimal(pos, (Decimal) o, decimalType.getPrecision());
+				writer.writeDecimal(pos, (SqlDecimal) o, decimalType.getPrecision());
 				break;
 			case ARRAY:
-				writer.writeArray(pos, (BaseArray) o, (ArrayType) type);
+				writer.writeArray(pos, (SqlArray) o, (ArrayType) type);
 				break;
 			case MAP:
 			case MULTISET:
-				writer.writeMap(pos, (BaseMap) o, (MapType) type);
+				writer.writeMap(pos, (SqlMap) o, (MapType) type);
 				break;
 			case ROW:
-				writer.writeRow(pos, (BaseRow) o, (RowType) type);
+				writer.writeRow(pos, (SqlRow) o, (RowType) type);
 				break;
 			case RAW:
 				writer.writeGeneric(pos, (SqlRawValue<?>) o, (RawType<?>) type);

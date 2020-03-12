@@ -29,7 +29,7 @@ import org.apache.flink.api.java.typeutils.runtime.DataOutputViewStream;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.MemorySegmentFactory;
-import org.apache.flink.table.dataformats.BaseMap;
+import org.apache.flink.table.dataformats.SqlMap;
 import org.apache.flink.table.dataformats.BinaryArray;
 import org.apache.flink.table.dataformats.BinaryMap;
 import org.apache.flink.table.dataformats.GenericMap;
@@ -48,10 +48,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Serializer for {@link BaseMap}.
+ * Serializer for {@link SqlMap}.
  */
 @Internal
-public class BaseMapSerializer extends TypeSerializer<BaseMap> {
+public class BaseMapSerializer extends TypeSerializer<SqlMap> {
 	private static final Logger LOG = LoggerFactory.getLogger(BaseMapSerializer.class);
 	private static final long serialVersionUID = 1L;
 
@@ -91,12 +91,12 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	}
 
 	@Override
-	public TypeSerializer<BaseMap> duplicate() {
+	public TypeSerializer<SqlMap> duplicate() {
 		return new BaseMapSerializer(keyType, valueType, keySerializer.duplicate(), valueSerializer.duplicate());
 	}
 
 	@Override
-	public BaseMap createInstance() {
+	public SqlMap createInstance() {
 		return new BinaryMap();
 	}
 
@@ -106,7 +106,7 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public BaseMap copy(BaseMap from) {
+	public SqlMap copy(SqlMap from) {
 		if (from instanceof GenericMap) {
 			Map<Object, Object> fromMap = (Map<Object, Object>) ((GenericMap) from).getJavaMap();
 			if (!(fromMap instanceof HashMap) && LOG.isDebugEnabled()) {
@@ -123,7 +123,7 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	}
 
 	@Override
-	public BaseMap copy(BaseMap from, BaseMap reuse) {
+	public SqlMap copy(SqlMap from, SqlMap reuse) {
 		return copy(from);
 	}
 
@@ -133,14 +133,14 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	}
 
 	@Override
-	public void serialize(BaseMap record, DataOutputView target) throws IOException {
+	public void serialize(SqlMap record, DataOutputView target) throws IOException {
 		BinaryMap binaryMap = toBinaryMap(record);
 		target.writeInt(binaryMap.getSizeInBytes());
 		SegmentsUtil.copyToView(binaryMap.getSegments(), binaryMap.getOffset(), binaryMap.getSizeInBytes(), target);
 	}
 
 	@SuppressWarnings("unchecked")
-	public BinaryMap toBinaryMap(BaseMap from) {
+	public BinaryMap toBinaryMap(SqlMap from) {
 		if (from instanceof BinaryMap) {
 			return (BinaryMap) from;
 		}
@@ -187,12 +187,12 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	}
 
 	@Override
-	public BaseMap deserialize(DataInputView source) throws IOException {
+	public SqlMap deserialize(DataInputView source) throws IOException {
 		return deserializeReuse(new BinaryMap(), source);
 	}
 
 	@Override
-	public BaseMap deserialize(BaseMap reuse, DataInputView source) throws IOException {
+	public SqlMap deserialize(SqlMap reuse, DataInputView source) throws IOException {
 		return deserializeReuse(reuse instanceof GenericMap ? new BinaryMap() : (BinaryMap) reuse, source);
 	}
 
@@ -243,14 +243,14 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 	}
 
 	@Override
-	public TypeSerializerSnapshot<BaseMap> snapshotConfiguration() {
+	public TypeSerializerSnapshot<SqlMap> snapshotConfiguration() {
 		return new BaseMapSerializerSnapshot(keyType, valueType, keySerializer, valueSerializer);
 	}
 
 	/**
 	 * {@link TypeSerializerSnapshot} for {@link BaseArraySerializer}.
 	 */
-	public static final class BaseMapSerializerSnapshot implements TypeSerializerSnapshot<BaseMap> {
+	public static final class BaseMapSerializerSnapshot implements TypeSerializerSnapshot<SqlMap> {
 		private static final int CURRENT_VERSION = 3;
 
 		private LogicalType previousKeyType;
@@ -304,13 +304,13 @@ public class BaseMapSerializer extends TypeSerializer<BaseMap> {
 		}
 
 		@Override
-		public TypeSerializer<BaseMap> restoreSerializer() {
+		public TypeSerializer<SqlMap> restoreSerializer() {
 			return new BaseMapSerializer(
 				previousKeyType, previousValueType, previousKeySerializer, previousValueSerializer);
 		}
 
 		@Override
-		public TypeSerializerSchemaCompatibility<BaseMap> resolveSchemaCompatibility(TypeSerializer<BaseMap> newSerializer) {
+		public TypeSerializerSchemaCompatibility<SqlMap> resolveSchemaCompatibility(TypeSerializer<SqlMap> newSerializer) {
 			if (!(newSerializer instanceof BaseMapSerializer)) {
 				return TypeSerializerSchemaCompatibility.incompatible();
 			}
