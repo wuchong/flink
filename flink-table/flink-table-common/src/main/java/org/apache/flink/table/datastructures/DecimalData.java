@@ -19,13 +19,13 @@ package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.core.memory.MemorySegment;
-import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.utils.SegmentsUtil;
+
+import javax.annotation.Nonnull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -44,21 +44,22 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 
 	private static final long serialVersionUID = 1L;
 
-	private static final MathContext MC_DIVIDE = new MathContext(38, RoundingMode.HALF_UP);
+	// member fields and static fields are package-visible,
+	// in order to be accessible for DecimalDataUtils
 
-	public static final int MAX_COMPACT_PRECISION = 18;
+	static final int MAX_COMPACT_PRECISION = 18;
 
 	/**
 	 * Maximum number of decimal digits an Int can represent. (1e9 < Int.MaxValue < 1e10)
 	 */
-	public static final int MAX_INT_DIGITS = 9;
+	static final int MAX_INT_DIGITS = 9;
 
 	/**
 	 * Maximum number of decimal digits a Long can represent. (1e18 < Long.MaxValue < 1e19)
 	 */
-	public static final int MAX_LONG_DIGITS = 18;
+	static final int MAX_LONG_DIGITS = 18;
 
-	public static final long[] POW10 = new long[MAX_COMPACT_PRECISION + 1];
+	static final long[] POW10 = new long[MAX_COMPACT_PRECISION + 1];
 
 	static {
 		POW10[0] = 1;
@@ -66,8 +67,6 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 			POW10[i] = 10 * POW10[i - 1];
 		}
 	}
-
-	public static final DecimalType DECIMAL_SYSTEM_DEFAULT = new DecimalType(DecimalType.MAX_PRECISION, 18);
 
 	// for now, we follow closely to what Spark does.
 	// see if we can improve upon it later.
@@ -78,26 +77,30 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 	// otherwise, (longVal, scale) represents the value
 	//   `decimalVal` may be set and cached
 
-	private final int precision;
-	private final int scale;
+	final int precision;
+	final int scale;
 
-	private final long longVal;
-	private BigDecimal decimalVal;
+	final long longVal;
+	BigDecimal decimalVal;
 
 	// this constructor does not perform any sanity check.
-	private DecimalData(int precision, int scale, long longVal, BigDecimal decimalVal) {
+	DecimalData(int precision, int scale, long longVal, BigDecimal decimalVal) {
 		this.precision = precision;
 		this.scale = scale;
 		this.longVal = longVal;
 		this.decimalVal = decimalVal;
 	}
 
-	public boolean isCompact() {
-		return isCompact(this.precision);
+	// ------------------------------------------------------------------------------------------
+	// Public Interfaces
+	// ------------------------------------------------------------------------------------------
+
+	public int getPrecision() {
+		return precision;
 	}
 
-	public static boolean isCompact(int precision) {
-		return precision <= MAX_COMPACT_PRECISION;
+	public int getScale() {
+		return scale;
 	}
 
 	public BigDecimal toBigDecimal() {
@@ -108,14 +111,56 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 		return bd;
 	}
 
+	/**
+	 * Returns a long whose value is the <i>unscaled value</i> of this {@code DecimalData}.
+	 *
+	 * @return the unscaled value of this {@code DecimalData}.
+	 * @throws ArithmeticException if the value of {@code this} will not exactly fit in a {@code long}.
+	 */
+	public long toUnscaledLong() {
+		if (isCompact()) {
+			return longVal;
+		} else {
+			return toBigDecimal().unscaledValue().longValueExact();
+		}
+	}
+
+	/**
+	 * Returns a byte array whose value is the <i>unscaled value</i> of this {@code DecimalData}.
+	 *
+	 * @return the unscaled value of this {@code DecimalData}.
+	 */
+	public byte[] toUnscaledBytes() {
+		if (!isCompact()) {
+			return toBigDecimal().unscaledValue().toByteArray();
+		}
+
+		// big endian; consistent with BigInteger.toByteArray()
+		byte[] bytes = new byte[8];
+		long l = longVal;
+		for (int i = 0; i < 8; i++) {
+			bytes[7 - i] = (byte) l;
+			l >>>= 8;
+		}
+		return bytes;
+	}
+
+	public boolean isCompact() {
+		return isCompact(this.precision);
+	}
+
+	public DecimalData copy() {
+		return new DecimalData(precision, scale, longVal, decimalVal);
+	}
+
 	@Override
 	public int hashCode() {
 		return toBigDecimal().hashCode();
 	}
 
 	@Override
-	public int compareTo(DecimalData that) {
-		if (this.isCompact() && that.isCompact() && this.scale == that.scale) {
+	public int compareTo(@Nonnull DecimalData that) {
+		if (isCompact(this.precision) && isCompact(that.precision) && this.scale == that.scale) {
 			return Long.compare(this.longVal, that.longVal);
 		}
 		return this.toBigDecimal().compareTo(that.toBigDecimal());
@@ -135,28 +180,9 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 		return toBigDecimal().toPlainString();
 	}
 
-	/**
-	 * Returns the signum function of this decimal.  (The return value is -1 if this decimal
-	 * is negative; 0 if this decimal is zero; and 1 if this decimal is positive.)
-	 *
-	 * @return the signum function of this decimal.
-	 */
-	public int signum() {
-		if (isCompact()) {
-			return Long.signum(longVal);
-		} else {
-			return decimalVal.signum();
-		}
-	}
-
-	// convert long to Decimal.
-	// long vlaue `l` must have at most `precision` digits.
-	// the decimal result is `l / POW10[scale]`
-	public static DecimalData fromLong(long l, int precision, int scale) {
-		checkArgument(precision > 0 && precision <= MAX_LONG_DIGITS);
-		checkArgument((l >= 0 ? l : -l) < POW10[precision]);
-		return new DecimalData(precision, scale, l, null);
-	}
+	// ------------------------------------------------------------------------------------------
+	// Constructor helper
+	// ------------------------------------------------------------------------------------------
 
 	// convert external BigDecimal to internal representation.
 	// first, value may be rounded to have the desired `scale`
@@ -174,41 +200,10 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 		return new DecimalData(precision, scale, longVal, bd);
 	}
 
-	public static DecimalData zero(int precision, int scale) {
-		if (precision <= MAX_COMPACT_PRECISION) {
-			return new DecimalData(precision, scale, 0, null);
-		} else {
-			return fromBigDecimal(BigDecimal.ZERO, precision, scale);
-		}
-	}
-
-	public DecimalData copy() {
-		return new DecimalData(precision, scale, longVal, decimalVal);
-	}
-
-	public long toUnscaledLong() {
-		assert isCompact();
-		return longVal;
-	}
-
 	public static DecimalData fromUnscaledLong(int precision, int scale, long longVal) {
-		assert isCompact(precision);
+		checkArgument(precision > 0 && precision <= MAX_LONG_DIGITS);
+		checkArgument((longVal >= 0 ? longVal : -longVal) < POW10[precision]);
 		return new DecimalData(precision, scale, longVal, null);
-	}
-
-	public byte[] toUnscaledBytes() {
-		if (!isCompact()) {
-			return toBigDecimal().unscaledValue().toByteArray();
-		}
-
-		// big endian; consistent with BigInteger.toByteArray()
-		byte[] bytes = new byte[8];
-		long l = longVal;
-		for (int i = 0; i < 8; i++) {
-			bytes[7 - i] = (byte) l;
-			l >>>= 8;
-		}
-		return bytes;
 	}
 
 	// we assume the bytes were generated by us from toUnscaledBytes()
@@ -226,267 +221,36 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 		return new DecimalData(precision, scale, l, null);
 	}
 
-	public double doubleValue() {
-		if (isCompact()) {
-			return ((double) longVal) / POW10[scale];
+	public static DecimalData zero(int precision, int scale) {
+		if (precision <= MAX_COMPACT_PRECISION) {
+			return new DecimalData(precision, scale, 0, null);
 		} else {
-			return decimalVal.doubleValue();
+			return fromBigDecimal(BigDecimal.ZERO, precision, scale);
 		}
 	}
 
-	public DecimalData negate() {
-		if (isCompact()) {
-			return new DecimalData(precision, scale, -longVal, null);
-		} else {
-			return new DecimalData(precision, scale, -1, decimalVal.negate());
-		}
+	// ------------------------------------------------------------------------------------------
+	// Utilities
+	// ------------------------------------------------------------------------------------------
+
+	public static boolean isCompact(int precision) {
+		return precision <= MAX_COMPACT_PRECISION;
 	}
 
-	public DecimalData abs() {
-		if (isCompact()) {
-			if (longVal >= 0) {
-				return this;
-			} else {
-				return new DecimalData(precision, scale, -longVal, null);
-			}
-		} else {
-			if (decimalVal.signum() >= 0) {
-				return this;
-			} else {
-				return new DecimalData(precision, scale, -1, decimalVal.negate());
-			}
-		}
-	}
+	// ------------------------------------------------------------------------------------------
+	// Package Visible Utilities
+	// ------------------------------------------------------------------------------------------
 
-	// floor()/ceil() preserve precision, but set scale to 0.
-	// note that result may exceed the original precision.
-
-	public DecimalData floor() {
-		BigDecimal bd = toBigDecimal().setScale(0, RoundingMode.FLOOR);
-		return fromBigDecimal(bd, bd.precision(), 0);
-	}
-
-	public DecimalData ceil() {
-		BigDecimal bd = toBigDecimal().setScale(0, RoundingMode.CEILING);
-		return fromBigDecimal(bd, bd.precision(), 0);
-	}
-
-	public int getPrecision() {
-		return precision;
-	}
-
-	public int getScale() {
-		return scale;
-	}
-
-	public static DecimalData add(DecimalData v1, DecimalData v2, int precision, int scale) {
-		if (v1.isCompact() && v2.isCompact() && v1.scale == v2.scale) {
-			assert scale == v1.scale; // no need to rescale
-			try {
-				long ls = Math.addExact(v1.longVal, v2.longVal); // checks overflow
-				return new DecimalData(precision, scale, ls, null);
-			} catch (ArithmeticException e) {
-				// overflow, fall through
-			}
-		}
-		BigDecimal bd = v1.toBigDecimal().add(v2.toBigDecimal());
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	public static DecimalData subtract(DecimalData v1, DecimalData v2, int precision, int scale) {
-		if (v1.isCompact() && v2.isCompact() && v1.scale == v2.scale) {
-			assert scale == v1.scale; // no need to rescale
-			try {
-				long ls = Math.subtractExact(v1.longVal, v2.longVal); // checks overflow
-				return new DecimalData(precision, scale, ls, null);
-			} catch (ArithmeticException e) {
-				// overflow, fall through
-			}
-		}
-		BigDecimal bd = v1.toBigDecimal().subtract(v2.toBigDecimal());
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	public static DecimalData multiply(DecimalData v1, DecimalData v2, int precision, int scale) {
-		BigDecimal bd = v1.toBigDecimal().multiply(v2.toBigDecimal());
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	public static DecimalData divide(DecimalData v1, DecimalData v2, int precision, int scale) {
-		BigDecimal bd = v1.toBigDecimal().divide(v2.toBigDecimal(), MC_DIVIDE);
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	public static DecimalData mod(DecimalData v1, DecimalData v2, int precision, int scale) {
-		BigDecimal bd = v1.toBigDecimal().remainder(v2.toBigDecimal(), MC_DIVIDE);
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	/**
-	 * Returns a {@code Decimal} whose value is the integer part
-	 * of the quotient {@code (this / divisor)} rounded down.
-	 *
-	 * @param  value value by which this {@code Decimal} is to be divided.
-	 * @param  divisor value by which this {@code Decimal} is to be divided.
-	 * @return The integer part of {@code this / divisor}.
-	 * @throws ArithmeticException if {@code divisor==0}
-	 */
-	public static DecimalData divideToIntegralValue(DecimalData value, DecimalData divisor, int precision, int scale) {
-		BigDecimal bd = value.toBigDecimal().divideToIntegralValue(divisor.toBigDecimal());
-		return fromBigDecimal(bd, precision, scale);
-	}
-
-	// cast decimal to integral or floating data types, by SQL standard.
-	// to cast to integer, rounding-DOWN is performed, and overflow will just return null.
-	// to cast to floats, overflow will not happen, because precision<=38.
-
-	public static long castToIntegral(DecimalData dec) {
-		BigDecimal bd = dec.toBigDecimal();
-		// rounding down. This is consistent with float=>int,
-		// and consistent with SQLServer, Spark.
-		bd = bd.setScale(0, RoundingMode.DOWN);
-		return bd.longValue();
-	}
-
-	public static long castToLong(DecimalData dec) {
-		return castToIntegral(dec);
-	}
-
-	public static int castToInt(DecimalData dec) {
-		return (int) castToIntegral(dec);
-	}
-
-	public static short castToShort(DecimalData dec) {
-		return (short) castToIntegral(dec);
-	}
-
-	public static byte castToByte(DecimalData dec) {
-		return (byte) castToIntegral(dec);
-	}
-
-	public static float castToFloat(DecimalData dec) {
-		return (float) dec.doubleValue();
-	}
-
-	public static double castToDouble(DecimalData dec) {
-		return dec.doubleValue();
-	}
-
-	public static DecimalData castToDecimal(DecimalData dec, int precision, int scale) {
-		return fromBigDecimal(dec.toBigDecimal(), precision, scale);
-	}
-
-	public static boolean castToBoolean(DecimalData dec) {
-		return dec.toBigDecimal().compareTo(BigDecimal.ZERO) != 0;
-	}
-
-	public static long castToTimestamp(DecimalData dec) {
-		return (long) (dec.doubleValue() * 1000);
-	}
-
-	public static DecimalData castFrom(DecimalData dec, int precision, int scale) {
-		return fromBigDecimal(dec.toBigDecimal(), precision, scale);
-	}
-
-	public static DecimalData castFrom(String string, int precision, int scale) {
-		return fromBigDecimal(new BigDecimal(string), precision, scale);
-	}
-
-	public static DecimalData castFrom(double val, int p, int s) {
-		return fromBigDecimal(BigDecimal.valueOf(val), p, s);
-	}
-
-	public static DecimalData castFrom(long val, int p, int s) {
-		return fromBigDecimal(BigDecimal.valueOf(val), p, s);
-	}
-
-	public static DecimalData castFrom(boolean val, int p, int s) {
-		return fromBigDecimal(BigDecimal.valueOf((val ? 1 : 0)), p, s);
-	}
-
-	/**
-	 * SQL <code>SIGN</code> operator applied to BigDecimal values.
-	 * preserve precision and scale.
-	 */
-	public static DecimalData sign(DecimalData b0) {
-		if (b0.isCompact()) {
-			return new DecimalData(b0.precision, b0.scale, b0.signum() * POW10[b0.scale], null);
-		} else {
-			return fromBigDecimal(BigDecimal.valueOf(b0.signum()), b0.precision, b0.scale);
-		}
-	}
-
-	public static int compare(DecimalData b1, DecimalData b2){
-		return b1.compareTo(b2);
-	}
-
-	public static int compare(DecimalData b1, long n2) {
-		if (!b1.isCompact()) {
-			return b1.decimalVal.compareTo(BigDecimal.valueOf(n2));
-		}
-		if (b1.scale == 0) {
-			return Long.compare(b1.longVal, n2);
-		}
-
-		long i1 = b1.longVal / POW10[b1.scale];
-		if (i1 == n2) {
-			long l2 = n2 * POW10[b1.scale]; // won't overflow
-			return Long.compare(b1.longVal, l2);
-		} else {
-			return i1 > n2 ? +1 : -1;
-		}
-	}
-
-	public static int compare(DecimalData b1, double n2) {
-		return Double.compare(b1.doubleValue(), n2);
-	}
-
-	public static int compare(long n1, DecimalData b2) {
-		return -compare(b2, n1);
-	}
-
-	public static int compare(double n1, DecimalData b2) {
-		return -compare(b2, n1);
-	}
-
-	/**
-	 * SQL <code>ROUND</code> operator applied to BigDecimal values.
-	 */
-	public static DecimalData sround(DecimalData b0, int r) {
-		if (r >= b0.scale) {
-			return b0;
-		}
-
-		BigDecimal b2 = b0.toBigDecimal().movePointRight(r)
-				.setScale(0, RoundingMode.HALF_UP)
-				.movePointLeft(r);
-		int p = b0.precision;
-		int s = b0.scale;
-		if (r < 0) {
-			return fromBigDecimal(b2, Math.min(38, 1 + p - s), 0);
-		} else {  // 0 <= r < s
-			return fromBigDecimal(b2, 1 + p - s + r, r);
-		}
-	}
-
-	public static boolean is32BitDecimal(int precision) {
-		return precision <= MAX_INT_DIGITS;
-	}
-
-	public static boolean is64BitDecimal(int precision) {
-		return precision <= MAX_LONG_DIGITS && precision > MAX_INT_DIGITS;
-	}
-
-	public static boolean isByteArrayDecimal(int precision) {
-		return precision > MAX_LONG_DIGITS;
-	}
-
-	static DecimalData readDecimalFieldFromSegments(MemorySegment[] segments, int baseOffset,
-													long offsetAndSize, int precision, int scale) {
+	static DecimalData readDecimalFieldFromSegments(
+		MemorySegment[] segments,
+		int baseOffset,
+		long offsetAndSize,
+		int precision,
+		int scale) {
 		final int size = ((int) offsetAndSize);
 		int subOffset = (int) (offsetAndSize >> 32);
 		byte[] bytes = new byte[size];
 		SegmentsUtil.copyToBytes(segments, baseOffset + subOffset, bytes, 0, size);
-		return DecimalData.fromUnscaledBytes(precision, scale, bytes);
+		return fromUnscaledBytes(precision, scale, bytes);
 	}
 }

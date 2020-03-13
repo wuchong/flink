@@ -207,7 +207,7 @@ public final class BinaryArrayData extends BinarySection implements ArrayData {
 		assertIndexIsValid(pos);
 		int fieldOffset = getElementOffset(pos, 8);
 		final long offsetAndSize = SegmentsUtil.getLong(segments, fieldOffset);
-		return BinaryRawValueData.fromAddress(segments, offset, offsetAndSize);
+		return BinaryRawValueData.readRawValueFieldFromSegments(segments, offset, offsetAndSize);
 	}
 
 	@Override

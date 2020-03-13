@@ -104,7 +104,7 @@ public final class BinaryRawValueData<T> extends LazyBinaryFormat<T>
 		}
 	}
 
-	static <T> BinaryRawValueData<T> fromAddress(
+	static <T> BinaryRawValueData<T> readRawValueFieldFromSegments(
 		MemorySegment[] segments, int baseOffset, long offsetAndSize) {
 		final int size = ((int) offsetAndSize);
 		int offset = (int) (offsetAndSize >> 32);

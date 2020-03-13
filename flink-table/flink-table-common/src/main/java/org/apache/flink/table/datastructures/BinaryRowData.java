@@ -353,7 +353,7 @@ public final class BinaryRowData extends BinarySection implements RowData, Typed
 	@Override
 	public <T> RawValueData<T> getGeneric(int pos) {
 		assertIndexIsValid(pos);
-		return BinaryRawValueData.fromAddress(segments, offset, getLong(pos));
+		return BinaryRawValueData.readRawValueFieldFromSegments(segments, offset, getLong(pos));
 	}
 
 	@Override

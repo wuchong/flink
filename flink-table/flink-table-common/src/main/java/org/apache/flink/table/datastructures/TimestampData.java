@@ -227,15 +227,19 @@ public final class TimestampData implements Comparable<TimestampData>, Serializa
 		return precision <= 3;
 	}
 
+	// ------------------------------------------------------------------------------------------
+	// Package Visible Utilities
+	// ------------------------------------------------------------------------------------------
+
 	/**
-	 * Obtains an instance of {@code SqlTimestamp} from underlying {@link MemorySegment}.
+	 * Obtains an instance of {@code TimestampData} from underlying {@link MemorySegment}.
 	 *
 	 * @param segments the underlying MemorySegments
 	 * @param baseOffset the base offset of current instance of {@code SqlTimestamp}
 	 * @param offsetAndNanos the offset of millseconds part and nanoseconds
 	 * @return an instance of {@code SqlTimestamp}
 	 */
-	public static TimestampData readTimestampFieldFromSegments(
+	static TimestampData readTimestampFieldFromSegments(
 			MemorySegment[] segments, int baseOffset, long offsetAndNanos) {
 		final int nanoOfMillisecond = (int) offsetAndNanos;
 		final int subOffset = (int) (offsetAndNanos >> 32);
