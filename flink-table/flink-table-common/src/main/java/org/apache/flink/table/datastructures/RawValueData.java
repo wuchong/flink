@@ -25,9 +25,9 @@ import org.apache.flink.table.types.logical.RawType;
 import java.io.Serializable;
 
 /**
- * {@link RawValueData} is a data structure represents data of type {@link RawType}
- * in table internal implementation. This class is used to encapsulate "raw value",
- * the "raw value" might be in binary format, i.e. byte[], or in Java object.
+ * {@link RawValueData} is a data structure represents data of {@link RawType} in Flink Table/SQL.
+ *
+ * @param <T> originating class for the raw value
  */
 @PublicEvolving
 public interface RawValueData<T> extends Serializable {

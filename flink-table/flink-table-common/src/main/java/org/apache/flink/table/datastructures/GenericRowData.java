@@ -22,10 +22,10 @@ import org.apache.flink.annotation.PublicEvolving;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
- * A GenericRow can have arbitrary number of fields and contain a set of fields, which may all be
- * different types. The fields in GenericRow can be null.
+ * A {@link GenericRowData} can have arbitrary number of fields and contain a set of fields,
+ * which may all be different types. The fields in {@link GenericRowData} can be null.
  *
- * <p>The fields in the Row can be accessed by position (zero-based) {@link #getInt}.
+ * <p>The fields in the row can be accessed by position (zero-based) {@link #getInt}.
  * And can update fields by {@link #setField(int, Object)}.
  *
  * <p>GenericRow is Java serializable, and all internal data formats are Java serializable. However,

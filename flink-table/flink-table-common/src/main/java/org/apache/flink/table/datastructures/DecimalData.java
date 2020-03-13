@@ -19,6 +19,7 @@ package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.core.memory.MemorySegment;
+import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.utils.SegmentsUtil;
 
 import javax.annotation.Nonnull;
@@ -31,8 +32,10 @@ import java.math.RoundingMode;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * Sql Decimal value. A mutable implementation of BigDecimal that can hold a Long if values
- * are small enough.
+ * {@link DecimalData} is an internal data structure represents data of {@link DecimalType}
+ * in Flink Table/SQL.
+ *
+ * <p>It is an immutable implementation which can hold a long if values are small enough.
  *
  * <p>The semantics of the fields are as follows:
  * - precision and scale represent the SQL precision and scale we are looking for
@@ -145,6 +148,9 @@ public final class DecimalData implements Comparable<DecimalData>, Serializable 
 		return bytes;
 	}
 
+	/**
+	 * Returns whether the decimal data is small enough to be stored in a long.
+	 */
 	public boolean isCompact() {
 		return isCompact(this.precision);
 	}

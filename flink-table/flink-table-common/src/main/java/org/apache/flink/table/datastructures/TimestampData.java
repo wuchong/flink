@@ -20,6 +20,9 @@ package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.core.memory.MemorySegment;
+import org.apache.flink.table.types.logical.LocalZonedTimestampType;
+import org.apache.flink.table.types.logical.TimestampType;
+import org.apache.flink.table.types.logical.VarCharType;
 import org.apache.flink.table.utils.SegmentsUtil;
 import org.apache.flink.util.Preconditions;
 
@@ -31,11 +34,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * Immutable SQL TIMESTAMP and TIMESTAMP_WITH_LOCAL_TIME_ZONE with nanosecond precision.
+ * {@link TimestampData} is an internal data structure represents data of {@link TimestampType}
+ * and {@link LocalZonedTimestampType} in Flink Table/SQL.
  *
- * <p>This class is composite of a millisecond and nanoOfMillisecond. The millisecond part
- * holds the integral second and the milli-of-second. The nanoOfMillisecond holds the
- * nano-of-millisecond, which should between 0 - 999_999.
+ * <p>It is an immutable implementation which is composite of a millisecond and nanoOfMillisecond
+ * since epoch.
  */
 @PublicEvolving
 public final class TimestampData implements Comparable<TimestampData>, Serializable {

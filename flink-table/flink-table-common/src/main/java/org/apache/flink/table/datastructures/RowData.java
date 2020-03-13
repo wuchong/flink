@@ -18,25 +18,25 @@
 package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.VarCharType;
 
 import java.io.Serializable;
 
 /**
- * An interface for row used internally in Flink Table/SQL, which only contains the columns as
- * internal types.
+ * {@link RowData} is an internal data structure representing data of {@link RowType}
+ * in Flink Table/SQL, which only contains columns of the internal data structures.
  *
- * <p>A {@link RowData} also contains {@link RowKind} which is a metadata information of
- * this row, not a column of this row. The {@link RowKind} represents the changelog operation
- * kind: INSERT/DELETE/UPDATE_BEFORE/UPDATE_AFTER.
+ * <p>A {@link RowData} also contains a {@link RowKind} which represents the kind of row in
+ * a changelog. The {@link RowKind} is just a metadata information of row, not a column.
  *
- * <p>TODO: add a list and description for all internal formats
- *
- * <p>There are different implementations depending on the scenario. For example, the binary-orient
- * implementation {@link BinaryRowData} and the object-orient implementation {@link GenericRowData}. All
- * the different implementations have the same binary format after serialization.
- *
- * <p>{@code BaseRow}s are influenced by Apache Spark InternalRows.
+ * <p>{@link RowData} has different implementations which are designed for different scenarios.
+ * For example, the binary-orient implementation {@link BinaryRowData} is backed by
+ * {@link MemorySegment} instead of Object to reduce serialization/deserialization cost.
+ * The object-orient implementation {@link GenericRowData} is backed by an array of Object
+ * which is easy to construct and efficient to update.
  */
 @PublicEvolving
 public interface RowData extends TypedGetters, Serializable {

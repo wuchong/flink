@@ -19,12 +19,14 @@
 package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 
 import java.io.Serializable;
 
 /**
- * An interface for array used internally in Flink Table/SQL.
+ * {@link ArrayData} is an internal data structure represents data of {@link ArrayType}
+ * in Flink Table/SQL, which only contains elements of the internal data structures.
  *
  * <p>There are different implementations depending on the scenario:
  * After serialization, it becomes the {@link BinaryArrayData} format.

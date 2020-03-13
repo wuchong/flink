@@ -20,12 +20,14 @@ package org.apache.flink.table.datastructures;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.MapType;
+import org.apache.flink.table.types.logical.VarCharType;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /**
- * An interface for map used internally in Flink Table/SQL.
+ * {@link MapData} is an internal data structure represents data of {@link MapType} in Flink Table/SQL.
  *
  * <p>There are different implementations depending on the scenario:
  * After serialization, it becomes the {@link BinaryMapData} format.

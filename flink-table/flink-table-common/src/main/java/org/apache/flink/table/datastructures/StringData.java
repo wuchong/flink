@@ -24,8 +24,8 @@ import org.apache.flink.table.types.logical.CharType;
 import java.io.Serializable;
 
 /**
- * {@link StringData} is a data structure represents data of type {@link VarCharType} and {@link CharType}
- * in table internal implementation.
+ * {@link StringData} is an internal data structure represents data of {@link VarCharType}
+ * and {@link CharType} in Flink Table/SQL.
  */
 @PublicEvolving
 public interface StringData extends Comparable<StringData>, Serializable {

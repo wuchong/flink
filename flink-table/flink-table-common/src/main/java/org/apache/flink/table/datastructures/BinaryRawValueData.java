@@ -31,6 +31,10 @@ import java.io.Serializable;
 
 /**
  * Internal format for raw values.
+ *
+ * <p>This class is used to encapsulate "raw value", the "raw value" might be in binary format,
+ * i.e. byte[], or in Java object.
+ *
  * @param <T> the java type of the raw value.
  */
 @Internal
