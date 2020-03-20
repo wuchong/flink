@@ -54,7 +54,7 @@ class StreamExecGroupWindowTableAggregate(
     namedProperties,
     inputTimeFieldIndex,
     emitStrategy,
-    "TableAggregate") {
+    "Table Aggregation") {
 
   if (emitStrategy.produceUpdates) {
     throw new TableException("Emit strategy has not been supported for Table Aggregate!")

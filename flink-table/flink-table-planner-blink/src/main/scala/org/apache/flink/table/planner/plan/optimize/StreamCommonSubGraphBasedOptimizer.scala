@@ -18,28 +18,27 @@
 
 package org.apache.flink.table.planner.plan.optimize
 
+import org.apache.calcite.rel.RelNode
+import org.apache.calcite.rel.core.TableScan
+import org.apache.calcite.rex.RexBuilder
 import org.apache.flink.table.api.TableConfig
 import org.apache.flink.table.api.config.ExecutionConfigOptions
 import org.apache.flink.table.catalog.{CatalogManager, FunctionCatalog}
 import org.apache.flink.table.planner.calcite.{FlinkContext, SqlExprToRexConverterFactory}
 import org.apache.flink.table.planner.delegation.StreamPlanner
-import org.apache.flink.table.planner.plan.`trait`.{AccMode, AccModeTraitDef, MiniBatchInterval, MiniBatchIntervalTrait, MiniBatchIntervalTraitDef, MiniBatchMode, UpdateAsRetractionTraitDef}
+import org.apache.flink.table.planner.plan.`trait`._
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 import org.apache.flink.table.planner.plan.nodes.calcite.Sink
 import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamExecDataStreamScan, StreamExecIntermediateTableScan, StreamPhysicalRel}
 import org.apache.flink.table.planner.plan.optimize.program.{FlinkStreamProgram, StreamOptimizeContext}
 import org.apache.flink.table.planner.plan.schema.IntermediateRelTable
 import org.apache.flink.table.planner.plan.stats.FlinkStatistic
-import org.apache.flink.table.planner.plan.utils.FlinkRelOptUtil
+import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, FlinkRelOptUtil}
 import org.apache.flink.table.planner.sinks.DataStreamTableSink
 import org.apache.flink.table.planner.utils.TableConfigUtils
 import org.apache.flink.table.planner.utils.TableConfigUtils.getMillisecondFromConfigDuration
 import org.apache.flink.table.sinks.RetractStreamTableSink
 import org.apache.flink.util.Preconditions
-
-import org.apache.calcite.rel.RelNode
-import org.apache.calcite.rel.core.TableScan
-import org.apache.calcite.rex.RexBuilder
 
 import java.util
 import java.util.Collections
@@ -62,11 +61,11 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
         case n: Sink =>
           n.sink match {
             case _: RetractStreamTableSink[_] => true
-            case s: DataStreamTableSink[_] => s.updatesAsRetraction
+            case s: DataStreamTableSink[_] => s.requestBeforeImageOfUpdate
             case _ => false
           }
         case o =>
-          o.getTraitSet.getTrait(UpdateAsRetractionTraitDef.INSTANCE).sendsUpdatesAsRetractions
+          o.getTraitSet.getTrait(SendBeforeImageForUpdatesTraitDef.INSTANCE).sendBeforeImageForUpdates
       }
       sinkBlock.setUpdateAsRetraction(retractionFromRoot)
       val miniBatchInterval: MiniBatchInterval = if (config.getConfiguration.getBoolean(
@@ -89,7 +88,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
       val block = sinkBlocks.head
       val optimizedTree = optimizeTree(
         block.getPlan,
-        block.isUpdateAsRetraction,
+        block.requestBeforeImageOfUpdate,
         block.getMiniBatchInterval,
         isSinkBlock = true)
       block.setOptimizedPlan(optimizedTree)
@@ -98,7 +97,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
 
     // infer updateAsRetraction property and miniBatchInterval property for all input blocks
     sinkBlocks.foreach(b => inferTraits(
-      b, b.isUpdateAsRetraction, b.getMiniBatchInterval, isSinkBlock = true))
+      b, b.requestBeforeImageOfUpdate, b.getMiniBatchInterval, isSinkBlock = true))
     // propagate updateAsRetraction property and miniBatchInterval property to all input blocks
     sinkBlocks.foreach(propagateTraits(_, isSinkBlock = true))
     // clear the intermediate result
@@ -122,7 +121,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
         require(isSinkBlock)
         val optimizedTree = optimizeTree(
           s,
-          updatesAsRetraction = block.isUpdateAsRetraction,
+          requestUpdateBefore = block.requestBeforeImageOfUpdate,
           miniBatchInterval = block.getMiniBatchInterval,
           isSinkBlock = true)
         block.setOptimizedPlan(optimizedTree)
@@ -130,13 +129,12 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
       case o =>
         val optimizedPlan = optimizeTree(
           o,
-          updatesAsRetraction = block.isUpdateAsRetraction,
+          requestUpdateBefore = block.requestBeforeImageOfUpdate,
           miniBatchInterval = block.getMiniBatchInterval,
           isSinkBlock = isSinkBlock)
-        val isAccRetract = optimizedPlan.getTraitSet
-          .getTrait(AccModeTraitDef.INSTANCE).getAccMode == AccMode.AccRetract
+        val changelogMode = ChangelogPlanUtils.getChangelogMode(optimizedPlan)
         val name = createUniqueIntermediateRelTableName
-        val intermediateRelTable = createIntermediateRelTable(name, optimizedPlan, isAccRetract)
+        val intermediateRelTable = createIntermediateRelTable(name, optimizedPlan, changelogMode)
         val newTableScan = wrapIntermediateRelTableToTableScan(intermediateRelTable, name)
         block.setNewOutputNode(newTableScan)
         block.setOutputTableName(name)
@@ -148,14 +146,14 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
     * Generates the optimized [[RelNode]] tree from the original relational node tree.
     *
     * @param relNode The root node of the relational expression tree.
-    * @param updatesAsRetraction True if request updates as retraction messages.
+    * @param requestUpdateBefore True if request before image of updates
     * @param miniBatchInterval mini-batch interval of the block.
     * @param isSinkBlock True if the given block is sink block.
     * @return The optimized [[RelNode]] tree
     */
   private def optimizeTree(
       relNode: RelNode,
-      updatesAsRetraction: Boolean,
+      requestUpdateBefore: Boolean,
       miniBatchInterval: MiniBatchInterval,
       isSinkBlock: Boolean): RelNode = {
 
@@ -180,11 +178,11 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
 
       override def getRexBuilder: RexBuilder = planner.getRelBuilder.getRexBuilder
 
-      override def updateAsRetraction: Boolean = updatesAsRetraction
-
       def getMiniBatchInterval: MiniBatchInterval = miniBatchInterval
 
       override def needFinalTimeIndicatorConversion: Boolean = true
+
+      override def requestBeforeImageOfUpdate: Boolean = requestUpdateBefore
     })
   }
 
@@ -227,7 +225,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
           o, retractionFromRoot, miniBatchInterval, isSinkBlock = isSinkBlock)
         val name = createUniqueIntermediateRelTableName
         val intermediateRelTable = createIntermediateRelTable(name, optimizedPlan,
-          isAccRetract = false)
+          ChangelogPlanUtils.INSERT_ONLY_MODE)
         val newTableScan = wrapIntermediateRelTableToTableScan(intermediateRelTable, name)
         block.setNewOutputNode(newTableScan)
         block.setOutputTableName(name)
@@ -246,12 +244,12 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
     // process current block
     def shipTraits(
         rel: RelNode,
-        updateAsRetraction: Boolean,
+        requestBeforeImageOfUpdate: Boolean,
         miniBatchInterval: MiniBatchInterval): Unit = {
       rel match {
         case _: StreamExecDataStreamScan | _: StreamExecIntermediateTableScan =>
           val scan = rel.asInstanceOf[TableScan]
-          val retractionTrait = scan.getTraitSet.getTrait(UpdateAsRetractionTraitDef.INSTANCE)
+          val emitUpdateBeforeTrait = scan.getTraitSet.getTrait(SendBeforeImageForUpdatesTraitDef.INSTANCE)
           val miniBatchIntervalTrait = scan.getTraitSet.getTrait(MiniBatchIntervalTraitDef.INSTANCE)
           val tableName = scan.getTable.getQualifiedName.mkString(".")
           val inputBlocks = block.children.filter(b => tableName.equals(b.getOutputTableName))
@@ -269,21 +267,22 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
               inputBlocks.head.getMiniBatchInterval,mergedInterval)
             inputBlocks.head.setMiniBatchInterval(newInterval)
 
-            if (retractionTrait.sendsUpdatesAsRetractions || updateAsRetraction) {
+            if (emitUpdateBeforeTrait.sendBeforeImageForUpdates || requestBeforeImageOfUpdate) {
               inputBlocks.head.setUpdateAsRetraction(true)
             }
           }
         case ser: StreamPhysicalRel => ser.getInputs.foreach { e =>
-          if (ser.needsUpdatesAsRetraction(e) || (updateAsRetraction && !ser.consumesRetractions)) {
-            shipTraits(e, updateAsRetraction = true, miniBatchInterval)
+          if (ser.requestBeforeImageOfUpdates(e) ||
+              (requestBeforeImageOfUpdate && ser.forwardChanges)) {
+            shipTraits(e, requestBeforeImageOfUpdate = true, miniBatchInterval)
           } else {
-            shipTraits(e, updateAsRetraction = false, miniBatchInterval)
+            shipTraits(e, requestBeforeImageOfUpdate = false, miniBatchInterval)
           }
         }
       }
     }
 
-    shipTraits(block.getOptimizedPlan, block.isUpdateAsRetraction, block.getMiniBatchInterval)
+    shipTraits(block.getOptimizedPlan, block.requestBeforeImageOfUpdate, block.getMiniBatchInterval)
     block.children.foreach(propagateTraits(_, isSinkBlock = false))
   }
 
@@ -307,7 +306,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
   private def createIntermediateRelTable(
       name: String,
       relNode: RelNode,
-      isAccRetract: Boolean): IntermediateRelTable = {
+      changelogMode: ChangelogMode): IntermediateRelTable = {
     val uniqueKeys = getUniqueKeys(relNode)
     val monotonicity = FlinkRelMetadataQuery
       .reuseOrCreate(planner.getRelBuilder.getCluster.getMetadataQuery)
@@ -316,7 +315,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
       .uniqueKeys(uniqueKeys)
       .relModifiedMonotonicity(monotonicity)
       .build()
-    new IntermediateRelTable(Collections.singletonList(name), relNode, isAccRetract, statistic)
+    new IntermediateRelTable(Collections.singletonList(name), relNode, changelogMode, statistic)
   }
 
   private def getUniqueKeys(relNode: RelNode): util.Set[_ <: util.Set[String]] = {

@@ -153,7 +153,7 @@ class RelNodeBlock(val outputNode: RelNode) {
     }
   }
 
-  def isUpdateAsRetraction: Boolean = updateAsRetract
+  def requestBeforeImageOfUpdate: Boolean = updateAsRetract
 
   def setMiniBatchInterval(miniBatchInterval: MiniBatchInterval): Unit = {
     this.miniBatchInterval = miniBatchInterval

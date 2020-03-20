@@ -18,6 +18,8 @@
 
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
+import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
+import org.apache.calcite.rel.RelNode
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
@@ -27,16 +29,13 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.SinkCodeGenerator.generateRowConverterOperator
 import org.apache.flink.table.planner.codegen.{CodeGenUtils, CodeGeneratorContext}
 import org.apache.flink.table.planner.delegation.StreamPlanner
-import org.apache.flink.table.planner.plan.`trait`.{AccMode, AccModeTraitDef}
 import org.apache.flink.table.planner.plan.nodes.calcite.Sink
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.UpdatingPlanChecker
+import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, UpdatingPlanChecker}
 import org.apache.flink.table.planner.sinks.DataStreamTableSink
 import org.apache.flink.table.runtime.typeutils.{BaseRowTypeInfo, TypeCheckUtils}
 import org.apache.flink.table.sinks._
 import org.apache.flink.table.types.logical.TimestampType
-import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
-import org.apache.calcite.rel.RelNode
 
 import java.util
 
@@ -55,14 +54,22 @@ class StreamExecSink[T](
   with StreamPhysicalRel
   with StreamExecNode[Any] {
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = false
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean =
+  override def produceDeletions: Boolean = false
+
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = {
     sink.isInstanceOf[RetractStreamTableSink[_]]
+  }
 
-  override def consumesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
 
-  override def producesRetractions: Boolean = false
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean =
+//    sink.isInstanceOf[RetractStreamTableSink[_]]
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -92,7 +99,7 @@ class StreamExecSink[T](
 
           case upsertSink: UpsertStreamTableSink[T] =>
             // check for append only table
-            val isAppendOnlyTable = UpdatingPlanChecker.isAppendOnly(this)
+            val isAppendOnlyTable = ChangelogPlanUtils.isInsertOnly(this)
             upsertSink.setIsAppendOnly(isAppendOnlyTable)
 
             // check that we have keys if the table has changes (is not append-only)
@@ -108,15 +115,15 @@ class StreamExecSink[T](
 
           case _: AppendStreamTableSink[T] =>
             // verify table is an insert-only (append-only) table
-            if (!UpdatingPlanChecker.isAppendOnly(this)) {
+            if (!ChangelogPlanUtils.isInsertOnly(this)) {
               throw new TableException(
                 "AppendStreamTableSink requires that Table has only insert changes.")
             }
 
-            val accMode = this.getTraitSet.getTrait(AccModeTraitDef.INSTANCE).getAccMode
-            if (accMode == AccMode.AccRetract) {
+            val isInsertOnly = ChangelogPlanUtils.isInsertOnly(this)
+            if (!isInsertOnly) {
               throw new TableException(
-                "AppendStreamTableSink can not be used to output retraction messages.")
+                "AppendStreamTableSink can not be used to output update/delete messages.")
             }
             translateToTransformation(withChangeFlag = false, planner)
 
@@ -160,7 +167,7 @@ class StreamExecSink[T](
     val config = planner.getTableConfig
     val inputNode = getInput
     // if no change flags are requested, verify table is an insert-only (append-only) table.
-    if (!withChangeFlag && !UpdatingPlanChecker.isAppendOnly(inputNode)) {
+    if (!withChangeFlag && !ChangelogPlanUtils.isInsertOnly(inputNode)) {
       throw new TableException(
         "Table is not an append-only table. " +
           "Use the toRetractStream() in order to handle add and retract messages.")

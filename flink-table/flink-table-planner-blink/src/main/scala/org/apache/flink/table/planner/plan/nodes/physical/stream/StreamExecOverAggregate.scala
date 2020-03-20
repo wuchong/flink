@@ -29,13 +29,11 @@ import org.apache.flink.table.planner.codegen.CodeGeneratorContext
 import org.apache.flink.table.planner.codegen.agg.AggsHandlerCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.AggregateUtil.transformToStreamAggregateInfoList
 import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, OverAggregateUtil, RelExplainUtil}
 import org.apache.flink.table.runtime.operators.over._
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelOptCost, RelOptPlanner, RelTraitSet}
 import org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING
 import org.apache.calcite.rel.`type`.RelDataType
@@ -45,6 +43,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex.RexLiteral
 import org.apache.calcite.tools.RelBuilder
+import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 
 import java.util
 
@@ -64,13 +63,13 @@ class StreamExecOverAggregate(
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = false
 
-  override def needsUpdatesAsRetraction(input: RelNode) = true
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions = true
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
 
   override def requireWatermark: Boolean = {
     if (logicWindow.groups.size() != 1
@@ -147,6 +146,9 @@ class StreamExecOverAggregate(
 
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
+
+    validateInputStreamIsInsertOnly(this, "Over Aggregation")
+
     val tableConfig = planner.getTableConfig
 
     if (logicWindow.groups.size > 1) {
@@ -171,14 +173,6 @@ class StreamExecOverAggregate(
 
     val inputDS = getInputNodes.get(0).translateToPlan(planner)
       .asInstanceOf[Transformation[BaseRow]]
-
-    val inputIsAccRetract = StreamExecRetractionRules.isAccRetract(input)
-
-    if (inputIsAccRetract) {
-      throw new TableException(
-          "Retraction on Over window aggregation is not supported yet. " +
-            "Note: Over window aggregation should not follow a non-windowed GroupBy aggregation.")
-    }
 
     if (!logicWindow.groups.get(0).keys.isEmpty && tableConfig.getMinIdleStateRetentionTime < 0) {
       LOG.warn(

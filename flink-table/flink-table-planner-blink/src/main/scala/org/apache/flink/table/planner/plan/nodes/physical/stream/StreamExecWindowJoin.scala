@@ -29,19 +29,19 @@ import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{JoinTypeUtil, KeySelectorUtil, UpdatingPlanChecker, WindowJoinUtil}
+import org.apache.flink.table.planner.plan.utils.{JoinTypeUtil, KeySelectorUtil, WindowJoinUtil}
 import org.apache.flink.table.planner.plan.utils.PythonUtil.containsPythonCall
 import org.apache.flink.table.planner.plan.utils.RelExplainUtil.preferExpressionFormat
 import org.apache.flink.table.runtime.generated.GeneratedFunction
 import org.apache.flink.table.runtime.operators.join.{FlinkJoinType, KeyedCoProcessOperatorWithWatermarkDelay, OuterJoinPaddingUtil, ProcTimeBoundedStreamJoin, RowTimeBoundedStreamJoin}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
 import org.apache.flink.util.Collector
-
 import org.apache.calcite.plan._
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.{JoinInfo, JoinRelType}
 import org.apache.calcite.rel.{BiRel, RelNode, RelWriter}
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 
 import java.util
 
@@ -77,13 +77,20 @@ class StreamExecWindowJoin(
   // TODO remove FlinkJoinType
   private lazy val flinkJoinType: FlinkJoinType = JoinTypeUtil.getFlinkJoinType(joinType)
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = false
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  /** Doesn't support updating inputs */
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = isRowTime
 
@@ -131,13 +138,8 @@ class StreamExecWindowJoin(
 
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
-    val isLeftAppendOnly = UpdatingPlanChecker.isAppendOnly(left)
-    val isRightAppendOnly = UpdatingPlanChecker.isAppendOnly(right)
-    if (!isLeftAppendOnly || !isRightAppendOnly) {
-      throw new TableException(
-        "Window Join: Windowed stream join does not support updates.\n" +
-          "please re-check window join statement according to description above.")
-    }
+
+    validateInputStreamIsInsertOnly(this, "Window Join")
 
     val leftPlan = getInputNodes.get(0).translateToPlan(planner)
       .asInstanceOf[Transformation[BaseRow]]

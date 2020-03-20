@@ -16,23 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.planner.plan.optimize.program
-
-import org.apache.flink.table.planner.plan.`trait`.UpdateAsRetractionTrait
-
-import org.apache.calcite.rel.RelNode
+package org.apache.flink.table.dataformat;
 
 /**
-  * A [[FlinkOptimizeProgram]] that does some initialization be for retraction inference.
-  */
-class FlinkUpdateAsRetractionTraitInitProgram extends FlinkOptimizeProgram[StreamOptimizeContext] {
+ * A kind of row in a changelog.
+ */
+public enum RowKind {
 
-  override def optimize(root: RelNode, context: StreamOptimizeContext): RelNode = {
-    if (context.updateAsRetraction) {
-      val newTraitSet = root.getTraitSet.plus(UpdateAsRetractionTrait(true))
-      root.copy(newTraitSet, root.getInputs)
-    } else {
-      root
-    }
-  }
+	/**
+	 * Insertion operation.
+	 */
+	INSERT,
+
+	/**
+	 * Previous content of an updated row.
+	 */
+	UPDATE_BEFORE,
+
+	/**
+	 * New content of an updated row.
+	 */
+	UPDATE_AFTER,
+
+	/**
+	 * Deletion operation.
+	 */
+	DELETE
 }

@@ -59,11 +59,13 @@ class StreamExecJoin(
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
 
-  override def producesUpdates: Boolean = {
+  override def produceUpdates: Boolean = {
     flinkJoinType != FlinkJoinType.INNER && flinkJoinType != FlinkJoinType.SEMI
   }
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+  override def produceDeletions: Boolean = produceUpdates
+
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = {
     def getCurrentRel(rel: RelNode): RelNode = {
       rel match {
         case _: HepRelVertex => rel.asInstanceOf[HepRelVertex].getCurrentRel
@@ -88,15 +90,42 @@ class StreamExecJoin(
     }
   }
 
-  override def consumesRetractions: Boolean = false
+  override def forwardChanges: Boolean = true
 
-  override def producesRetractions: Boolean = {
-    flinkJoinType match {
-      case FlinkJoinType.FULL | FlinkJoinType.RIGHT | FlinkJoinType.LEFT => true
-      case FlinkJoinType.ANTI => true
-      case _ => false
-    }
-  }
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+//    def getCurrentRel(rel: RelNode): RelNode = {
+//      rel match {
+//        case _: HepRelVertex => rel.asInstanceOf[HepRelVertex].getCurrentRel
+//        case _ => rel
+//      }
+//    }
+//
+//    val realInput = getCurrentRel(input)
+//    val inputUniqueKeys = getCluster.getMetadataQuery.getUniqueKeys(realInput)
+//    if (inputUniqueKeys != null) {
+//      val joinKeys = if (input == getCurrentRel(getLeft)) {
+//        keyPairs.map(_.source).toArray
+//      } else {
+//        keyPairs.map(_.target).toArray
+//      }
+//      val pkContainJoinKey = inputUniqueKeys.exists {
+//        uniqueKey => joinKeys.forall(uniqueKey.toArray.contains(_))
+//      }
+//      if (pkContainJoinKey) false else true
+//    } else {
+//      true
+//    }
+//  }
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = {
+//    flinkJoinType match {
+//      case FlinkJoinType.FULL | FlinkJoinType.RIGHT | FlinkJoinType.LEFT => true
+//      case FlinkJoinType.ANTI => true
+//      case _ => false
+//    }
+//  }
 
   override def requireWatermark: Boolean = false
 

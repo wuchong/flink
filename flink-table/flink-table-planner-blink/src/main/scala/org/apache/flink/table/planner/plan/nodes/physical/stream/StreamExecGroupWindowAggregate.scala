@@ -54,7 +54,7 @@ class StreamExecGroupWindowAggregate(
     namedProperties,
     inputTimeFieldIndex,
     emitStrategy,
-    "Aggregate") {
+    "Aggregation") {
 
   override def copy(traitSet: RelTraitSet, inputs: java.util.List[RelNode]): RelNode = {
     new StreamExecGroupWindowAggregate(

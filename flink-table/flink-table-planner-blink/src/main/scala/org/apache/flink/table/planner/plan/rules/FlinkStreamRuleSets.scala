@@ -408,14 +408,10 @@ object FlinkStreamRuleSets {
     StreamExecSinkRule.INSTANCE
   )
 
-  /**
-    * RuleSet for retraction inference.
-    */
-  val RETRACTION_RULES: RuleSet = RuleSets.ofList(
-    // retraction rules
-    StreamExecRetractionRules.DEFAULT_RETRACTION_INSTANCE,
-    StreamExecRetractionRules.UPDATES_AS_RETRACTION_INSTANCE,
-    StreamExecRetractionRules.ACCMODE_INSTANCE
+  val CHANGELOG_MODE_RULES: RuleSet = RuleSets.ofList(
+    ChangelogModeInferRules.PROPAGATE_CHANGELOG_MODE_INSTANCE,
+    ChangelogModeInferRules.PROPAGATE_EMIT_UPDATE_BEFORE_INSTANCE,
+    ChangelogModeInferRules.FINALIZE_CHANGELOG_MODE_INSTANCE
   )
 
   /**

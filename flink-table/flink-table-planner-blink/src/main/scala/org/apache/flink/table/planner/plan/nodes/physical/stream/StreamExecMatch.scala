@@ -38,15 +38,14 @@ import org.apache.flink.table.planner.codegen.{CodeGeneratorContext, MatchCodeGe
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.logical.MatchRecognize
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.PythonUtil.containsPythonCall
 import org.apache.flink.table.planner.plan.utils.RelExplainUtil._
-import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, RexDefaultVisitor, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, KeySelectorUtil, RexDefaultVisitor, SortUtil}
+import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 import org.apache.flink.table.runtime.operators.`match`.{BaseRowEventComparator, RowtimeProcessFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
 import org.apache.flink.table.types.logical.RowType
 import org.apache.flink.util.MathUtils
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.RelFieldCollation.Direction
 import org.apache.calcite.rel._
@@ -81,13 +80,19 @@ class StreamExecMatch(
     throw new TableException("Python Function can not be used in MATCH_RECOGNIZE for now.")
   }
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = true
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = true
+//
+//  override def consumesRetractions = true
+//
+//  override def producesRetractions: Boolean = false
 
-  override def consumesRetractions = true
+  override def produceUpdates: Boolean = false
 
-  override def producesRetractions: Boolean = false
+  override def produceDeletions: Boolean = false
 
-  override def producesUpdates: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
+
+  override def forwardChanges: Boolean = false
 
   override def requireWatermark: Boolean = {
     val rowtimeFields = getInput.getRowType.getFieldList
@@ -168,13 +173,7 @@ class StreamExecMatch(
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
 
-    val inputIsAccRetract = StreamExecRetractionRules.isAccRetract(getInput)
-
-    if (inputIsAccRetract) {
-      throw new TableException(
-        "Retraction on match recognize is not supported. " +
-          "Note: Match recognize should not follow a non-windowed GroupBy aggregation.")
-    }
+    validateInputStreamIsInsertOnly(this, "MATCH RECOGNIZE")
 
     val config = planner.getTableConfig
     val relBuilder = planner.getRelBuilder

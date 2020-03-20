@@ -17,6 +17,10 @@
  */
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
+import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
+import org.apache.calcite.rel._
+import org.apache.calcite.rel.core.Sort
+import org.apache.calcite.rex.RexNode
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
@@ -27,17 +31,10 @@ import org.apache.flink.table.planner.codegen.EqualiserCodeGenerator
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
-import org.apache.flink.table.planner.plan.utils.RelExplainUtil._
-import org.apache.flink.table.planner.plan.utils.{RelExplainUtil, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, RelExplainUtil, SortUtil}
 import org.apache.flink.table.runtime.keyselector.NullBinaryRowKeySelector
 import org.apache.flink.table.runtime.operators.rank.{AppendOnlyTopNFunction, ConstantRankRange, RankType, RetractableTopNFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
-import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
-import org.apache.calcite.rel._
-import org.apache.calcite.rel.core.Sort
-import org.apache.calcite.rex.RexNode
 
 import java.util
 
@@ -67,13 +64,26 @@ class StreamExecLimit(
   private lazy val limitStart: Long = SortUtil.getLimitStart(offset)
   private lazy val limitEnd: Long = SortUtil.getLimitEnd(offset, fetch)
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = {
+    if (ChangelogPlanUtils.isInsertOnly(getInput)) {
+      // insert-only input and order by processing time, so no updates produced
+      false
+    } else {
+      true
+    }
+  }
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = produceUpdates
 
-  override def consumesRetractions: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -112,7 +122,8 @@ class StreamExecLimit(
     }
     val inputRowTypeInfo = BaseRowTypeInfo.of(
       FlinkTypeFactory.toLogicalRowType(getInput.getRowType))
-    val generateRetraction = StreamExecRetractionRules.isAccRetract(this)
+    val consumeRetraction = ChangelogPlanUtils.containsRetraction(getInput)
+    val generateUpdateBefore = ChangelogPlanUtils.containsUpdateBefore(this)
     val tableConfig = planner.getTableConfig
     val minIdleStateRetentionTime = tableConfig.getMinIdleStateRetentionTime
     val maxIdleStateRetentionTime = tableConfig.getMaxIdleStateRetentionTime
@@ -126,7 +137,7 @@ class StreamExecLimit(
     val sortKeyComparator = ComparatorCodeGenerator.gen(
       tableConfig, "AlwaysEqualsComparator", Array(), Array(), Array(), Array())
 
-    val processFunction = if (generateRetraction) {
+    val processFunction = if (!consumeRetraction) {
       val cacheSize = tableConfig.getConfiguration.getLong(
         StreamExecRank.TABLE_EXEC_TOPN_CACHE_SIZE)
       new AppendOnlyTopNFunction(
@@ -137,7 +148,7 @@ class StreamExecLimit(
         sortKeySelector,
         rankType,
         rankRange,
-        generateRetraction,
+        generateUpdateBefore,
         outputRankNumber,
         cacheSize)
     } else {
@@ -152,7 +163,7 @@ class StreamExecLimit(
         rankType,
         rankRange,
         generatedEqualiser,
-        generateRetraction,
+        generateUpdateBefore,
         outputRankNumber)
     }
     val operator = new KeyedProcessOperator(processFunction)

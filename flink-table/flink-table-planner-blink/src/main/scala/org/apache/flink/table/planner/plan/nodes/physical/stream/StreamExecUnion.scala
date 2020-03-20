@@ -48,13 +48,19 @@ class StreamExecUnion(
 
   require(all, "Only support union all")
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = false
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = false
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = true
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 

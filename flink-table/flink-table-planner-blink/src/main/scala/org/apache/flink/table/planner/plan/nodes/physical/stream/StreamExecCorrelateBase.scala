@@ -51,13 +51,19 @@ abstract class StreamExecCorrelateBase(
 
   require(joinType == JoinRelType.INNER || joinType == JoinRelType.LEFT)
 
-  override def producesUpdates: Boolean = false
+  override def produceUpdates: Boolean = false
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = false
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = true
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 

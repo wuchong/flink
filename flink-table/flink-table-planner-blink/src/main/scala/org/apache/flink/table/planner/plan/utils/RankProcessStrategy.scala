@@ -17,7 +17,6 @@
  */
 package org.apache.flink.table.planner.plan.utils
 
-import org.apache.flink.table.planner.plan.`trait`.TraitUtil
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 
 import org.apache.calcite.rel.RelFieldCollation.Direction
@@ -53,15 +52,15 @@ object RankProcessStrategy {
       mq: RelMetadataQuery): RankProcessStrategy = {
 
     val fieldCollations = orderKey.getFieldCollations
-    val isUpdateStream = !UpdatingPlanChecker.isAppendOnly(input)
+    val isUpdateStream = !ChangelogPlanUtils.isInsertOnly(input)
 
     if (isUpdateStream) {
-      val inputIsAccRetract = TraitUtil.isAccRetract(input)
+      val inputContainsDeletion = ChangelogPlanUtils.containsDeletion(input)
       val uniqueKeys = mq.getUniqueKeys(input)
-      if (inputIsAccRetract || uniqueKeys == null || uniqueKeys.isEmpty
-        // unique key should contains partition key
-        || !uniqueKeys.exists(k => k.contains(partitionKey))) {
-        // input is AccRetract or extract the unique keys failed,
+      if (inputContainsDeletion || uniqueKeys == null || uniqueKeys.isEmpty
+          // unique key should contains partition key
+          || !uniqueKeys.exists(k => k.contains(partitionKey))) {
+        // input contains deletion or extract the unique keys failed,
         // and we fall back to using retract rank
         RetractStrategy
       } else {

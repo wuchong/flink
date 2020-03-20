@@ -85,13 +85,13 @@ class StreamExecIncrementalGroupAggregate(
 
   override def deriveRowType(): RelDataType = outputRowType
 
-  override def producesUpdates = false
+  override def produceUpdates = false
 
-  override def needsUpdatesAsRetraction(input: RelNode) = true
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions = true
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
 
   override def requireWatermark: Boolean = false
 

@@ -31,7 +31,6 @@ import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.calcite.Rank
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, _}
 import org.apache.flink.table.runtime.operators.rank._
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
@@ -84,15 +83,32 @@ class StreamExecRank(
     strategy
   }
 
-  override def producesUpdates = true
+  override def produceUpdates = true
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+  override def produceDeletions: Boolean = {
+    if (outputRankNumber) {
+      // AppendStrategy or UpdateStrategy will not produce deletions
+      getStrategy(forceRecompute = true) == RetractStrategy
+    } else {
+      // produce deletion if without row_number,
+      // because we use deletion to remove records out of TopN
+      true
+    }
+  }
+
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = {
     getStrategy(forceRecompute = true) == RetractStrategy
   }
 
-  override def consumesRetractions = true
+  override def forwardChanges: Boolean = false
 
-  override def producesRetractions: Boolean = false
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+//    getStrategy(forceRecompute = true) == RetractStrategy
+//  }
+//
+//  override def consumesRetractions = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -153,7 +169,7 @@ class StreamExecRank(
     val sortKeyType = sortKeySelector.getProducedType
     val sortKeyComparator = ComparatorCodeGenerator.gen(tableConfig, "StreamExecSortComparator",
       sortFields.indices.toArray, sortKeyType.getLogicalTypes, sortDirections, nullsIsLast)
-    val generateRetraction = StreamExecRetractionRules.isAccRetract(this)
+    val generateUpdateBefore = ChangelogPlanUtils.containsUpdateBefore(this)
     val cacheSize = tableConfig.getConfiguration.getLong(StreamExecRank.TABLE_EXEC_TOPN_CACHE_SIZE)
     val minIdleStateRetentionTime = tableConfig.getMinIdleStateRetentionTime
     val maxIdleStateRetentionTime = tableConfig.getMaxIdleStateRetentionTime
@@ -168,7 +184,7 @@ class StreamExecRank(
           sortKeySelector,
           rankType,
           rankRange,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber,
           cacheSize)
 
@@ -183,7 +199,7 @@ class StreamExecRank(
           sortKeySelector,
           rankType,
           rankRange,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber,
           cacheSize)
 
@@ -201,7 +217,7 @@ class StreamExecRank(
           rankType,
           rankRange,
           generatedEqualiser,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber)
     }
     val operator = new KeyedProcessOperator(processFunction)

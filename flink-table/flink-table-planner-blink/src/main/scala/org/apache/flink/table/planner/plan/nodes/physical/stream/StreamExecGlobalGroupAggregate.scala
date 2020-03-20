@@ -28,7 +28,6 @@ import org.apache.flink.table.planner.codegen.{CodeGeneratorContext, EqualiserCo
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.PartialFinalType
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, _}
 import org.apache.flink.table.runtime.generated.GeneratedAggsHandleFunction
 import org.apache.flink.table.runtime.operators.aggregate.MiniBatchGlobalGroupAggFunction
@@ -64,13 +63,31 @@ class StreamExecGlobalGroupAggregate(
   extends StreamExecGroupAggregateBase(cluster, traitSet, inputRel)
   with StreamExecNode[BaseRow] {
 
-  override def producesUpdates = true
+  override def produceUpdates = true
 
-  override def needsUpdatesAsRetraction(input: RelNode) = true
+  /**
+   * Aggregate will not produces deletions if input is insert-only.
+   */
+  override def produceDeletions: Boolean = {
+    val isInputInsertOnly = ChangelogPlanUtils.isInsertOnly(getInput)
+    !isInputInsertOnly
+  }
 
-  override def consumesRetractions = true
+  /**
+   * Aggregates requires before images of updating.
+   */
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  /**
+   * Aggregate consumes changes and produces new changes.
+   */
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode) = true
+//
+//  override def consumesRetractions = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -129,7 +146,7 @@ class StreamExecGlobalGroupAggregate(
 
     val outRowType = FlinkTypeFactory.toLogicalRowType(outputRowType)
 
-    val generateRetraction = StreamExecRetractionRules.isAccRetract(this)
+    val generateUpdateBefore = ChangelogPlanUtils.containsUpdateBefore(this)
 
     val localAggsHandler = generateAggsHandler(
       "LocalGroupAggsHandler",
@@ -171,7 +188,7 @@ class StreamExecGlobalGroupAggregate(
         recordEqualiser,
         globalAccTypes,
         indexOfCountStar,
-        generateRetraction)
+        generateUpdateBefore)
 
       new KeyedMapBundleOperator(
         aggFunction,

@@ -27,7 +27,6 @@ import org.apache.flink.table.planner.codegen.agg.AggsHandlerCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.PartialFinalType
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, _}
 import org.apache.flink.table.runtime.operators.aggregate.MiniBatchLocalGroupAggFunction
 import org.apache.flink.table.runtime.operators.bundle.MapBundleOperator
@@ -59,13 +58,19 @@ class StreamExecLocalGroupAggregate(
   extends StreamExecGroupAggregateBase(cluster, traitSet, inputRel)
   with StreamExecNode[BaseRow] {
 
-  override def producesUpdates = false
+  override def produceUpdates = false
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions = true
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -116,7 +121,7 @@ class StreamExecLocalGroupAggregate(
     val inRowType = FlinkTypeFactory.toLogicalRowType(getInput.getRowType)
     val outRowType = FlinkTypeFactory.toLogicalRowType(outputRowType)
 
-    val needRetraction = StreamExecRetractionRules.isAccRetract(getInput)
+    val needRetraction = ChangelogPlanUtils.containsRetraction(getInput)
 
     val generator = new AggsHandlerCodeGenerator(
       CodeGeneratorContext(planner.getTableConfig),

@@ -20,11 +20,10 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.plan.nodes.common.CommonIntermediateTableScan
 import org.apache.flink.table.planner.plan.schema.IntermediateRelTable
-import org.apache.flink.table.planner.plan.utils.UpdatingPlanChecker
-
 import org.apache.calcite.plan.{RelOptCluster, RelOptTable, RelTraitSet}
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
+import org.apache.flink.table.dataformat.RowKind
 
 import java.util
 
@@ -39,17 +38,25 @@ class StreamExecIntermediateTableScan(
   extends CommonIntermediateTableScan(cluster, traitSet, table)
   with StreamPhysicalRel {
 
-  def isAccRetract: Boolean = intermediateTable.isAccRetract
-
-  override def producesUpdates: Boolean = {
-    !UpdatingPlanChecker.isAppendOnly(intermediateTable.relNode)
+  override def produceUpdates: Boolean = {
+    val changelogMode = intermediateTable.changelogMode
+    changelogMode.contains(RowKind.UPDATE_AFTER) || changelogMode.contains(RowKind.UPDATE_BEFORE)
   }
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = intermediateTable.changelogMode.contains(RowKind.DELETE)
 
-  override def consumesRetractions: Boolean = false
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = false
 
-  override def producesRetractions: Boolean = producesUpdates && isAccRetract
+  /**
+   * This is a leaf node which doesn't have inputs.
+   */
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = producesUpdates && isAccRetract
 
   override def requireWatermark: Boolean = false
 

@@ -27,26 +27,46 @@ import org.apache.calcite.rel.RelNode
   */
 trait StreamPhysicalRel extends FlinkPhysicalRel {
 
+  // -------------------------------------------------------------------------------------------
+  // Interfaces used to infer ChangelogMode trait for nodes
+  // -------------------------------------------------------------------------------------------
+
   /**
     * Whether the [[StreamPhysicalRel]] produces update and delete changes.
     */
-  def producesUpdates: Boolean
+  def produceUpdates: Boolean
+
+  def produceDeletions: Boolean
+
+  def requestBeforeImageOfUpdates(input: RelNode): Boolean
 
   /**
-    * Whether the [[StreamPhysicalRel]] requires retraction messages or not.
-    */
-  def needsUpdatesAsRetraction(input: RelNode): Boolean
+   * Whether the [[StreamPhysicalRel]] forwards changes (insert/delete/update). Some nodes don't
+   * produce new changes but simply forward changes without changing the
+   * [[org.apache.flink.table.dataformat.RowKind]] of each rows, e.g. Calc, Correlate. Some nodes
+   * consumes received changes and produce new changes, e.g. Aggregate, Join.
+   */
+  def forwardChanges: Boolean
 
-  /**
-    * Whether the [[StreamPhysicalRel]] consumes retraction messages instead of forwarding them.
-    * The node might or might not produce new retraction messages.
-    */
-  def consumesRetractions: Boolean
+//  /**
+//    * Whether the [[StreamPhysicalRel]] requires retraction messages or not.
+//    */
+//  def needsUpdatesAsRetraction(input: RelNode): Boolean
+//
+//  /**
+//    * Whether the [[StreamPhysicalRel]] consumes retraction messages instead of forwarding them.
+//    * The node might or might not produce new retraction messages.
+//    */
+//  def consumesRetractions: Boolean
+//
+//  /**
+//    * Whether the [[StreamPhysicalRel]] produces retraction messages.
+//    */
+//  def producesRetractions: Boolean
 
-  /**
-    * Whether the [[StreamPhysicalRel]] produces retraction messages.
-    */
-  def producesRetractions: Boolean
+  // -------------------------------------------------------------------------------------------
+  // Interfaces used to infer MiniBatchInterval trait for nodes
+  // -------------------------------------------------------------------------------------------
 
   /**
     * Whether the [[StreamPhysicalRel]] requires rowtime watermark in processing logic.

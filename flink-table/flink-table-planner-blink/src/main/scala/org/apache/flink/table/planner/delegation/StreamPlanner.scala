@@ -48,8 +48,8 @@ class StreamPlanner(
       ConventionTraitDef.INSTANCE,
       FlinkRelDistributionTraitDef.INSTANCE,
       MiniBatchIntervalTraitDef.INSTANCE,
-      UpdateAsRetractionTraitDef.INSTANCE,
-      AccModeTraitDef.INSTANCE)
+      SendBeforeImageForUpdatesTraitDef.INSTANCE,
+      ChangelogModeTraitDef.INSTANCE)
   }
 
   override protected def getOptimizer: Optimizer = new StreamCommonSubGraphBasedOptimizer(this)

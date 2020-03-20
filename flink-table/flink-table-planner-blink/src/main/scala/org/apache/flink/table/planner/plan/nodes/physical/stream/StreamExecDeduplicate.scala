@@ -26,15 +26,14 @@ import org.apache.flink.table.api.config.ExecutionConfigOptions
 import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
-import org.apache.flink.table.planner.plan.utils.{AggregateUtil, KeySelectorUtil}
+import org.apache.flink.table.planner.plan.utils.{AggregateUtil, ChangelogPlanUtils, KeySelectorUtil}
 import org.apache.flink.table.runtime.operators.bundle.KeyedMapBundleOperator
 import org.apache.flink.table.runtime.operators.deduplicate.{DeduplicateKeepFirstRowFunction, DeduplicateKeepLastRowFunction, MiniBatchDeduplicateKeepFirstRowFunction, MiniBatchDeduplicateKeepLastRowFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
+import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 
 import java.util
 
@@ -59,13 +58,22 @@ class StreamExecDeduplicate(
 
   def getUniqueKeys: Array[Int] = uniqueKeys
 
-  override def producesUpdates: Boolean = keepLastRow
+  override def produceUpdates: Boolean = keepLastRow
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = true
+  /**
+   * Currently, deduplicate only accept insert-only as input, so no deletions will be produced.
+   */
+  override def produceDeletions: Boolean = false
 
-  override def consumesRetractions: Boolean = true
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
+
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = true
+//
+//  override def consumesRetractions: Boolean = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -103,17 +111,14 @@ class StreamExecDeduplicate(
 
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
-    val inputIsAccRetract = StreamExecRetractionRules.isAccRetract(getInput)
 
-    if (inputIsAccRetract) {
-      throw new TableException("Deduplicate doesn't support retraction input stream currently.")
-    }
+    validateInputStreamIsInsertOnly(this, "Deduplication")
 
     val inputTransform = getInputNodes.get(0).translateToPlan(planner)
       .asInstanceOf[Transformation[BaseRow]]
 
     val rowTypeInfo = inputTransform.getOutputType.asInstanceOf[BaseRowTypeInfo]
-    val generateRetraction = StreamExecRetractionRules.isAccRetract(this)
+    val generateUpdateBefore = ChangelogPlanUtils.containsUpdateBefore(this)
     val tableConfig = planner.getTableConfig
     val isMiniBatchEnabled = tableConfig.getConfiguration.getBoolean(
       ExecutionConfigOptions.TABLE_EXEC_MINIBATCH_ENABLED)
@@ -121,7 +126,7 @@ class StreamExecDeduplicate(
       val exeConfig = planner.getExecEnv.getConfig
       val rowSerializer = rowTypeInfo.createSerializer(exeConfig)
       val processFunction = if (keepLastRow) {
-        new MiniBatchDeduplicateKeepLastRowFunction(rowTypeInfo, generateRetraction, rowSerializer)
+        new MiniBatchDeduplicateKeepLastRowFunction(rowTypeInfo, generateUpdateBefore, rowSerializer)
       } else {
         new MiniBatchDeduplicateKeepFirstRowFunction(rowSerializer)
       }
@@ -134,7 +139,7 @@ class StreamExecDeduplicate(
       val maxRetentionTime = tableConfig.getMaxIdleStateRetentionTime
       val processFunction = if (keepLastRow) {
         new DeduplicateKeepLastRowFunction(minRetentionTime, maxRetentionTime, rowTypeInfo,
-          generateRetraction)
+          generateUpdateBefore)
       } else {
         new DeduplicateKeepFirstRowFunction(minRetentionTime, maxRetentionTime)
       }

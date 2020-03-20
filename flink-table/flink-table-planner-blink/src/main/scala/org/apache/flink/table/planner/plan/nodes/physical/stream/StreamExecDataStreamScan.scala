@@ -65,13 +65,21 @@ class StreamExecDataStreamScan(
 
   def isAccRetract: Boolean = dataStreamTable.isAccRetract
 
-  override def producesUpdates: Boolean = dataStreamTable.producesUpdates
+  override def produceUpdates: Boolean = dataStreamTable.producesUpdates
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+  override def produceDeletions: Boolean = produceUpdates && isAccRetract
 
-  override def consumesRetractions: Boolean = false
+  // it's a leaf node (no inputs), so doesn't support ignore update_before images
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = false
 
-  override def producesRetractions: Boolean = producesUpdates && isAccRetract
+  // it's a leaf node (no inputs), so doesn't support forward changes
+  override def forwardChanges: Boolean = false
+
+  //  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
+//
+//  override def consumesRetractions: Boolean = false
+//
+//  override def producesRetractions: Boolean = producesUpdates && isAccRetract
 
   override def requireWatermark: Boolean = false
 

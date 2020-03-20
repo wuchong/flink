@@ -20,7 +20,6 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import java.time.Duration
 import java.util
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.AggregateCall
@@ -37,9 +36,9 @@ import org.apache.flink.table.planner.codegen.{CodeGeneratorContext, EqualiserCo
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.logical._
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
 import org.apache.flink.table.planner.plan.utils.AggregateUtil.{hasRowIntervalType, hasTimeIntervalType, isProctimeAttribute, isRowtimeAttribute, toDuration, toLong, transformToStreamAggregateInfoList}
-import org.apache.flink.table.planner.plan.utils.{AggregateInfoList, AggregateUtil, KeySelectorUtil, RelExplainUtil, WindowEmitStrategy}
+import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
+import org.apache.flink.table.planner.plan.utils.{AggregateInfoList, AggregateUtil, ChangelogPlanUtils, KeySelectorUtil, RelExplainUtil, UpdatingPlanChecker, WindowEmitStrategy}
 import org.apache.flink.table.runtime.generated.{GeneratedClass, GeneratedNamespaceAggsHandleFunction, GeneratedNamespaceTableAggsHandleFunction, GeneratedRecordEqualiser}
 import org.apache.flink.table.runtime.operators.window.{CountWindow, TimeWindow, WindowOperator, WindowOperatorBuilder}
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter.fromDataTypeToLogicalType
@@ -68,13 +67,21 @@ abstract class StreamExecGroupWindowAggregateBase(
     with StreamPhysicalRel
     with StreamExecNode[BaseRow] {
 
-  override def producesUpdates: Boolean = emitStrategy.produceUpdates
+  override def produceUpdates: Boolean = emitStrategy.produceUpdates
 
-  override def consumesRetractions = true
+  override def produceDeletions: Boolean = {
+    emitStrategy.produceUpdates && !ChangelogPlanUtils.isInsertOnly(getInput)
+  }
 
-  override def needsUpdatesAsRetraction(input: RelNode) = true
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = true
 
-  override def producesRetractions: Boolean = false
+  override def forwardChanges: Boolean = false
+
+//  override def consumesRetractions = true
+//
+//  override def needsUpdatesAsRetraction(input: RelNode) = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = window match {
     case TumblingGroupWindow(_, timeField, size)
@@ -120,6 +127,9 @@ abstract class StreamExecGroupWindowAggregateBase(
 
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
+
+    validateInputStreamIsInsertOnly(this, s"Window $aggType")
+
     val config = planner.getTableConfig
 
     val inputTransform = getInputNodes.get(0).translateToPlan(planner)
@@ -127,16 +137,6 @@ abstract class StreamExecGroupWindowAggregateBase(
 
     val inputRowTypeInfo = inputTransform.getOutputType.asInstanceOf[BaseRowTypeInfo]
     val outRowType = BaseRowTypeInfo.of(FlinkTypeFactory.toLogicalRowType(outputRowType))
-
-    val inputIsAccRetract = StreamExecRetractionRules.isAccRetract(input)
-
-    if (inputIsAccRetract) {
-      throw new TableException(
-        s"Group Window $aggType: Retraction on windowed GroupBy $aggType is not supported yet. \n" +
-          "please re-check sql grammar. \n" +
-          s"Note: Windowed GroupBy $aggType should not follow a" +
-          "non-windowed GroupBy aggregation.")
-    }
 
     val isCountWindow = window match {
       case TumblingGroupWindow(_, _, size) if hasRowIntervalType(size) => true
@@ -164,7 +164,7 @@ abstract class StreamExecGroupWindowAggregateBase(
       -1
     }
 
-    val needRetraction = StreamExecRetractionRules.isAccRetract(getInput)
+    val needRetraction = ChangelogPlanUtils.containsRetraction(getInput)
     val aggInfoList = transformToStreamAggregateInfoList(
       aggCalls,
       inputRowType,

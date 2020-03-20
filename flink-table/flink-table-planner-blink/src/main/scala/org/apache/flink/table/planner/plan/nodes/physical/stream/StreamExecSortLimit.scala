@@ -27,12 +27,10 @@ import org.apache.flink.table.planner.codegen.EqualiserCodeGenerator
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.rules.physical.stream.StreamExecRetractionRules
-import org.apache.flink.table.planner.plan.utils.{AppendFastStrategy, KeySelectorUtil, RankProcessStrategy, RelExplainUtil, RetractStrategy, SortUtil, UpdateFastStrategy}
+import org.apache.flink.table.planner.plan.utils.{AppendFastStrategy, ChangelogPlanUtils, KeySelectorUtil, RankProcessStrategy, RelExplainUtil, RetractStrategy, SortUtil, UpdateFastStrategy}
 import org.apache.flink.table.runtime.keyselector.NullBinaryRowKeySelector
 import org.apache.flink.table.runtime.operators.rank.{AppendOnlyTopNFunction, ConstantRankRange, RankType, RetractableTopNFunction, UpdatableTopNFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.core.Sort
 import org.apache.calcite.rel.metadata.RelMetadataQuery
@@ -74,15 +72,23 @@ class StreamExecSortLimit(
     strategy
   }
 
-  override def producesUpdates = true
+  override def produceUpdates = true
 
-  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+  override def produceDeletions: Boolean = true
+
+  override def requestBeforeImageOfUpdates(input: RelNode): Boolean = {
     getStrategy(forceRecompute = true) == RetractStrategy
   }
 
-  override def consumesRetractions = true
+  override def forwardChanges: Boolean = false
 
-  override def producesRetractions: Boolean = false
+//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {
+//    getStrategy(forceRecompute = true) == RetractStrategy
+//  }
+//
+//  override def consumesRetractions = true
+//
+//  override def producesRetractions: Boolean = false
 
   override def requireWatermark: Boolean = false
 
@@ -150,7 +156,7 @@ class StreamExecSortLimit(
       sortKeyType.getLogicalTypes,
       sortDirections,
       nullsIsLast)
-    val generateRetraction = StreamExecRetractionRules.isAccRetract(this)
+    val generateUpdateBefore = ChangelogPlanUtils.containsUpdateBefore(this)
     val cacheSize = tableConfig.getConfiguration.getLong(StreamExecRank.TABLE_EXEC_TOPN_CACHE_SIZE)
     val minIdleStateRetentionTime = tableConfig.getMinIdleStateRetentionTime
     val maxIdleStateRetentionTime = tableConfig.getMaxIdleStateRetentionTime
@@ -171,7 +177,7 @@ class StreamExecSortLimit(
           sortKeySelector,
           rankType,
           rankRange,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber,
           cacheSize)
 
@@ -186,7 +192,7 @@ class StreamExecSortLimit(
           sortKeySelector,
           rankType,
           rankRange,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber,
           cacheSize)
 
@@ -203,7 +209,7 @@ class StreamExecSortLimit(
           rankType,
           rankRange,
           generatedEqualiser,
-          generateRetraction,
+          generateUpdateBefore,
           outputRankNumber)
     }
     val operator = new KeyedProcessOperator(processFunction)
