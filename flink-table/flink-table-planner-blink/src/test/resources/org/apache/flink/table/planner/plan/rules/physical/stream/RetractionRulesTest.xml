@@ -39,15 +39,15 @@ LogicalAggregate(group=[{0}], frequency=[COUNT($0)])
     </Resource>
     <Resource name="planAfter">
       <![CDATA[
-GroupAggregate(groupBy=[cnt], select=[cnt, COUNT_RETRACT(cnt) AS frequency], updateAsRetraction=[false], accMode=[Acc])
-+- Exchange(distribution=[hash[cnt]], updateAsRetraction=[true], accMode=[AccRetract])
-   +- Union(all=[true], union=[cnt], updateAsRetraction=[true], accMode=[AccRetract])
-      :- Calc(select=[CAST(cnt) AS cnt], updateAsRetraction=[true], accMode=[AccRetract])
-      :  +- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS cnt], updateAsRetraction=[true], accMode=[AccRetract])
-      :     +- Exchange(distribution=[hash[word]], updateAsRetraction=[true], accMode=[Acc])
-      :        +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], updateAsRetraction=[true], accMode=[Acc])
-      +- Calc(select=[cnt], updateAsRetraction=[true], accMode=[Acc])
-         +- TableSourceScan(table=[[default_catalog, default_database, MyTable2, source: [TestTableSource(word, cnt)]]], fields=[word, cnt], updateAsRetraction=[true], accMode=[Acc])
+GroupAggregate(groupBy=[cnt], select=[cnt, COUNT_RETRACT(cnt) AS frequency], changelogMode=[I,UA,D])
++- Exchange(distribution=[hash[cnt]], changelogMode=[I,UB,UA])
+   +- Union(all=[true], union=[cnt], changelogMode=[I,UB,UA])
+      :- Calc(select=[CAST(cnt) AS cnt], changelogMode=[I,UB,UA])
+      :  +- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS cnt], changelogMode=[I,UB,UA])
+      :     +- Exchange(distribution=[hash[word]], changelogMode=[I])
+      :        +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], changelogMode=[I])
+      +- Calc(select=[cnt], changelogMode=[I])
+         +- TableSourceScan(table=[[default_catalog, default_database, MyTable2, source: [TestTableSource(word, cnt)]]], fields=[word, cnt], changelogMode=[I])
 ]]>
     </Resource>
   </TestCase>
@@ -63,7 +63,7 @@ LogicalProject(word=[$0], number=[$1])
     </Resource>
     <Resource name="planAfter">
       <![CDATA[
-TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], updateAsRetraction=[false], accMode=[Acc])
+TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], changelogMode=[I])
 ]]>
     </Resource>
   </TestCase>
@@ -80,10 +80,10 @@ LogicalProject(EXPR$0=[$1])
     </Resource>
     <Resource name="planAfter">
       <![CDATA[
-Calc(select=[EXPR$0], updateAsRetraction=[false], accMode=[Acc])
-+- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS EXPR$0], updateAsRetraction=[false], accMode=[Acc])
-   +- Exchange(distribution=[hash[word]], updateAsRetraction=[true], accMode=[Acc])
-      +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], updateAsRetraction=[true], accMode=[Acc])
+Calc(select=[EXPR$0], changelogMode=[I,UA])
++- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS EXPR$0], changelogMode=[I,UA])
+   +- Exchange(distribution=[hash[word]], changelogMode=[I])
+      +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], changelogMode=[I])
 ]]>
     </Resource>
   </TestCase>
@@ -105,12 +105,12 @@ LogicalAggregate(group=[{0}], frequency=[COUNT()])
     </Resource>
     <Resource name="planAfter">
       <![CDATA[
-GroupAggregate(groupBy=[cnt], select=[cnt, COUNT_RETRACT(*) AS frequency], updateAsRetraction=[false], accMode=[Acc])
-+- Exchange(distribution=[hash[cnt]], updateAsRetraction=[true], accMode=[AccRetract])
-   +- Calc(select=[cnt], updateAsRetraction=[true], accMode=[AccRetract])
-      +- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS cnt], updateAsRetraction=[true], accMode=[AccRetract])
-         +- Exchange(distribution=[hash[word]], updateAsRetraction=[true], accMode=[Acc])
-            +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], updateAsRetraction=[true], accMode=[Acc])
+GroupAggregate(groupBy=[cnt], select=[cnt, COUNT_RETRACT(*) AS frequency], changelogMode=[I,UA,D])
++- Exchange(distribution=[hash[cnt]], changelogMode=[I,UB,UA])
+   +- Calc(select=[cnt], changelogMode=[I,UB,UA])
+      +- GroupAggregate(groupBy=[word], select=[word, COUNT(number) AS cnt], changelogMode=[I,UB,UA])
+         +- Exchange(distribution=[hash[word]], changelogMode=[I])
+            +- TableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(word, number)]]], fields=[word, number], changelogMode=[I])
 ]]>
     </Resource>
   </TestCase>

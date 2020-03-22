@@ -120,6 +120,7 @@ class SinkTest extends TableTestBase {
     val upsertSink2 = util.createUpsertTableSink(Array(), Array("b", "cnt"), Array(LONG, LONG))
     util.writeToSink(table2, upsertSink2,  "upsertSink2")
 
+    // TODO: add IT case for this
     util.verifyPlanWithTrait()
   }
 
