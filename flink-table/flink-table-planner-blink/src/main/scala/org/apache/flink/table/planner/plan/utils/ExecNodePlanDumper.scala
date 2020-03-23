@@ -335,7 +335,8 @@ class NodeTreeWriterImpl(
           case streamRel: StreamPhysicalRel =>
             val traitSet = streamRel.getTraitSet
 //            printValues.add(
-//              Pair.of("emitUpdateBefore", traitSet.getTrait(EmitUpdateBeforeTraitDef.INSTANCE)))
+//              Pair.of("sendUpdateBefore", traitSet.getTrait(
+//                SendBeforeImageForUpdatesTraitDef.INSTANCE)))
             printValues.add(
               Pair.of("changelogMode", traitSet.getTrait(ChangelogModeTraitDef.INSTANCE)))
           case _ => // ignore

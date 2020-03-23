@@ -181,11 +181,11 @@ object ChangelogModeInferRules {
       if (!current.forwardChanges) {
         return false
       }
-      val containsUpdateChanges = getInputRelNodes(current).exists { input =>
+      // input contains update before and this node will forward
+      getInputRelNodes(current).exists { input =>
         val changelogMode = getChangelogModeTraitValue(input)
-        changelogMode.contains(RowKind.UPDATE_AFTER)
+        changelogMode.contains(RowKind.UPDATE_BEFORE)
       }
-      containsUpdateChanges
     }
   }
 
