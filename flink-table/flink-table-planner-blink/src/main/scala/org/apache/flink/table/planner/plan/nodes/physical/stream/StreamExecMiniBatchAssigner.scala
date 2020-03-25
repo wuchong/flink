@@ -24,11 +24,10 @@ import org.apache.flink.table.api.TableException
 import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.delegation.StreamPlanner
-import org.apache.flink.table.planner.plan.`trait`.{MiniBatchIntervalTraitDef, MiniBatchMode}
+import org.apache.flink.table.planner.plan.`trait`.{ChangelogMode, MiniBatchIntervalTraitDef, MiniBatchMode}
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.runtime.operators.wmassigners.{ProcTimeMiniBatchAssignerOperator, RowTimeMiniBatchAssginerOperator}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 
@@ -52,6 +51,21 @@ class StreamExecMiniBatchAssigner(
   extends SingleRel(cluster, traits, inputRel)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    // forward input changes
+    inputChangelogModes.head
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    // backward downstream expectation
+    expectedOutputMode
+  }
 
   override def produceUpdates: Boolean = false
 

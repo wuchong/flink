@@ -23,12 +23,12 @@ import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.common.CommonLookupJoin
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.sources.TableSource
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.{JoinInfo, JoinRelType}
 import org.apache.calcite.rex.RexProgram
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -57,6 +57,21 @@ class StreamExecLookupJoin(
     joinType)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    // forward input changes
+    inputChangelogModes.head
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    // backward downstream expectation
+    expectedOutputMode
+  }
 
   override def produceUpdates: Boolean = false
 

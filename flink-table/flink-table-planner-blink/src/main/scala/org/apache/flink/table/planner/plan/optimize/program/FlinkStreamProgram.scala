@@ -179,14 +179,23 @@ object FlinkStreamProgram {
     chainedProgram.addLast(
       PHYSICAL_REWRITE,
       FlinkGroupProgramBuilder.newBuilder[StreamOptimizeContext]
-        .addProgram(new FlinkEmitUpdateBeforeTraitInitProgram,
-          "init for retraction")
-        .addProgram(
-          FlinkHepRuleSetProgramBuilder.newBuilder
-            .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
-            .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
-            .add(FlinkStreamRuleSets.CHANGELOG_MODE_RULES)
-            .build(), "changelog mode rules")
+          .addProgram(new FlinkChangelogModeInferProgram2, "changelog mode inference")
+//          .addProgram(new FlinkChangelogModeInferProgram, "changelog mode inference")
+//        .addProgram(new FlinkEmitUpdateBeforeTraitInitProgram,
+//          "init for retraction")
+//        .addProgram(
+//          FlinkHepRuleSetProgramBuilder.newBuilder
+//            .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//            .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//            .add(FlinkStreamRuleSets.CHANGELOG_MODE_INITIAL_RULES)
+//            .build(), "changelog mode propagate rules")
+//        .addProgram(new FlinkChangelogModeTraitInitProgram)
+//        .addProgram(
+//          FlinkHepRuleSetProgramBuilder.newBuilder
+//            .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//            .setHepMatchOrder(HepMatchOrder.TOP_DOWN)
+//            .add(FlinkStreamRuleSets.CHANGELOG_MODE_FINAL_RULES)
+//            .build(), "changelog mode final rules")
         .addProgram(new FlinkMiniBatchIntervalTraitInitProgram,
           "Initialization for mini-batch interval inference")
         .addProgram(

@@ -16,22 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.planner.plan.optimize.program
+package org.apache.flink.table.runtime.operators.changelog;
 
-import org.apache.flink.table.planner.plan.`trait`.SendBeforeImageForUpdatesTrait
-import org.apache.calcite.rel.RelNode
+import org.apache.flink.api.common.functions.RichFilterFunction;
+import org.apache.flink.table.dataformat.BaseRow;
 
-/**
-  * A [[FlinkOptimizeProgram]] that does some initialization be for retraction inference.
-  */
-class FlinkEmitUpdateBeforeTraitInitProgram extends FlinkOptimizeProgram[StreamOptimizeContext] {
+public class DropUpdateBeforeFunction extends RichFilterFunction<BaseRow> {
 
-  override def optimize(root: RelNode, context: StreamOptimizeContext): RelNode = {
-    if (!context.requestBeforeImageOfUpdate) {
-      val newTraitSet = root.getTraitSet.plus(new SendBeforeImageForUpdatesTrait(false))
-      root.copy(newTraitSet, root.getInputs)
-    } else {
-      root
-    }
-  }
+	private static final long serialVersionUID = -7756766094686710128L;
+
+	@Override
+	public boolean filter(BaseRow value) throws Exception {
+		// TODO:
+		return false;
+	}
 }

@@ -28,12 +28,13 @@ import org.apache.calcite.tools.RelBuilder
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
 import org.apache.flink.table.api.{TableConfig, TableException}
-import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.dataformat.{BaseRow, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkRelBuilder.PlannerNamedWindowProperty
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.agg.AggsHandlerCodeGenerator
 import org.apache.flink.table.planner.codegen.{CodeGeneratorContext, EqualiserCodeGenerator}
 import org.apache.flink.table.planner.delegation.StreamPlanner
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.planner.plan.logical._
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.planner.plan.utils.AggregateUtil.{hasRowIntervalType, hasTimeIntervalType, isProctimeAttribute, isRowtimeAttribute, toDuration, toLong, transformToStreamAggregateInfoList}
@@ -64,8 +65,25 @@ abstract class StreamExecGroupWindowAggregateBase(
     emitStrategy: WindowEmitStrategy,
     aggType: String)
   extends SingleRel(cluster, traitSet, inputRel)
-    with StreamPhysicalRel
-    with StreamExecNode[BaseRow] {
+  with StreamPhysicalRel
+  with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = {
+    inputChangelogModes.head.containsOnly(RowKind.INSERT)
+  }
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    val builder = ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT)
+    if (emitStrategy.produceUpdates) {
+      builder.addContainedKind(RowKind.UPDATE_BEFORE).addContainedKind(RowKind.UPDATE_AFTER)
+    }
+    builder.build()
+  }
+
+  override def consumedChangelogMode(
+    inputOrdinal: Int,
+    inputMode: ChangelogMode,
+    expectedOutputMode: ChangelogMode): ChangelogMode = inputMode
 
   override def produceUpdates: Boolean = emitStrategy.produceUpdates
 

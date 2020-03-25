@@ -18,20 +18,25 @@
 
 package org.apache.flink.table.planner.plan.optimize.program
 
-import org.apache.flink.table.planner.plan.`trait`.SendBeforeImageForUpdatesTrait
 import org.apache.calcite.rel.RelNode
+import org.apache.flink.table.planner.plan.`trait`.{ChangelogModeTrait, ChangelogModeTraitDef, SendBeforeImageForUpdatesTrait}
+import org.apache.flink.table.planner.plan.utils.ChangelogModeUtils
 
 /**
   * A [[FlinkOptimizeProgram]] that does some initialization be for retraction inference.
   */
-class FlinkEmitUpdateBeforeTraitInitProgram extends FlinkOptimizeProgram[StreamOptimizeContext] {
+class FlinkChangelogModeTraitInitProgram extends FlinkOptimizeProgram[StreamOptimizeContext] {
 
   override def optimize(root: RelNode, context: StreamOptimizeContext): RelNode = {
-    if (!context.requestBeforeImageOfUpdate) {
-      val newTraitSet = root.getTraitSet.plus(new SendBeforeImageForUpdatesTrait(false))
-      root.copy(newTraitSet, root.getInputs)
-    } else {
-      root
+    val rootMode = root.getTraitSet.getTrait(ChangelogModeTraitDef.INSTANCE).changelogMode
+    if (rootMode.isDefined && !context.requestBeforeImageOfUpdate) {
+      val mode = rootMode.get
+      val expectedMode = ChangelogModeUtils.removeBeforeImageForUpdates(mode)
+      if (!mode.equals(expectedMode)) {
+        val newTraitSet = root.getTraitSet.plus(new ChangelogModeTrait(Some(expectedMode)))
+        return root.copy(newTraitSet, root.getInputs)
+      }
     }
+    root
   }
 }

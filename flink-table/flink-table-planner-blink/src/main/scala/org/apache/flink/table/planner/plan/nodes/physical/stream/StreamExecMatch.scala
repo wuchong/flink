@@ -40,7 +40,7 @@ import org.apache.flink.table.planner.plan.logical.MatchRecognize
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.planner.plan.utils.PythonUtil.containsPythonCall
 import org.apache.flink.table.planner.plan.utils.RelExplainUtil._
-import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, KeySelectorUtil, RexDefaultVisitor, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, ChangelogPlanUtils, KeySelectorUtil, RexDefaultVisitor, SortUtil}
 import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 import org.apache.flink.table.runtime.operators.`match`.{BaseRowEventComparator, RowtimeProcessFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
@@ -56,6 +56,7 @@ import org.apache.calcite.sql.SqlMatchRecognize.AfterOption
 import org.apache.calcite.sql.`type`.SqlTypeFamily
 import org.apache.calcite.sql.fun.SqlStdOperatorTable._
 import org.apache.calcite.tools.RelBuilder
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import _root_.java.lang.{Boolean => JBoolean, Long => JLong}
 import _root_.java.util
@@ -85,6 +86,19 @@ class StreamExecMatch(
 //  override def consumesRetractions = true
 //
 //  override def producesRetractions: Boolean = false
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = {
+    ChangelogModeUtils.isInsertOnly(inputChangelogModes.head)
+  }
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.INSERT_ONLY
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = inputMode
 
   override def produceUpdates: Boolean = false
 

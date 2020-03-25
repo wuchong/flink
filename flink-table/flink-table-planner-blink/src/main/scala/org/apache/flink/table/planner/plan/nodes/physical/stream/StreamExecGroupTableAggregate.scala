@@ -21,20 +21,21 @@ import java.util
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
-import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.dataformat.{BaseRow, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.agg.AggsHandlerCodeGenerator
 import org.apache.flink.table.planner.codegen.CodeGeneratorContext
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{AggregateInfoList, AggregateUtil, ChangelogPlanUtils, KeySelectorUtil, RelExplainUtil, UpdatingPlanChecker}
+import org.apache.flink.table.planner.plan.utils.{AggregateInfoList, AggregateUtil, ChangelogModeUtils, ChangelogPlanUtils, KeySelectorUtil, RelExplainUtil, UpdatingPlanChecker}
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter.fromDataTypeToLogicalType
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.AggregateCall
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.runtime.operators.aggregate.GroupTableAggFunction
 
 import scala.collection.JavaConversions._
@@ -65,6 +66,20 @@ class StreamExecGroupTableAggregate(
       needRetractionArray,
       needInputCount = needRetraction,
       isStateBackendDataViews = true)
+  }
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.ALL_CHANGES
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    // request update_before if there is update_after
+    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
   }
 
   override def produceUpdates = true

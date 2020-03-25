@@ -24,6 +24,7 @@ import org.apache.calcite.rex.RexBuilder
 import org.apache.flink.table.api.TableConfig
 import org.apache.flink.table.api.config.ExecutionConfigOptions
 import org.apache.flink.table.catalog.{CatalogManager, FunctionCatalog}
+import org.apache.flink.table.dataformat.RowKind
 import org.apache.flink.table.planner.calcite.{FlinkContext, SqlExprToRexConverterFactory}
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.`trait`._
@@ -60,9 +61,9 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
       val retractionFromRoot = sinkBlock.outputNode match {
         case n: Sink =>
           n.sink match {
-            case _: RetractStreamTableSink[_] => true
+            case _: RetractStreamTableSink[_] => false
             case s: DataStreamTableSink[_] => s.requestBeforeImageOfUpdate
-            case _ => false
+            case _ => true
           }
         case o =>
           o.getTraitSet.getTrait(SendBeforeImageForUpdatesTraitDef.INSTANCE).sendBeforeImageForUpdates
@@ -132,9 +133,11 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
           requestUpdateBefore = block.requestBeforeImageOfUpdate,
           miniBatchInterval = block.getMiniBatchInterval,
           isSinkBlock = isSinkBlock)
-        val changelogMode = ChangelogPlanUtils.getChangelogMode(optimizedPlan)
         val name = createUniqueIntermediateRelTableName
-        val intermediateRelTable = createIntermediateRelTable(name, optimizedPlan, changelogMode)
+        val intermediateRelTable = createIntermediateRelTable(
+          name,
+          optimizedPlan,
+          block.requestBeforeImageOfUpdate)
         val newTableScan = wrapIntermediateRelTableToTableScan(intermediateRelTable, name)
         block.setNewOutputNode(newTableScan)
         block.setOutputTableName(name)
@@ -206,7 +209,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
         if (child.getNewOutputNode.isEmpty) {
           inferTraits(
             child,
-            retractionFromRoot = false,
+            retractionFromRoot = true,
             miniBatchInterval = MiniBatchInterval.NONE,
             isSinkBlock = false)
         }
@@ -224,8 +227,10 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
         val optimizedPlan = optimizeTree(
           o, retractionFromRoot, miniBatchInterval, isSinkBlock = isSinkBlock)
         val name = createUniqueIntermediateRelTableName
-        val intermediateRelTable = createIntermediateRelTable(name, optimizedPlan,
-          ChangelogPlanUtils.INSERT_ONLY_MODE)
+        val intermediateRelTable = createIntermediateRelTable(
+          name,
+          optimizedPlan,
+          isUpdateBeforeRequired = false)
         val newTableScan = wrapIntermediateRelTableToTableScan(intermediateRelTable, name)
         block.setNewOutputNode(newTableScan)
         block.setOutputTableName(name)
@@ -267,9 +272,14 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
               inputBlocks.head.getMiniBatchInterval,mergedInterval)
             inputBlocks.head.setMiniBatchInterval(newInterval)
 
-            if (emitUpdateBeforeTrait.sendBeforeImageForUpdates || requestBeforeImageOfUpdate) {
+            val changelogMode = ChangelogPlanUtils.getChangelogMode(scan)
+            if (changelogMode.contains(RowKind.UPDATE_AFTER) &&
+                changelogMode.contains(RowKind.UPDATE_BEFORE)) {
               inputBlocks.head.setUpdateAsRetraction(true)
             }
+//            if (emitUpdateBeforeTrait.sendBeforeImageForUpdates || requestBeforeImageOfUpdate) {
+//              inputBlocks.head.setUpdateAsRetraction(true)
+//            }
           }
         case ser: StreamPhysicalRel => ser.getInputs.foreach { e =>
           if (ser.requestBeforeImageOfUpdates(e) ||
@@ -306,7 +316,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
   private def createIntermediateRelTable(
       name: String,
       relNode: RelNode,
-      changelogMode: ChangelogMode): IntermediateRelTable = {
+      isUpdateBeforeRequired: Boolean): IntermediateRelTable = {
     val uniqueKeys = getUniqueKeys(relNode)
     val monotonicity = FlinkRelMetadataQuery
       .reuseOrCreate(planner.getRelBuilder.getCluster.getMetadataQuery)
@@ -315,7 +325,13 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
       .uniqueKeys(uniqueKeys)
       .relModifiedMonotonicity(monotonicity)
       .build()
-    new IntermediateRelTable(Collections.singletonList(name), relNode, changelogMode, statistic)
+    val changelogMode = ChangelogPlanUtils.getChangelogMode(relNode)
+    new IntermediateRelTable(
+      Collections.singletonList(name),
+      relNode,
+      isUpdateBeforeRequired,
+      changelogMode,
+      statistic)
   }
 
   private def getUniqueKeys(relNode: RelNode): util.Set[_ <: util.Set[String]] = {

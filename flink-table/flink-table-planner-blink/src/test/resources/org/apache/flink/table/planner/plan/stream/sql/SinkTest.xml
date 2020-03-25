@@ -30,7 +30,7 @@ LogicalSink(name=[`default_catalog`.`default_database`.`appendSink`], fields=[a]
       <![CDATA[
 Sink(name=[`default_catalog`.`default_database`.`appendSink`], fields=[a], changelogMode=[NONE])
 +- Calc(select=[cnt], changelogMode=[I,UB,UA])
-   +- GroupAggregate(groupBy=[a], select=[a, COUNT(*) AS cnt], changelogMode=[I,UA])
+   +- GroupAggregate(groupBy=[a], select=[a, COUNT(*) AS cnt], changelogMode=[I,UB,UA])
       +- Exchange(distribution=[hash[a]], changelogMode=[I])
          +- Calc(select=[a], changelogMode=[I])
             +- DataStreamScan(table=[[default_catalog, default_database, MyTable]], fields=[a, b, c], changelogMode=[I])
@@ -70,8 +70,9 @@ Sink(name=[`default_catalog`.`default_database`.`upsertSink1`], fields=[b, cnt],
          +- Reused(reference_id=[1])
 
 Sink(name=[`default_catalog`.`default_database`.`upsertSink2`], fields=[b, cnt], changelogMode=[NONE])
-+- Calc(select=[b, cnt], where=[AND(>=(b, 4), <(b, 6))], changelogMode=[I,UB,UA])
-   +- Reused(reference_id=[1])
++- Calc(select=[b, cnt], where=[AND(>=(b, 4), <(b, 6))], changelogMode=[I,UA])
+   +- DropUpdateBefore(changelogMode=[I,UA])
+      +- Reused(reference_id=[1])
 ]]>
     </Resource>
   </TestCase>
@@ -170,8 +171,9 @@ Sink(name=[`default_catalog`.`default_database`.`retractSink`], fields=[b, cnt],
    +- Reused(reference_id=[1])
 
 Sink(name=[`default_catalog`.`default_database`.`upsertSink`], fields=[b, cnt], changelogMode=[NONE])
-+- Calc(select=[b, cnt], where=[AND(>=(b, 4), <(b, 6))], changelogMode=[I,UB,UA])
-   +- Reused(reference_id=[1])
++- Calc(select=[b, cnt], where=[AND(>=(b, 4), <(b, 6))], changelogMode=[I,UA])
+   +- DropUpdateBefore(changelogMode=[I,UA])
+      +- Reused(reference_id=[1])
 ]]>
     </Resource>
   </TestCase>
@@ -214,6 +216,38 @@ Sink(name=[`default_catalog`.`default_database`.`retractSink`], fields=[cnt, a],
          +- Exchange(distribution=[hash[a]], changelogMode=[I])
             +- Calc(select=[a], changelogMode=[I])
                +- DataStreamScan(table=[[default_catalog, default_database, MyTable]], fields=[a, b, c], changelogMode=[I])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testUpsertAndUpsertSink2">
+    <Resource name="planBefore">
+      <![CDATA[
+LogicalSink(name=[`default_catalog`.`default_database`.`upsertSink1`], fields=[b, cnt])
++- LogicalAggregate(group=[{0}], cnt=[COUNT($1)])
+   +- LogicalProject(b=[$1], a=[$0])
+      +- LogicalTableScan(table=[[default_catalog, default_database, MyTable]])
+
+LogicalSink(name=[`default_catalog`.`default_database`.`upsertSink2`], fields=[b, cnt])
++- LogicalProject(b=[$0], cnt=[$1])
+   +- LogicalFilter(condition=[AND(>=($0, 4), <($0, 6))])
+      +- LogicalAggregate(group=[{0}], cnt=[COUNT($1)])
+         +- LogicalProject(b=[$1], a=[$0])
+            +- LogicalTableScan(table=[[default_catalog, default_database, MyTable]])
+]]>
+    </Resource>
+    <Resource name="planAfter">
+      <![CDATA[
+GroupAggregate(groupBy=[b], select=[b, COUNT(a) AS cnt], changelogMode=[I,UA], reuse_id=[1])
++- Exchange(distribution=[hash[b]], changelogMode=[I])
+   +- Calc(select=[b, a], changelogMode=[I])
+      +- DataStreamScan(table=[[default_catalog, default_database, MyTable]], fields=[a, b, c], changelogMode=[I])
+
+Sink(name=[`default_catalog`.`default_database`.`upsertSink1`], fields=[b, cnt], changelogMode=[NONE])
++- Reused(reference_id=[1])
+
+Sink(name=[`default_catalog`.`default_database`.`upsertSink2`], fields=[b, cnt], changelogMode=[NONE])
++- Calc(select=[b, cnt], where=[AND(>=(b, 4), <(b, 6))], changelogMode=[I,UA])
+   +- Reused(reference_id=[1])
 ]]>
     </Resource>
   </TestCase>

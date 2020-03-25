@@ -30,7 +30,7 @@ import org.apache.flink.table.planner.codegen.agg.AggsHandlerCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.planner.plan.utils.AggregateUtil.transformToStreamAggregateInfoList
-import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, OverAggregateUtil, RelExplainUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, KeySelectorUtil, OverAggregateUtil, RelExplainUtil}
 import org.apache.flink.table.runtime.operators.over._
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
@@ -43,6 +43,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rex.RexLiteral
 import org.apache.calcite.tools.RelBuilder
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils.validateInputStreamIsInsertOnly
 
 import java.util
@@ -62,6 +63,17 @@ class StreamExecOverAggregate(
   extends SingleRel(cluster, traitSet, inputRel)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.INSERT_ONLY
+  }
+
+  override def consumedChangelogMode(
+    inputOrdinal: Int,
+    inputMode: ChangelogMode,
+    expectedOutputMode: ChangelogMode): ChangelogMode = inputMode
 
   override def produceUpdates: Boolean = false
 

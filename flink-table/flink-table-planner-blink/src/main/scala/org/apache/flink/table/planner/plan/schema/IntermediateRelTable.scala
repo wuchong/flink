@@ -38,11 +38,12 @@ import java.util.{List => JList}
 class IntermediateRelTable(
     names: JList[String],
     val relNode: RelNode,
+    val isUpdateBeforeRequired: Boolean,
     val changelogMode: ChangelogMode,
     statistic: FlinkStatistic = FlinkStatistic.UNKNOWN)
   extends FlinkPreparingTableBase(null, relNode.getRowType, names, statistic) {
 
   def this(names: JList[String], relNode: RelNode) {
-    this(names, relNode, ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT).build())
+    this(names, relNode, false, ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT).build())
   }
 }

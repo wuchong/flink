@@ -125,6 +125,22 @@ class SinkTest extends TableTestBase {
   }
 
   @Test
+  def testUpsertAndUpsertSink2(): Unit = {
+    val table = util.tableEnv.sqlQuery("SELECT b, COUNT(a) AS cnt FROM MyTable GROUP BY b")
+    util.tableEnv.registerTable("TempTable", table)
+
+    val upsertSink1 = util.createUpsertTableSink(Array(0), Array("b", "cnt"), Array(LONG, LONG))
+    util.writeToSink(table, upsertSink1, "upsertSink1")
+
+    val table2 = util.tableEnv.sqlQuery("SELECT b, cnt FROM TempTable WHERE b >= 4 AND b < 6")
+    val upsertSink2 = util.createUpsertTableSink(Array(), Array("b", "cnt"), Array(LONG, LONG))
+    util.writeToSink(table2, upsertSink2,  "upsertSink2")
+
+    // TODO: add IT case for this
+    util.verifyPlanWithTrait()
+  }
+
+  @Test
   def testAppendUpsertAndRetractSink(): Unit = {
     util.addDataStream[(Int, Long, String)]("MyTable2", 'd, 'e, 'f)
     util.addDataStream[(Int, Long, String)]("MyTable3", 'i, 'j, 'k)

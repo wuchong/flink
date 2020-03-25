@@ -20,7 +20,7 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.dataformat.{BaseRow, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkRelBuilder
 import org.apache.flink.table.planner.codegen.CodeGeneratorContext
 import org.apache.flink.table.planner.codegen.OperatorCodeGenerator.ELEMENT
@@ -34,13 +34,13 @@ import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter.fromDat
 import org.apache.flink.table.runtime.typeutils.TypeCheckUtils
 import org.apache.flink.table.types.logical.{RowType, TimestampKind, TimestampType}
 import org.apache.flink.table.typeutils.TimeIndicatorTypeInfo.ROWTIME_STREAM_MARKER
-
 import org.apache.calcite.plan._
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.TableScan
 import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelNode, RelWriter}
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -58,12 +58,16 @@ class StreamExecDataStreamScan(
     table: RelOptTable,
     outputRowType: RelDataType)
   extends TableScan(cluster, traitSet, table)
-  with StreamPhysicalRel
+  with StreamScanPhysicalRel
   with StreamExecNode[BaseRow]{
 
   val dataStreamTable: DataStreamTable[Any] = getTable.unwrap(classOf[DataStreamTable[Any]])
 
   def isAccRetract: Boolean = dataStreamTable.isAccRetract
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT).build()
+  }
 
   override def produceUpdates: Boolean = dataStreamTable.producesUpdates
 

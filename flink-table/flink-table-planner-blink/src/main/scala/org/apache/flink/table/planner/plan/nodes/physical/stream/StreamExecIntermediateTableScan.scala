@@ -24,6 +24,7 @@ import org.apache.calcite.plan.{RelOptCluster, RelOptTable, RelTraitSet}
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.flink.table.dataformat.RowKind
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -36,7 +37,11 @@ class StreamExecIntermediateTableScan(
     table: RelOptTable,
     outputRowType: RelDataType)
   extends CommonIntermediateTableScan(cluster, traitSet, table)
-  with StreamPhysicalRel {
+  with StreamScanPhysicalRel {
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    intermediateTable.changelogMode
+  }
 
   override def produceUpdates: Boolean = {
     val changelogMode = intermediateTable.changelogMode

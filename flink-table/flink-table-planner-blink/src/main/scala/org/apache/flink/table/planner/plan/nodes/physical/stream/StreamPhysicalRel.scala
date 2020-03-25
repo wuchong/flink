@@ -19,8 +19,8 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.plan.nodes.physical.FlinkPhysicalRel
-
 import org.apache.calcite.rel.RelNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 /**
   * Base class for stream physical relational expression.
@@ -28,7 +28,20 @@ import org.apache.calcite.rel.RelNode
 trait StreamPhysicalRel extends FlinkPhysicalRel {
 
   // -------------------------------------------------------------------------------------------
-  // Interfaces used to infer ChangelogMode trait for nodes
+  // (Option#1) Interfaces used to infer ChangelogMode trait for nodes
+  // -------------------------------------------------------------------------------------------
+
+  def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean
+
+  def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode
+
+  def consumedChangelogMode(
+    inputOrdinal: Int,
+    inputMode: ChangelogMode,
+    expectedOutputMode: ChangelogMode): ChangelogMode
+
+  // -------------------------------------------------------------------------------------------
+  // (Option#2) Interfaces used to infer ChangelogMode trait for nodes
   // -------------------------------------------------------------------------------------------
 
   /**

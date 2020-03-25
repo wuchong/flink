@@ -29,14 +29,14 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{RelExplainUtil, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, RelExplainUtil, SortUtil}
 import org.apache.flink.table.runtime.operators.sort.StreamSortOperator
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel._
 import org.apache.calcite.rel.core.Sort
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.lang.{Boolean => JBoolean}
 import java.util
@@ -64,6 +64,19 @@ class StreamExecSort(
   extends Sort(cluster, traitSet, inputRel, sortCollation)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.INSERT_ONLY
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+  }
 
   /**
     * this node will not produce or consume retraction message

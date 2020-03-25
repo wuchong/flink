@@ -28,7 +28,7 @@ import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks,
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.table.api.{DataTypes, TableException}
 import org.apache.flink.table.dataformat.DataFormatConverters.DataFormatConverter
-import org.apache.flink.table.dataformat.{BaseRow, DataFormatConverters}
+import org.apache.flink.table.dataformat.{BaseRow, DataFormatConverters, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.CodeGeneratorContext
 import org.apache.flink.table.planner.codegen.OperatorCodeGenerator._
@@ -45,11 +45,11 @@ import org.apache.flink.table.sources.{DefinedFieldMapping, RowtimeAttributeDesc
 import org.apache.flink.table.types.{DataType, FieldsDataType}
 import org.apache.flink.table.utils.TypeMappingUtils
 import org.apache.flink.types.Row
-
 import org.apache.calcite.plan._
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 import java.util.function.{Function => JFunction}
@@ -64,8 +64,12 @@ class StreamExecTableSourceScan(
     traitSet: RelTraitSet,
     tableSourceTable: TableSourceTable[_])
   extends PhysicalTableSourceScan(cluster, traitSet, tableSourceTable)
-  with StreamPhysicalRel
+  with StreamScanPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT).build()
+  }
 
   override def produceUpdates: Boolean = false
 

@@ -26,16 +26,16 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{RelExplainUtil, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, RelExplainUtil, SortUtil}
 import org.apache.flink.table.runtime.keyselector.NullBinaryRowKeySelector
 import org.apache.flink.table.runtime.operators.sort.{ProcTimeSortOperator, RowTimeSortOperator}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.RelFieldCollation.Direction
 import org.apache.calcite.rel._
 import org.apache.calcite.rel.core.Sort
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -55,6 +55,19 @@ class StreamExecTemporalSort(
   extends Sort(cluster, traitSet, inputRel, sortCollation)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = {
+    ChangelogModeUtils.isInsertOnly(inputChangelogModes.head)
+  }
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.INSERT_ONLY
+  }
+
+  override def consumedChangelogMode(
+    inputOrdinal: Int,
+    inputMode: ChangelogMode,
+    expectedOutputMode: ChangelogMode): ChangelogMode = inputMode
 
   override def produceUpdates: Boolean = false
 

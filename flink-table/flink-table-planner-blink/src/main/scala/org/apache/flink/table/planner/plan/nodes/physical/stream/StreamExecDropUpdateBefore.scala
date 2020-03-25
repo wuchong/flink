@@ -18,55 +18,41 @@
 
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
-import org.apache.flink.api.dag.Transformation
-import org.apache.flink.streaming.api.transformations.UnionTransformation
-import org.apache.flink.table.dataformat.{BaseRow, RowKind}
-import org.apache.flink.table.planner.delegation.StreamPlanner
-import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
-import org.apache.calcite.rel.`type`.RelDataType
-import org.apache.calcite.rel.core.{SetOp, Union}
-import org.apache.calcite.rel.{RelNode, RelWriter}
+import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
+import org.apache.flink.api.dag.Transformation
+import org.apache.flink.streaming.api.operators.StreamFilter
+import org.apache.flink.streaming.api.transformations.OneInputTransformation
+import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
+import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.planner.plan.utils.ChangelogModeUtils
+import org.apache.flink.table.runtime.operators.changelog.DropUpdateBeforeFunction
+import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
 
 import java.util
 
 import scala.collection.JavaConversions._
 
-/**
-  * Stream physical RelNode for [[Union]].
-  */
-class StreamExecUnion(
+class StreamExecDropUpdateBefore(
     cluster: RelOptCluster,
     traitSet: RelTraitSet,
-    inputRels: util.List[RelNode],
-    all: Boolean,
-    outputRowType: RelDataType)
-  extends Union(cluster, traitSet, inputRels, all)
+    inputRel: RelNode)
+  extends SingleRel(cluster, traitSet, inputRel)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
-
-  require(all, "Only support union all")
 
   override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
 
   override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
-    val builder = ChangelogMode.newBuilder()
-    inputChangelogModes.foreach(mode => mode.getContainedKinds.foreach(builder.addContainedKind))
-    builder.build()
+    ChangelogModeUtils.removeBeforeImageForUpdates(inputChangelogModes.head)
   }
 
   override def consumedChangelogMode(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
-      expectedOutputMode: ChangelogMode): ChangelogMode = {
-    if (expectedOutputMode.contains(RowKind.UPDATE_BEFORE)) {
-      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
-    } else {
-      ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
-    }
-  }
+      expectedOutputMode: ChangelogMode): ChangelogMode = inputMode
 
   override def produceUpdates: Boolean = false
 
@@ -76,28 +62,22 @@ class StreamExecUnion(
 
   override def forwardChanges: Boolean = true
 
-//  override def needsUpdatesAsRetraction(input: RelNode): Boolean = false
-//
-//  override def consumesRetractions: Boolean = false
-//
-//  override def producesRetractions: Boolean = false
-
   override def requireWatermark: Boolean = false
 
-  override def deriveRowType(): RelDataType = outputRowType
-
-  override def copy(traitSet: RelTraitSet, inputs: util.List[RelNode], all: Boolean): SetOp = {
-    new StreamExecUnion(cluster, traitSet, inputs, all, outputRowType)
+  override def copy(
+      traitSet: RelTraitSet,
+      inputs: util.List[RelNode]): RelNode = {
+    new StreamExecDropUpdateBefore(cluster, traitSet, inputs.get(0))
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {
-    super.explainTerms(pw).item("union", outputRowType.getFieldNames.mkString(", "))
+    super.explainTerms(pw)
   }
 
   //~ ExecNode methods -----------------------------------------------------------
 
   override def getInputNodes: util.List[ExecNode[StreamPlanner, _]] = {
-    getInputs.map(_.asInstanceOf[ExecNode[StreamPlanner, _]])
+    List(getInput.asInstanceOf[ExecNode[StreamPlanner, _]])
   }
 
   override def replaceInputNode(
@@ -108,9 +88,18 @@ class StreamExecUnion(
 
   override protected def translateToPlanInternal(
       planner: StreamPlanner): Transformation[BaseRow] = {
-    val transformations = getInputNodes.map {
-      input => input.translateToPlan(planner).asInstanceOf[Transformation[BaseRow]]
-    }
-    new UnionTransformation(transformations)
+
+    val inputTransform = getInputNodes.get(0).translateToPlan(planner)
+      .asInstanceOf[Transformation[BaseRow]]
+    val rowTypeInfo = inputTransform.getOutputType.asInstanceOf[BaseRowTypeInfo]
+    val operator = new StreamFilter(new DropUpdateBeforeFunction())
+    new OneInputTransformation(
+      inputTransform,
+      getRelDetailedDescription,
+      operator,
+      rowTypeInfo,
+      inputTransform.getParallelism
+    )
   }
+
 }

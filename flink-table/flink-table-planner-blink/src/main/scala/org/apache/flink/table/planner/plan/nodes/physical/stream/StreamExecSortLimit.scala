@@ -27,7 +27,7 @@ import org.apache.flink.table.planner.codegen.EqualiserCodeGenerator
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{AppendFastStrategy, ChangelogPlanUtils, KeySelectorUtil, RankProcessStrategy, RelExplainUtil, RetractStrategy, SortUtil, UpdateFastStrategy}
+import org.apache.flink.table.planner.plan.utils.{AppendFastStrategy, ChangelogModeUtils, ChangelogPlanUtils, KeySelectorUtil, RankProcessStrategy, RelExplainUtil, RetractStrategy, SortUtil, UpdateFastStrategy}
 import org.apache.flink.table.runtime.keyselector.NullBinaryRowKeySelector
 import org.apache.flink.table.runtime.operators.rank.{AppendOnlyTopNFunction, ConstantRankRange, RankType, RetractableTopNFunction, UpdatableTopNFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
@@ -37,6 +37,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelCollation, RelNode, RelWriter}
 import org.apache.calcite.rex.{RexLiteral, RexNode}
 import org.apache.calcite.util.ImmutableBitSet
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -70,6 +71,25 @@ class StreamExecSortLimit(
         inputRel, ImmutableBitSet.of(), sortCollation, cluster.getMetadataQuery)
     }
     strategy
+  }
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.ALL_CHANGES
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    if (getStrategy(forceRecompute = true) == RetractStrategy) {
+      // requires update_before
+      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    } else {
+      // doesn't require update_before
+      ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    }
   }
 
   override def produceUpdates = true

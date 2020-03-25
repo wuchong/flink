@@ -30,8 +30,9 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.EqualiserCodeGenerator
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, RelExplainUtil, SortUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, ChangelogPlanUtils, RelExplainUtil, SortUtil}
 import org.apache.flink.table.runtime.keyselector.NullBinaryRowKeySelector
 import org.apache.flink.table.runtime.operators.rank.{AppendOnlyTopNFunction, ConstantRankRange, RankType, RetractableTopNFunction}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
@@ -63,6 +64,23 @@ class StreamExecLimit(
 
   private lazy val limitStart: Long = SortUtil.getLimitStart(offset)
   private lazy val limitEnd: Long = SortUtil.getLimitEnd(offset, fetch)
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    if (ChangelogModeUtils.isInsertOnly(inputChangelogModes.head)) {
+      ChangelogModeUtils.INSERT_ONLY
+    } else {
+      ChangelogModeUtils.ALL_CHANGES
+    }
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+  }
 
   override def produceUpdates: Boolean = {
     if (ChangelogPlanUtils.isInsertOnly(getInput)) {

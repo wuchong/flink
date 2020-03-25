@@ -19,7 +19,6 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import java.util
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
@@ -27,6 +26,7 @@ import org.apache.calcite.rel.core.Calc
 import org.apache.calcite.rex.RexProgram
 import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.planner.delegation.StreamPlanner
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.planner.plan.nodes.common.CommonCalc
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 
@@ -44,6 +44,21 @@ abstract class StreamExecCalcBase(
   extends CommonCalc(cluster, traitSet, inputRel, calcProgram)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    // forward input mode
+    inputChangelogModes.head
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    // backward downstream expectation
+    expectedOutputMode
+  }
 
   override def produceUpdates: Boolean = false
 

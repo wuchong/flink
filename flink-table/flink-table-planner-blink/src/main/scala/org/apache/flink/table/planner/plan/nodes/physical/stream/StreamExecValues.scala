@@ -23,13 +23,14 @@ import org.apache.flink.table.dataformat.BaseRow
 import org.apache.flink.table.planner.codegen.ValuesCodeGenerator
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-
 import com.google.common.collect.ImmutableList
 import org.apache.calcite.plan._
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.Values
 import org.apache.calcite.rex.RexLiteral
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
+import org.apache.flink.table.planner.plan.utils.ChangelogModeUtils
 
 import java.util
 
@@ -42,8 +43,12 @@ class StreamExecValues(
     tuples: ImmutableList[ImmutableList[RexLiteral]],
     outputRowType: RelDataType)
   extends Values(cluster, outputRowType, tuples, traitSet)
-  with StreamPhysicalRel
+  with StreamScanPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    ChangelogModeUtils.INSERT_ONLY
+  }
 
   override def produceUpdates: Boolean = false
 

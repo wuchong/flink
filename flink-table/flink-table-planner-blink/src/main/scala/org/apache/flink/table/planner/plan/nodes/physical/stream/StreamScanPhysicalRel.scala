@@ -16,22 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.planner.plan.optimize.program
+package org.apache.flink.table.planner.plan.nodes.physical.stream
 
-import org.apache.flink.table.planner.plan.`trait`.SendBeforeImageForUpdatesTrait
-import org.apache.calcite.rel.RelNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
-/**
-  * A [[FlinkOptimizeProgram]] that does some initialization be for retraction inference.
-  */
-class FlinkEmitUpdateBeforeTraitInitProgram extends FlinkOptimizeProgram[StreamOptimizeContext] {
+trait StreamScanPhysicalRel extends StreamPhysicalRel {
 
-  override def optimize(root: RelNode, context: StreamOptimizeContext): RelNode = {
-    if (!context.requestBeforeImageOfUpdate) {
-      val newTraitSet = root.getTraitSet.plus(new SendBeforeImageForUpdatesTrait(false))
-      root.copy(newTraitSet, root.getInputs)
-    } else {
-      root
-    }
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = {
+    throw new UnsupportedOperationException(
+      "consumedChangelogMode called on " + this.getClass.getSimpleName)
   }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    throw new UnsupportedOperationException(
+      "consumedChangelogMode called on " + this.getClass.getSimpleName)
+  }
+
 }

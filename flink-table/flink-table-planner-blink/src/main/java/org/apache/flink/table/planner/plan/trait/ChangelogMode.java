@@ -24,6 +24,7 @@ import org.apache.flink.util.Preconditions;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -55,6 +56,19 @@ public final class ChangelogMode {
 
 	public boolean containsOnly(RowKind kind) {
 		return kinds.size() == 1 && kinds.contains(kind);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ChangelogMode that = (ChangelogMode) o;
+		return Objects.equals(kinds, that.kinds);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(kinds);
 	}
 
 	// --------------------------------------------------------------------------------------------

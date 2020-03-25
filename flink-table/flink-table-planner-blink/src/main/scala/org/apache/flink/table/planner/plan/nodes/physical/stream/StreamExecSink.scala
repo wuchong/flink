@@ -29,9 +29,10 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.SinkCodeGenerator.generateRowConverterOperator
 import org.apache.flink.table.planner.codegen.{CodeGenUtils, CodeGeneratorContext}
 import org.apache.flink.table.planner.delegation.StreamPlanner
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 import org.apache.flink.table.planner.plan.nodes.calcite.Sink
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, UpdatingPlanChecker}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, ChangelogPlanUtils, UpdatingPlanChecker}
 import org.apache.flink.table.planner.sinks.DataStreamTableSink
 import org.apache.flink.table.runtime.typeutils.{BaseRowTypeInfo, TypeCheckUtils}
 import org.apache.flink.table.sinks._
@@ -53,6 +54,30 @@ class StreamExecSink[T](
   extends Sink(cluster, traitSet, inputRel, sink, sinkName)
   with StreamPhysicalRel
   with StreamExecNode[Any] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = {
+    if (sink.isInstanceOf[AppendStreamTableSink[_]]) {
+      ChangelogModeUtils.isInsertOnly(inputChangelogModes.head)
+    } else {
+      // retract/upsert sink can support any changelog mode
+      true
+    }
+  }
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    throw new UnsupportedOperationException("producedChangelogMode called on StreamExecSink")
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    if (sink.isInstanceOf[UpsertStreamTableSink[_]]) {
+      ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    } else {
+      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    }
+  }
 
   override def produceUpdates: Boolean = false
 

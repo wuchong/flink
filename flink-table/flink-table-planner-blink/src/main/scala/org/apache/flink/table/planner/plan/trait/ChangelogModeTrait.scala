@@ -19,10 +19,7 @@
 package org.apache.flink.table.planner.plan.`trait`
 
 import org.apache.calcite.plan.{RelOptPlanner, RelTrait, RelTraitDef}
-import org.apache.flink.table.dataformat.RowKind
-import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils
-
-import scala.collection.mutable.ArrayBuffer
+import org.apache.flink.table.planner.plan.utils.ChangelogModeUtils
 
 /**
  * Tracks the [[ChangelogMode]] of a [[org.apache.calcite.rel.RelNode]]
@@ -43,21 +40,7 @@ class ChangelogModeTrait(val changelogMode: Option[ChangelogMode]) extends RelTr
   }
 
   override def toString: String = changelogMode match {
-    case Some(mode) =>
-      val kinds = new ArrayBuffer[String]
-      if (mode.contains(RowKind.INSERT)) {
-        kinds += "I"
-      }
-      if (mode.contains(RowKind.UPDATE_BEFORE)) {
-        kinds += "UB"
-      }
-      if (mode.contains(RowKind.UPDATE_AFTER)) {
-        kinds += "UA"
-      }
-      if (mode.contains(RowKind.DELETE)) {
-        kinds += "D"
-      }
-      kinds.mkString(",")
+    case Some(mode) => ChangelogModeUtils.stringifyChangelogMode(mode)
     case None => "NONE"
   }
 }

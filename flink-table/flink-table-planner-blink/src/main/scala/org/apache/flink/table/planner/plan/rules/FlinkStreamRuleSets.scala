@@ -414,6 +414,14 @@ object FlinkStreamRuleSets {
     ChangelogModeInferRules.FINALIZE_CHANGELOG_MODE_INSTANCE
   )
 
+  val CHANGELOG_MODE_INITIAL_RULES: RuleSet = RuleSets.ofList(
+    InferChangelogModeRules.PROPAGATE_CHANGELOG_MODE_INSTANCE
+  )
+
+  val CHANGELOG_MODE_FINAL_RULES: RuleSet = RuleSets.ofList(
+    InferChangelogModeRules.FINALIZE_CHANGELOG_MODE_INSTANCE
+  )
+
   /**
     * RuleSet related to watermark assignment.
     */

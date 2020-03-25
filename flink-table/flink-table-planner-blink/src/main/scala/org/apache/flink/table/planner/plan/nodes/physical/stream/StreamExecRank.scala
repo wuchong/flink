@@ -24,7 +24,7 @@ import org.apache.flink.configuration.ConfigOptions.key
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
 import org.apache.flink.table.api.TableException
-import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.dataformat.{BaseRow, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.codegen.EqualiserCodeGenerator
 import org.apache.flink.table.planner.codegen.sort.ComparatorCodeGenerator
@@ -34,11 +34,11 @@ import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
 import org.apache.flink.table.planner.plan.utils.{KeySelectorUtil, _}
 import org.apache.flink.table.runtime.operators.rank._
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel._
 import org.apache.calcite.rel.`type`.RelDataTypeField
 import org.apache.calcite.util.ImmutableBitSet
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.lang.{Long => JLong}
 import java.util
@@ -81,6 +81,35 @@ class StreamExecRank(
         inputRel, partitionKey, orderKey, cluster.getMetadataQuery)
     }
     strategy
+  }
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    val builder = ChangelogMode.newBuilder()
+      .addContainedKind(RowKind.INSERT)
+      .addContainedKind(RowKind.UPDATE_BEFORE)
+      .addContainedKind(RowKind.UPDATE_AFTER)
+    if (!outputRankNumber || getStrategy(forceRecompute = true) == RetractStrategy) {
+      // 1) produce deletion if without row_number,
+      //    because we use deletion to remove records out of TopN
+      // 2) AppendStrategy or UpdateStrategy will not produce deletions
+      builder.addContainedKind(RowKind.DELETE)
+    }
+    builder.build()
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    if (getStrategy(forceRecompute = true) == RetractStrategy) {
+      // requires update_before
+      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    } else {
+      // doesn't require update_before
+      ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    }
   }
 
   override def produceUpdates = true

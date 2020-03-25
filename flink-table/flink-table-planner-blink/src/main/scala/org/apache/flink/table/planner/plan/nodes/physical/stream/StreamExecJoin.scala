@@ -20,23 +20,23 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.streaming.api.transformations.TwoInputTransformation
-import org.apache.flink.table.dataformat.BaseRow
+import org.apache.flink.table.dataformat.{BaseRow, RowKind}
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.delegation.StreamPlanner
 import org.apache.flink.table.planner.plan.nodes.common.CommonPhysicalJoin
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, StreamExecNode}
-import org.apache.flink.table.planner.plan.utils.{JoinUtil, KeySelectorUtil, RelExplainUtil}
+import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, JoinUtil, KeySelectorUtil, RelExplainUtil}
 import org.apache.flink.table.runtime.operators.join.FlinkJoinType
 import org.apache.flink.table.runtime.operators.join.stream.state.JoinInputSideSpec
 import org.apache.flink.table.runtime.operators.join.stream.{StreamingJoinOperator, StreamingSemiAntiJoinOperator}
 import org.apache.flink.table.runtime.typeutils.BaseRowTypeInfo
-
 import org.apache.calcite.plan._
 import org.apache.calcite.plan.hep.HepRelVertex
 import org.apache.calcite.rel.core.{Join, JoinRelType}
 import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rel.{RelNode, RelWriter}
 import org.apache.calcite.rex.RexNode
+import org.apache.flink.table.planner.plan.`trait`.ChangelogMode
 
 import java.util
 
@@ -58,6 +58,35 @@ class StreamExecJoin(
   extends CommonPhysicalJoin(cluster, traitSet, leftRel, rightRel, condition, joinType)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {
+
+  override def supportChangelogMode(inputChangelogModes: Array[ChangelogMode]): Boolean = true
+
+  override def producedChangelogMode(inputChangelogModes: Array[ChangelogMode]): ChangelogMode = {
+    val insertOnly = ChangelogModeUtils.isInsertOnly(inputChangelogModes.head) &&
+      ChangelogModeUtils.isInsertOnly(inputChangelogModes.last)
+    val innerOrSemi = flinkJoinType == FlinkJoinType.INNER || flinkJoinType == FlinkJoinType.SEMI
+    if (insertOnly && innerOrSemi) {
+      ChangelogModeUtils.INSERT_ONLY
+    } else {
+      // only produce insert and delete
+      ChangelogMode.newBuilder()
+        .addContainedKind(RowKind.INSERT)
+        .addContainedKind(RowKind.DELETE)
+        .build()
+    }
+  }
+
+  override def consumedChangelogMode(
+      inputOrdinal: Int,
+      inputMode: ChangelogMode,
+      expectedOutputMode: ChangelogMode): ChangelogMode = {
+    val requestBeforeImage = requestBeforeImageOfUpdates(getInput(inputOrdinal))
+    if (requestBeforeImage) {
+      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    } else {
+      ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    }
+  }
 
   override def produceUpdates: Boolean = {
     flinkJoinType != FlinkJoinType.INNER && flinkJoinType != FlinkJoinType.SEMI
