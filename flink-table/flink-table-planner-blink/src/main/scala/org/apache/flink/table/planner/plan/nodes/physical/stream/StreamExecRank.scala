@@ -103,12 +103,11 @@ class StreamExecRank(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
-    if (getStrategy(forceRecompute = true) == RetractStrategy) {
-      // requires update_before
-      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
-    } else {
+    if (getStrategy(forceRecompute = true) != RetractStrategy) {
       // doesn't require update_before
       ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    } else {
+      inputMode
     }
   }
 

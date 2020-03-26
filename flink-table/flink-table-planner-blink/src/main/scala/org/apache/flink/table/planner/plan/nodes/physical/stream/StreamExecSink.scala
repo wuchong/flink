@@ -75,7 +75,7 @@ class StreamExecSink[T](
     if (sink.isInstanceOf[UpsertStreamTableSink[_]]) {
       ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
     } else {
-      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+      inputMode
     }
   }
 

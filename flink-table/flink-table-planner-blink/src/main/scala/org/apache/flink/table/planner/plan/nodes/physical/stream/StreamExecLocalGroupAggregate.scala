@@ -68,7 +68,8 @@ class StreamExecLocalGroupAggregate(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
-    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+//    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    inputMode
   }
 
   override def produceUpdates = false

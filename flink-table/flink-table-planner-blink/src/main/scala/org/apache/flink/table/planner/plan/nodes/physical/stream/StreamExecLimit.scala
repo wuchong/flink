@@ -79,7 +79,8 @@ class StreamExecLimit(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
-    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    inputMode
+//    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
   }
 
   override def produceUpdates: Boolean = {

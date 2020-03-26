@@ -78,8 +78,9 @@ class StreamExecGroupTableAggregate(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
+    inputMode
     // request update_before if there is update_after
-    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+//    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
   }
 
   override def produceUpdates = true

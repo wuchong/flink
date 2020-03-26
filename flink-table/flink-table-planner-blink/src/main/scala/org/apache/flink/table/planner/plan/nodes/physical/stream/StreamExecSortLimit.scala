@@ -85,7 +85,8 @@ class StreamExecSortLimit(
       expectedOutputMode: ChangelogMode): ChangelogMode = {
     if (getStrategy(forceRecompute = true) == RetractStrategy) {
       // requires update_before
-      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+//      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+      inputMode
     } else {
       // doesn't require update_before
       ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)

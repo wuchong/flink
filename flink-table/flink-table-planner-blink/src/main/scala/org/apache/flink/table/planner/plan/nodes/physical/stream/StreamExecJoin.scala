@@ -81,10 +81,10 @@ class StreamExecJoin(
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
     val requestBeforeImage = requestBeforeImageOfUpdates(getInput(inputOrdinal))
-    if (requestBeforeImage) {
-      ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
-    } else {
+    if (!requestBeforeImage) {
       ChangelogModeUtils.removeBeforeImageForUpdates(inputMode)
+    } else {
+      inputMode
     }
   }
 

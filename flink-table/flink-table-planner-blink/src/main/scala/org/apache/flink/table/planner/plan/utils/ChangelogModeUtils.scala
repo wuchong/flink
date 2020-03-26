@@ -52,6 +52,11 @@ object ChangelogModeUtils {
     changelogMode
   }
 
+  def hasBeforeImageForUpdates(changelogMode: ChangelogMode): Boolean = {
+    // TODO
+    true
+  }
+
   def removeBeforeImageForUpdates(changelogMode: ChangelogMode): ChangelogMode = {
     if (changelogMode.contains(RowKind.UPDATE_AFTER) &&
         changelogMode.contains(RowKind.UPDATE_BEFORE)) {

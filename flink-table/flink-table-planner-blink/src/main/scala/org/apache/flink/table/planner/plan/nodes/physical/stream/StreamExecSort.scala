@@ -75,7 +75,8 @@ class StreamExecSort(
       inputOrdinal: Int,
       inputMode: ChangelogMode,
       expectedOutputMode: ChangelogMode): ChangelogMode = {
-    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+//    ChangelogModeUtils.addBeforeImageForUpdates(inputMode)
+    inputMode
   }
 
   /**
