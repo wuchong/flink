@@ -25,8 +25,11 @@ import org.apache.calcite.rel.RelNode
 import org.apache.flink.table.dataformat.RowKind
 import org.apache.flink.table.planner.plan.`trait`._
 import org.apache.flink.table.planner.plan.nodes.calcite.Sink
-import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamExecDropUpdateBefore, StreamExecIntermediateTableScan, StreamPhysicalRel}
+import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamExecDropUpdateBefore, StreamExecExchange, StreamExecIntermediateTableScan, StreamPhysicalRel}
 import org.apache.flink.table.planner.plan.utils.{ChangelogModeUtils, FlinkRelOptUtil}
+import org.apache.calcite.plan.RelOptRule.{any, operand}
+
+import java.util.Collections
 
 import scala.collection.JavaConversions._
 
@@ -34,6 +37,8 @@ object InferChangelogModeRules {
 
   val PROPAGATE_CHANGELOG_MODE_INSTANCE = new PropagateChangelogModeRule
   val FINALIZE_CHANGELOG_MODE_INSTANCE = new FinalizeChangelogModeRule
+  val EXCHANGE_DROP_UPDATE_BEFORE_TRANSPOSE_INSTANCE = new ExchangeDropUpdateBeforeTransposeRule
+  val CHANGELOG_ORDER_PRESERVING_INSTANCE = new ChangelogOrderPreservingRule
 
   class PropagateChangelogModeRule
     extends RelOptRule(
@@ -98,6 +103,7 @@ object InferChangelogModeRules {
           input match {
             case t: StreamExecIntermediateTableScan if t.intermediateTable.isUpdateBeforeRequired =>
               new StreamExecDropUpdateBefore(input.getCluster, newTraitSet, input)
+//            case ex: StreamExecExchange if getInputRelNodes(ex).isInstanceOf[]
             case _ =>
               input.copy(newTraitSet, input.getInputs)
           }
@@ -111,6 +117,58 @@ object InferChangelogModeRules {
         val newRel = current.copy(current.getTraitSet, newInputs)
         call.transformTo(newRel)
       }
+    }
+  }
+
+  class ExchangeDropUpdateBeforeTransposeRule extends RelOptRule(
+    operand(classOf[StreamExecExchange],
+      operand(classOf[StreamExecDropUpdateBefore], any())),
+    "ExchangeDropUpdateBeforeTransposeRule") {
+
+    override def onMatch(call: RelOptRuleCall): Unit = {
+      val exchange = call.rel[StreamExecExchange](0)
+      val dropBefore = call.rel[StreamExecDropUpdateBefore](1)
+      val inputChangelogMode = getChangelogModeTraitValue(dropBefore.getInput)
+      val newTraitSet = exchange.getTraitSet.plus(new ChangelogModeTrait(inputChangelogMode))
+      val newExchange = exchange.copy(newTraitSet, dropBefore.getInputs)
+      val newDropBefore = dropBefore.copy(
+        dropBefore.getTraitSet,
+        Collections.singletonList(newExchange))
+      call.transformTo(newDropBefore)
+    }
+  }
+
+  class ChangelogOrderPreservingRule extends RelOptRule(
+    operand(classOf[StreamPhysicalRel],
+      operand(classOf[StreamExecIntermediateTableScan], any())),
+    "ChangelogOrderPreservingRule") {
+
+    override def matches(call: RelOptRuleCall): Boolean = {
+      val rel = call.rel[StreamPhysicalRel](0)
+      val intermediate = call.rel[StreamExecIntermediateTableScan](1)
+      val changelogMode = getChangelogModeTraitValue(intermediate).get
+      val containsUpdateOrDelete = changelogMode.contains(RowKind.UPDATE_AFTER) ||
+        changelogMode.contains(RowKind.DELETE)
+      containsUpdateOrDelete && !rel.isInstanceOf[StreamExecExchange]
+    }
+
+    override def onMatch(call: RelOptRuleCall): Unit = {
+      val rel = call.rel[StreamPhysicalRel](0)
+      val intermediate = call.rel[StreamExecIntermediateTableScan](1)
+      val uniqueKeys = call.getMetadataQuery.getUniqueKeys(intermediate.intermediateTable.relNode)
+      val requiredDistribution = if (!uniqueKeys.isEmpty) {
+        FlinkRelDistribution.hash(uniqueKeys.head.asList())
+      } else {
+        FlinkRelDistribution.SINGLETON
+      }
+      val requiredTraitSet = intermediate.getTraitSet.plus(requiredDistribution)
+      val exchange = new StreamExecExchange(
+        intermediate.getCluster,
+        requiredTraitSet,
+        intermediate,
+        requiredDistribution)
+      val newRel = rel.copy(rel.getTraitSet, Collections.singletonList(exchange))
+      call.transformTo(newRel)
     }
   }
 

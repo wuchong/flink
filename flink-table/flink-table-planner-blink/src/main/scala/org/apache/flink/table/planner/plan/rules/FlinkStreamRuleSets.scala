@@ -419,7 +419,9 @@ object FlinkStreamRuleSets {
   )
 
   val CHANGELOG_MODE_FINAL_RULES: RuleSet = RuleSets.ofList(
-    InferChangelogModeRules.FINALIZE_CHANGELOG_MODE_INSTANCE
+    InferChangelogModeRules.FINALIZE_CHANGELOG_MODE_INSTANCE,
+    InferChangelogModeRules.EXCHANGE_DROP_UPDATE_BEFORE_TRANSPOSE_INSTANCE,
+    InferChangelogModeRules.CHANGELOG_ORDER_PRESERVING_INSTANCE
   )
 
   /**

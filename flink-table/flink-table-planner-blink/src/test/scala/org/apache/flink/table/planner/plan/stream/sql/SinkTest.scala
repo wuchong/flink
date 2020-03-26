@@ -107,6 +107,22 @@ class SinkTest extends TableTestBase {
   }
 
   @Test
+  def testRetractAndUpsertSink2(): Unit = {
+    val table = util.tableEnv.sqlQuery("SELECT b, COUNT(a) AS cnt FROM MyTable GROUP BY b")
+    util.tableEnv.registerTable("TempTable", table)
+
+    val table1 = util.tableEnv.sqlQuery("SELECT b, cnt FROM TempTable WHERE b < 4")
+    val retractSink = util.createRetractTableSink(Array("b", "cnt"), Array(LONG, LONG))
+    util.writeToSink(table1, retractSink, "retractSink")
+
+    val table2 = util.tableEnv.sqlQuery("SELECT * FROM TempTable ORDER BY cnt DESC LIMIT 3")
+    val upsertSink = util.createUpsertTableSink(Array(), Array("b", "cnt"), Array(LONG, LONG))
+    util.writeToSink(table2, upsertSink, "upsertSink")
+
+    util.verifyPlanWithTrait()
+  }
+
+  @Test
   def testUpsertAndUpsertSink(): Unit = {
     val table = util.tableEnv.sqlQuery("SELECT b, COUNT(a) AS cnt FROM MyTable GROUP BY b")
     util.tableEnv.registerTable("TempTable", table)
