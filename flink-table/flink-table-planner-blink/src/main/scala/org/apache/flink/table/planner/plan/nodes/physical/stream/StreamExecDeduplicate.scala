@@ -52,7 +52,7 @@ class StreamExecDeduplicate(
     traitSet: RelTraitSet,
     inputRel: RelNode,
     uniqueKeys: Array[Int],
-    keepLastRow: Boolean)
+    val keepLastRow: Boolean)
   extends SingleRel(cluster, traitSet, inputRel)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {

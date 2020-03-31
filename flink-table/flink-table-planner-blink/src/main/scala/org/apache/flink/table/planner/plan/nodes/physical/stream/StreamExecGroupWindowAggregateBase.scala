@@ -62,8 +62,8 @@ abstract class StreamExecGroupWindowAggregateBase(
     val window: LogicalWindow,
     namedProperties: Seq[PlannerNamedWindowProperty],
     inputTimeFieldIndex: Int,
-    emitStrategy: WindowEmitStrategy,
-    aggType: String)
+    val emitStrategy: WindowEmitStrategy,
+    val aggType: String)
   extends SingleRel(cluster, traitSet, inputRel)
   with StreamPhysicalRel
   with StreamExecNode[BaseRow] {

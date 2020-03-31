@@ -45,7 +45,7 @@ object UpdatingPlanChecker {
 
     override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
       node match {
-        case s: StreamPhysicalRel if s.producesUpdates || s.producesRetractions =>
+        case s: StreamPhysicalRel if s.produceUpdates || s.produceDeletions =>
           isAppendOnly = false
         case hep: HepRelVertex =>
           visit(hep.getCurrentRel, ordinal, parent)   //remove wrapper node

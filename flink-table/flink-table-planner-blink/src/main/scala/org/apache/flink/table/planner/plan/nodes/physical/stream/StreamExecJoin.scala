@@ -119,6 +119,25 @@ class StreamExecJoin(
     }
   }
 
+  def inputUniqueKeyContainsJoinKey(inputOrdinal: Int): Boolean = {
+    val input = getInput(inputOrdinal)
+    val inputUniqueKeys = getCluster.getMetadataQuery.getUniqueKeys(input)
+    if (inputUniqueKeys != null) {
+      val joinKeys = if (inputOrdinal == 0) {
+        // left input
+        keyPairs.map(_.source).toArray
+      } else {
+        // right input
+        keyPairs.map(_.target).toArray
+      }
+      inputUniqueKeys.exists {
+        uniqueKey => joinKeys.forall(uniqueKey.toArray.contains(_))
+      }
+    } else {
+      false
+    }
+  }
+
   override def forwardChanges: Boolean = true
 
 //  override def needsUpdatesAsRetraction(input: RelNode): Boolean = {

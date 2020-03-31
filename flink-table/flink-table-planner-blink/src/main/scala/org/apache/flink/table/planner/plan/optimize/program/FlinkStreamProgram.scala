@@ -179,7 +179,8 @@ object FlinkStreamProgram {
     chainedProgram.addLast(
       PHYSICAL_REWRITE,
       FlinkGroupProgramBuilder.newBuilder[StreamOptimizeContext]
-          .addProgram(new FlinkChangelogModeInferProgram2, "changelog mode inference")
+        .addProgram(new FlinkChangelogModeInferProgram3, "changelog mode inference")
+//          .addProgram(new FlinkChangelogModeInferProgram2, "changelog mode inference")
 //          .addProgram(new FlinkChangelogModeInferProgram, "changelog mode inference")
 //        .addProgram(new FlinkEmitUpdateBeforeTraitInitProgram,
 //          "init for retraction")

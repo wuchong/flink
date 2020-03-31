@@ -37,6 +37,12 @@ object ChangelogModeUtils {
     .addContainedKind(RowKind.INSERT)
     .build()
 
+  val UPSERT_DELETE: ChangelogMode = ChangelogMode.newBuilder()
+    .addContainedKind(RowKind.INSERT)
+    .addContainedKind(RowKind.UPDATE_AFTER)
+    .addContainedKind(RowKind.DELETE)
+    .build()
+
   def isInsertOnly(changelogMode: ChangelogMode): Boolean = {
     changelogMode.containsOnly(RowKind.INSERT)
   }
@@ -69,6 +75,19 @@ object ChangelogModeUtils {
       return resultBuilder.build()
     }
     changelogMode
+  }
+
+  /** Returns the union of a number of ChangelogMode sets. */
+  def union(modes: ChangelogMode*): ChangelogMode = {
+    val builder = ChangelogMode.newBuilder()
+    modes.foreach(mode => mode.getContainedKinds.asScala.foreach(builder.addContainedKind))
+    builder.build()
+  }
+
+  /** Returns a ChangelogMode with all the bits set in both this set and in
+   * another. */
+  def intersect(modes: ChangelogMode*): ChangelogMode ={
+    ???
   }
 
   def stringifyChangelogMode(mode: ChangelogMode): String = {
