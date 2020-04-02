@@ -50,6 +50,7 @@ import org.apache.flink.runtime.state.StatePartitionStreamProvider;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.TestTaskStateManager;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.InternalTimeServiceManager;
 import org.apache.flink.streaming.api.operators.KeyContext;
@@ -233,9 +234,9 @@ public class StreamOperatorSnapshotRestoreTest extends TestLogger {
 			protected StreamTaskStateInitializer createStreamTaskStateManager(
 				Environment env,
 				StateBackend stateBackend,
-				ProcessingTimeService processingTimeService) {
+				TtlTimeProvider ttlTimeProvider) {
 
-				return new StreamTaskStateInitializerImpl(env, stateBackend) {
+				return new StreamTaskStateInitializerImpl(env, stateBackend, ttlTimeProvider) {
 					@Override
 					protected <K> InternalTimeServiceManager<K> internalTimeServiceManager(
 						AbstractKeyedStateBackend<K> keyedStatedBackend,
