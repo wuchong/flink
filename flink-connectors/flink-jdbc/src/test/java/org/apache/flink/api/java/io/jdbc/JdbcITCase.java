@@ -18,7 +18,6 @@
 package org.apache.flink.api.java.io.jdbc;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.java.io.jdbc.JdbcConnectionOptions.JdbcConnectionOptionsBuilder;
 import org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 

@@ -38,7 +38,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test for JDBCAppendTableSink.
+ * Test for JdbcAppendTableSink.
  */
 public class JDBCAppendTableSinkTest {
 	private static final String[] FIELD_NAMES = new String[]{"foo"};

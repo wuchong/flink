@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.flink.table.descriptors.JDBCCatalogValidator.CATALOG_TYPE_VALUE_JDBC;
+import static org.apache.flink.table.descriptors.JdbcCatalogValidator.CATALOG_TYPE_VALUE_JDBC;
 
 /**
- * Test for {@link JDBCCatalogDescriptor}.
+ * Test for {@link JdbcCatalogDescriptor}.
  */
 public class JDBCCatalogDescriptorTest extends DescriptorTestBase {
 
@@ -37,7 +37,7 @@ public class JDBCCatalogDescriptorTest extends DescriptorTestBase {
 
 	@Override
 	protected List<Descriptor> descriptors() {
-		final Descriptor descriptor = new JDBCCatalogDescriptor(
+		final Descriptor descriptor = new JdbcCatalogDescriptor(
 			TEST_DB, TEST_USERNAME, TEST_PWD, TEST_BASE_URL);
 
 		return Arrays.asList(descriptor);
@@ -58,6 +58,6 @@ public class JDBCCatalogDescriptorTest extends DescriptorTestBase {
 
 	@Override
 	protected DescriptorValidator validator() {
-		return new JDBCCatalogValidator();
+		return new JdbcCatalogValidator();
 	}
 }
