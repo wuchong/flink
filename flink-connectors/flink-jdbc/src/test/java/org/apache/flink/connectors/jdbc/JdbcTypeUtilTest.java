@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import java.sql.Types;
 
-import static org.apache.flink.api.java.io.jdbc.JdbcTypeUtil.typeInformationToSqlType;
+import static org.apache.flink.connectors.jdbc.JdbcTypeUtil.typeInformationToSqlType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

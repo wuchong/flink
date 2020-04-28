@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.api.java.tuple.Tuple2;
 
 import org.junit.After;
@@ -33,16 +32,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-import static org.apache.flink.api.java.io.jdbc.JDBCOutputFormatTest.toRow;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TEST_DATA;
+import static org.apache.flink.connectors.jdbc.JdbcOutputFormatTest.toRow;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.OUTPUT_TABLE;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.mockito.Mockito.doReturn;
 
 /**
- * Test for the {@link AppendOnlyWriter}.
+ * Test for the Append only mode.
  */
-public class JDBCAppenOnlyWriterTest extends JDBCTestBase {
+public class JdbcAppendOnlyWriterTest extends JdbcTestBase {
 
 	private JdbcBatchingOutputFormat format;
 	private String[] fieldNames;
@@ -55,7 +54,7 @@ public class JDBCAppenOnlyWriterTest extends JDBCTestBase {
 	@Test(expected = IOException.class)
 	public void testMaxRetry() throws Exception {
 		format = JdbcBatchingOutputFormat.builder()
-			.setOptions(JDBCOptions.builder()
+			.setOptions(JdbcOptions.builder()
 				.setDBUrl(getDbMetadata().getUrl())
 				.setTableName(OUTPUT_TABLE)
 				.build())
@@ -71,7 +70,7 @@ public class JDBCAppenOnlyWriterTest extends JDBCTestBase {
 
 		// alter table schema to trigger retry logic after failure.
 		alterTable();
-		for (TestEntry entry : TEST_DATA) {
+		for (JdbcTestFixture.TestEntry entry : TEST_DATA) {
 			format.writeRecord(Tuple2.of(true, toRow(entry)));
 		}
 

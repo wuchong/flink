@@ -28,13 +28,13 @@ import static org.apache.flink.connectors.jdbc.AbstractJdbcOutputFormat.DEFAULT_
  * A builder to configure and build the JdbcAppendTableSink.
  */
 public class JdbcAppendTableSinkBuilder {
-	private String username;
-	private String password;
-	private String driverName;
-	private String dbURL;
-	private String query;
-	private int batchSize = DEFAULT_FLUSH_MAX_SIZE;
-	private int[] parameterTypes;
+	protected String username;
+	protected String password;
+	protected String driverName;
+	protected String dbURL;
+	protected String query;
+	protected int batchSize = DEFAULT_FLUSH_MAX_SIZE;
+	protected int[] parameterTypes;
 
 	/**
 	 * Specify the username of the JDBC connection.
@@ -77,7 +77,7 @@ public class JdbcAppendTableSinkBuilder {
 	 * Specify the query that the sink will execute. Usually user can specify
 	 * INSERT, REPLACE or UPDATE to push the data to the database.
 	 * @param query The query to be executed by the sink.
-	 * @see JdbcOutputFormat.JDBCOutputFormatBuilder#setQuery(String)
+	 * @see JdbcOutputFormat.JdbcOutputFormatBuilder#setQuery(String)
 	 */
 	public JdbcAppendTableSinkBuilder setQuery(String query) {
 		this.query = query;
@@ -126,7 +126,7 @@ public class JdbcAppendTableSinkBuilder {
 			"Types of the query parameters are not specified." +
 			" Please specify types using the setParameterTypes() method.");
 
-		JdbcOutputFormat format = JdbcOutputFormat.buildJDBCOutputFormat()
+		JdbcOutputFormat format = JdbcOutputFormat.buildJdbcOutputFormat()
 			.setUsername(username)
 			.setPassword(password)
 			.setDBUrl(dbURL)

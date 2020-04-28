@@ -15,23 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
-import org.junit.Before;
+import javax.sql.XADataSource;
 
-import java.sql.SQLException;
+import java.io.Serializable;
 
 /**
- * Base class for JDBC test using data from {@link JdbcTestFixture}. It uses {@link DerbyDbMetadata} and inserts data before each test.
+ * Describes a database: driver, schema and urls.
  */
-abstract class JDBCDataTestBase extends JDBCTestBase {
-	@Before
-	public void initData() throws SQLException {
-		JdbcTestFixture.initData(getDbMetadata());
-	}
+public interface DbMetadata extends Serializable {
 
-	@Override
-	protected DbMetadata getDbMetadata() {
-		return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
-	}
+	String getInitUrl();
+
+	String getUrl();
+
+	XADataSource buildXaDataSource();
+
+	String getDriverClass();
 }

@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc.split;
+package org.apache.flink.connectors.jdbc.split;
+
+import org.apache.flink.api.java.io.jdbc.split.NumericBetweenParametersProvider;
 
 import org.junit.Test;
 

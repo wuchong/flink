@@ -25,7 +25,7 @@ import java.sql.SQLException;
 /**
  * Simple JDBC connection provider.
  */
-class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
+public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
 
 	private static final long serialVersionUID = 1L;
 

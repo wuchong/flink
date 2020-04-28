@@ -20,7 +20,7 @@ package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.split.NumericBetweenParametersProvider;
+import org.apache.flink.connectors.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableSchema;
@@ -50,10 +50,10 @@ public class JdbcTableSource implements
 		ProjectableTableSource<Row>,
 		LookupableTableSource<Row> {
 
-	private final JdbcOptions options;
-	private final JdbcReadOptions readOptions;
-	private final JdbcLookupOptions lookupOptions;
-	private final TableSchema schema;
+	protected final JdbcOptions options;
+	protected final JdbcReadOptions readOptions;
+	protected final JdbcLookupOptions lookupOptions;
+	protected final TableSchema schema;
 
 	// index of fields selected, null means that all fields are selected
 	private final int[] selectFields;
@@ -64,7 +64,7 @@ public class JdbcTableSource implements
 		this(options, readOptions, lookupOptions, schema, null);
 	}
 
-	private JdbcTableSource(
+	protected JdbcTableSource(
 		JdbcOptions options, JdbcReadOptions readOptions, JdbcLookupOptions lookupOptions,
 		TableSchema schema, int[] selectFields) {
 		this.options = options;
@@ -153,7 +153,7 @@ public class JdbcTableSource implements
 
 	private JdbcInputFormat getInputFormat() {
 		final RowTypeInfo rowTypeInfo = (RowTypeInfo) fromDataTypeToLegacyInfo(producedDataType);
-		JdbcInputFormat.JDBCInputFormatBuilder builder = JdbcInputFormat.buildJDBCInputFormat()
+		JdbcInputFormat.JdbcInputFormatBuilder builder = JdbcInputFormat.buildJdbcInputFormat()
 				.setDrivername(options.getDriverName())
 				.setDBUrl(options.getDbURL())
 				.setRowTypeInfo(new RowTypeInfo(rowTypeInfo.getFieldTypes(), rowTypeInfo.getFieldNames()));
@@ -172,7 +172,7 @@ public class JdbcTableSource implements
 			long upperBound = readOptions.getPartitionUpperBound().get();
 			int numPartitions = readOptions.getNumPartitions().get();
 			builder.setParametersProvider(
-				new NumericBetweenParametersProvider(lowerBound, upperBound).ofBatchNum(numPartitions));
+				new JdbcNumericBetweenParametersProvider(lowerBound, upperBound).ofBatchNum(numPartitions));
 			query += " WHERE " +
 				dialect.quoteIdentifier(readOptions.getPartitionColumnName().get()) +
 				" BETWEEN ? AND ?";
@@ -205,7 +205,7 @@ public class JdbcTableSource implements
 		private JdbcOptions options;
 		private JdbcReadOptions readOptions;
 		private JdbcLookupOptions lookupOptions;
-		private TableSchema schema;
+		protected TableSchema schema;
 
 		/**
 		 * required, jdbc options.

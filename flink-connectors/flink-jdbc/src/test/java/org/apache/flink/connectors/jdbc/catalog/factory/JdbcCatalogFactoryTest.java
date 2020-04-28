@@ -18,8 +18,8 @@
 
 package org.apache.flink.connectors.jdbc.catalog.factory;
 
-import org.apache.flink.api.java.io.jdbc.catalog.JDBCCatalog;
-import org.apache.flink.api.java.io.jdbc.catalog.PostgresCatalog;
+import org.apache.flink.connectors.jdbc.catalog.JdbcCatalog;
+import org.apache.flink.connectors.jdbc.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.descriptors.CatalogDescriptor;
 import org.apache.flink.table.descriptors.JdbcCatalogDescriptor;
@@ -39,14 +39,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test for {@link JDBCCatalogFactory}.
+ * Test for {@link JdbcCatalogFactory}.
  */
 public class JdbcCatalogFactoryTest {
 	@ClassRule
 	public static SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance();
 
 	protected static String baseUrl;
-	protected static JDBCCatalog catalog;
+	protected static JdbcCatalog catalog;
 
 	protected static final String TEST_CATALOG_NAME = "mypg";
 	protected static final String TEST_USERNAME = "postgres";
@@ -59,7 +59,7 @@ public class JdbcCatalogFactoryTest {
 		// jdbc:postgresql://localhost:50807/
 		baseUrl = embeddedJdbcUrl.substring(0, embeddedJdbcUrl.lastIndexOf("/") + 1);
 
-		catalog = new JDBCCatalog(
+		catalog = new JdbcCatalog(
 			TEST_CATALOG_NAME, PostgresCatalog.DEFAULT_DATABASE, TEST_USERNAME, TEST_PWD, baseUrl);
 	}
 
@@ -73,12 +73,12 @@ public class JdbcCatalogFactoryTest {
 		final Catalog actualCatalog = TableFactoryService.find(CatalogFactory.class, properties)
 			.createCatalog(TEST_CATALOG_NAME, properties);
 
-		checkEquals(catalog, (JDBCCatalog) actualCatalog);
+		checkEquals(catalog, (JdbcCatalog) actualCatalog);
 
-		assertTrue(((JDBCCatalog) actualCatalog).getInternal() instanceof PostgresCatalog);
+		assertTrue(((JdbcCatalog) actualCatalog).getInternal() instanceof PostgresCatalog);
 	}
 
-	private static void checkEquals(JDBCCatalog c1, JDBCCatalog c2) {
+	private static void checkEquals(JdbcCatalog c1, JdbcCatalog c2) {
 		assertEquals(c1.getName(), c2.getName());
 		assertEquals(c1.getDefaultDatabase(), c2.getDefaultDatabase());
 		assertEquals(c1.getUsername(), c2.getUsername());

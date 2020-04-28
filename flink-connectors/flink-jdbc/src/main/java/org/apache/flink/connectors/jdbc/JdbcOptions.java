@@ -74,11 +74,11 @@ public class JdbcOptions extends JdbcConnectionOptions {
 	 * Builder of {@link JdbcOptions}.
 	 */
 	public static class Builder {
-		private String dbURL;
-		private String tableName;
-		private String driverName;
-		private String username;
-		private String password;
+		protected String dbURL;
+		protected String tableName;
+		protected String driverName;
+		protected String username;
+		protected String password;
 		private JdbcDialect dialect;
 
 		/**

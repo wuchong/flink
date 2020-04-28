@@ -42,7 +42,10 @@ import java.util.function.Function;
 import static org.apache.flink.api.java.io.jdbc.JDBCUtils.setRecordToStatement;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExecutor<JdbcIn>> extends AbstractJdbcOutputFormat<In> {
+/**
+ * {@link AbstractJdbcOutputFormat}.
+ */
+public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExecutor<JdbcIn>> extends AbstractJdbcOutputFormat<In> {
 	interface RecordExtractor<F, T> extends Function<F, T>, Serializable {
 		static <T> RecordExtractor<T, T> identity() {
 			return x -> x;
@@ -212,7 +215,7 @@ class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementEx
 		private String[] fieldNames;
 		private String[] keyFields;
 		private int[] fieldTypes;
-		private JdbcExecutionOptionsBuilder executionOptionsBuilder = JdbcExecutionOptions.builder();
+		private JdbcExecutionOptions.Builder executionOptionsBuilder = JdbcExecutionOptions.builder();
 
 		/**
 		 * required, jdbc options.

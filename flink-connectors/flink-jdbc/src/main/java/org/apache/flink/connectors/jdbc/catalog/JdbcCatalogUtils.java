@@ -31,7 +31,7 @@ public class JdbcCatalogUtils {
 	 * URL has to be without database, like "jdbc:postgresql://localhost:5432/" or "jdbc:postgresql://localhost:5432"
 	 * rather than "jdbc:postgresql://localhost:5432/db".
 	 */
-	public static void validateJDBCUrl(String url) {
+	public static void validateJdbcUrl(String url) {
 		String[] parts = url.trim().split("\\/+");
 
 		checkArgument(parts.length == 2);

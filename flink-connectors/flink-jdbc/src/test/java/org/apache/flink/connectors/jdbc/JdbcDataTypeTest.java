@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
@@ -37,7 +37,7 @@ import java.util.List;
  * Tests for all DataTypes and Dialects of JDBC connector.
  */
 @RunWith(Parameterized.class)
-public class JDBCDataTypeTest {
+public class JdbcDataTypeTest {
 
 	private static final String DDL_FORMAT = "CREATE TABLE T(\n" +
 		"f0 %s\n" +

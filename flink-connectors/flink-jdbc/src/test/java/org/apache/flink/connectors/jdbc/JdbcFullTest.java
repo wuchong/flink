@@ -16,13 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialects;
-import org.apache.flink.api.java.io.jdbc.split.NumericBetweenParametersProvider;
-import org.apache.flink.connectors.jdbc.JdbcDataTestBase;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.types.Row;
 
 import org.junit.After;
@@ -41,16 +40,12 @@ import java.sql.Types;
 import static org.apache.flink.connectors.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connectors.jdbc.JdbcTestFixture.ROW_TYPE;
 import static org.apache.flink.connectors.jdbc.JdbcTestFixture.ROW_TYPE_INFO;
-import static org.apache.flink.connectors.jdbc.JdbcTestFixture.SELECT_ALL_BOOKS;
-import static org.apache.flink.connectors.jdbc.JdbcTestFixture.SELECT_ALL_BOOKS_SPLIT_BY_ID;
-import static org.apache.flink.connectors.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS;
-import static org.apache.flink.connectors.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.hamcrest.core.StringContains.containsString;
 
 /**
- * Tests using both {@link JDBCInputFormat} and {@link JDBCOutputFormat}.
+ * Tests using both {@link JdbcInputFormat} and {@link JdbcOutputFormat}.
  */
-public class JDBCFullTest extends JdbcDataTestBase {
+public class JdbcFullTest extends JdbcDataTestBase {
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
@@ -70,7 +65,7 @@ public class JDBCFullTest extends JdbcDataTestBase {
 		exception.expect(ClassCastException.class);
 		exception.expectMessage(containsString("field index: 3, field value: 11.11."));
 
-		JDBCOutputFormat jdbcOutputFormat = JDBCOutputFormat.buildJDBCOutputFormat()
+		JdbcOutputFormat jdbcOutputFormat = JdbcOutputFormat.buildJdbcOutputFormat()
 			.setDrivername(getDbMetadata().getDriverClass())
 			.setDBUrl(getDbMetadata().getUrl())
 			.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
@@ -85,28 +80,28 @@ public class JDBCFullTest extends JdbcDataTestBase {
 
 	private void runTest(boolean exploitParallelism) throws Exception {
 		ExecutionEnvironment environment = ExecutionEnvironment.getExecutionEnvironment();
-		JDBCInputFormat.JDBCInputFormatBuilder inputBuilder = JDBCInputFormat.buildJDBCInputFormat()
+		JdbcInputFormat.JdbcInputFormatBuilder inputBuilder = JdbcInputFormat.buildJdbcInputFormat()
 				.setDrivername(getDbMetadata().getDriverClass())
 				.setDBUrl(getDbMetadata().getUrl())
-				.setQuery(SELECT_ALL_BOOKS)
+				.setQuery(JdbcTestFixture.SELECT_ALL_BOOKS)
 				.setRowTypeInfo(ROW_TYPE_INFO)
-				.setRowConverter(JDBCDialects.get(getDbMetadata().getUrl()).get().getRowConverter(ROW_TYPE));
+				.setRowConverter(JdbcDialects.get(getDbMetadata().getUrl()).get().getRowConverter(ROW_TYPE));
 
 		if (exploitParallelism) {
 			final int fetchSize = 1;
-			final long min = TEST_DATA[0].id;
-			final long max = TEST_DATA[TEST_DATA.length - fetchSize].id;
+			final long min = JdbcTestFixture.TEST_DATA[0].id;
+			final long max = JdbcTestFixture.TEST_DATA[JdbcTestFixture.TEST_DATA.length - fetchSize].id;
 			//use a "splittable" query to exploit parallelism
 			inputBuilder = inputBuilder
-					.setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
-					.setParametersProvider(new NumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize));
+					.setQuery(JdbcTestFixture.SELECT_ALL_BOOKS_SPLIT_BY_ID)
+					.setParametersProvider(new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize));
 		}
 		DataSet<Row> source = environment.createInput(inputBuilder.finish());
 
 		//NOTE: in this case (with Derby driver) setSqlTypes could be skipped, but
 		//some databases don't null values correctly when no column type was specified
 		//in PreparedStatement.setObject (see its javadoc for more details)
-		source.output(JDBCOutputFormat.buildJDBCOutputFormat()
+		source.output(JdbcOutputFormat.buildJdbcOutputFormat()
 				.setDrivername(getDbMetadata().getDriverClass())
 				.setDBUrl(getDbMetadata().getUrl())
 				.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
@@ -116,15 +111,15 @@ public class JDBCFullTest extends JdbcDataTestBase {
 		environment.execute();
 
 		try (
-				Connection dbConn = DriverManager.getConnection(getDbMetadata().getUrl());
-				PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
-				ResultSet resultSet = statement.executeQuery()
+			Connection dbConn = DriverManager.getConnection(getDbMetadata().getUrl());
+			PreparedStatement statement = dbConn.prepareStatement(JdbcTestFixture.SELECT_ALL_NEWBOOKS);
+			ResultSet resultSet = statement.executeQuery()
 		) {
 			int count = 0;
 			while (resultSet.next()) {
 				count++;
 			}
-			Assert.assertEquals(TEST_DATA.length, count);
+			Assert.assertEquals(JdbcTestFixture.TEST_DATA.length, count);
 		}
 	}
 

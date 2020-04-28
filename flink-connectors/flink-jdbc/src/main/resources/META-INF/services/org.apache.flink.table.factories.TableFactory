@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org.apache.flink.api.java.io.jdbc.JDBCTableSourceSinkFactory
-org.apache.flink.api.java.io.jdbc.catalog.factory.JDBCCatalogFactory
+org.apache.flink.connectors.jdbc.catalog.factory.JdbcCatalogFactory
+org.apache.flink.connectors.jdbc.JdbcTableSourceSinkFactory

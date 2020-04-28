@@ -19,25 +19,25 @@
 package org.apache.flink.api.java.io.jdbc.split;
 
 import org.apache.flink.api.java.io.jdbc.JDBCInputFormat;
+import org.apache.flink.connectors.jdbc.split.JdbcGenericParameterValuesProvider;
 
 import java.io.Serializable;
 
 /**
  * This splits generator actually does nothing but wrapping the query parameters
  * computed by the user before creating the {@link JDBCInputFormat} instance.
+ *
+ * @deprecated Please use {@link JdbcGenericParameterValuesProvider}.
  */
-public class GenericParameterValuesProvider implements ParameterValuesProvider {
-
-	private final Serializable[][] parameters;
+@Deprecated
+public class GenericParameterValuesProvider extends JdbcGenericParameterValuesProvider implements ParameterValuesProvider{
 
 	public GenericParameterValuesProvider(Serializable[][] parameters) {
-		this.parameters = parameters;
+		super(parameters);
 	}
 
 	@Override
-	public Serializable[][] getParameterValues(){
-		//do nothing...precomputed externally
-		return parameters;
+	public Serializable[][] getParameterValues() {
+		return super.getParameterValues();
 	}
-
 }

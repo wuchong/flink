@@ -30,15 +30,15 @@ public class JdbcCatalogUtilsTest {
 	public ExpectedException exception = ExpectedException.none();
 
 	@Test
-	public void testJDBCUrl() {
-		JdbcCatalogUtils.validateJDBCUrl("jdbc:postgresql://localhost:5432/");
+	public void testJdbcUrl() {
+		JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432/");
 
-		JdbcCatalogUtils.validateJDBCUrl("jdbc:postgresql://localhost:5432");
+		JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432");
 	}
 
 	@Test
-	public void testInvalidJDBCUrl() {
+	public void testInvalidJdbcUrl() {
 		exception.expect(IllegalArgumentException.class);
-		JdbcCatalogUtils.validateJDBCUrl("jdbc:postgresql://localhost:5432/db");
+		JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432/db");
 	}
 }

@@ -18,10 +18,9 @@
 
 package org.apache.flink.table.descriptors;
 
-import org.apache.flink.api.java.io.jdbc.catalog.JDBCCatalog;
 
 /**
- * Validator for {@link JDBCCatalog}.
+ * Validator for {@link org.apache.flink.connectors.jdbc.catalog.JdbcCatalog}.
  */
 public class JdbcCatalogValidator extends CatalogDescriptorValidator {
 

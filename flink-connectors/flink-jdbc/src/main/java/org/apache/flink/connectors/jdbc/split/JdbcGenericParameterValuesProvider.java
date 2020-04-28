@@ -23,12 +23,21 @@ import org.apache.flink.connectors.jdbc.JdbcInputFormat;
 import java.io.Serializable;
 
 /**
- * This interface is used by the {@link JdbcInputFormat} to compute the list of parallel query to run (i.e. splits).
- * Each query will be parameterized using a row of the matrix provided by each {@link ParameterValuesProvider}
- * implementation.
+ * This splits generator actually does nothing but wrapping the query parameters
+ * computed by the user before creating the {@link JdbcInputFormat} instance.
  */
-public interface ParameterValuesProvider {
+public class JdbcGenericParameterValuesProvider implements JdbcParameterValuesProvider {
 
-	/** Returns the necessary parameters array to use for query in parallel a table. */
-	Serializable[][] getParameterValues();
+	private final Serializable[][] parameters;
+
+	public JdbcGenericParameterValuesProvider(Serializable[][] parameters) {
+		this.parameters = parameters;
+	}
+
+	@Override
+	public Serializable[][] getParameterValues(){
+		//do nothing...precomputed externally
+		return parameters;
+	}
+
 }

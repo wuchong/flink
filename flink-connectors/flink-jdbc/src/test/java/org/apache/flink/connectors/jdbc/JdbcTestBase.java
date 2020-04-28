@@ -15,22 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
-import javax.sql.XADataSource;
+import org.junit.After;
+import org.junit.Before;
 
-import java.io.Serializable;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.cleanUpDatabasesStatic;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.cleanupData;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.initSchema;
 
 /**
- * Describes a database: driver, schema and urls.
+ * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before each test and drops afterwards.
  */
-public interface DbMetadata extends Serializable {
+public abstract class JdbcTestBase {
 
-	String getInitUrl();
+	@Before
+	public final void before() throws Exception {
+		initSchema(getDbMetadata());
+	}
 
-	String getUrl();
+	@After
+	public final void after() throws Exception {
+		cleanupData(getDbMetadata().getUrl());
+		cleanUpDatabasesStatic(getDbMetadata());
+	}
 
-	XADataSource buildXaDataSource();
+	protected abstract DbMetadata getDbMetadata();
 
-	String getDriverClass();
 }

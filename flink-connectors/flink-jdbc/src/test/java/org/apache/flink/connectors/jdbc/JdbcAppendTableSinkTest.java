@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test for JdbcAppendTableSink.
  */
-public class JDBCAppendTableSinkTest {
+public class JdbcAppendTableSinkTest {
 	private static final String[] FIELD_NAMES = new String[]{"foo"};
 	private static final TypeInformation[] FIELD_TYPES = new TypeInformation[]{
 		BasicTypeInfo.STRING_TYPE_INFO
@@ -49,7 +49,7 @@ public class JDBCAppendTableSinkTest {
 
 	@Test
 	public void testAppendTableSink() throws IOException {
-		JDBCAppendTableSink sink = JDBCAppendTableSink.builder()
+		JdbcAppendTableSink sink = JdbcAppendTableSink.builder()
 			.setDrivername("foo")
 			.setDBUrl("bar")
 			.setQuery("insert into %s (id) values (?)")
@@ -80,7 +80,7 @@ public class JDBCAppendTableSinkTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testTypeCompatibilityCheck() throws IOException {
 
-		JDBCAppendTableSink sink = JDBCAppendTableSink.builder()
+		JdbcAppendTableSink sink = JdbcAppendTableSink.builder()
 			.setDrivername("foo")
 			.setDBUrl("bar")
 			.setQuery("INSERT INTO foobar (id) VALUES (?)")

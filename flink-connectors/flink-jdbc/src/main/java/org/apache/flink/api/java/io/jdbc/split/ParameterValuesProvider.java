@@ -19,16 +19,17 @@
 package org.apache.flink.api.java.io.jdbc.split;
 
 import org.apache.flink.api.java.io.jdbc.JDBCInputFormat;
-
-import java.io.Serializable;
+import org.apache.flink.connectors.jdbc.split.JdbcParameterValuesProvider;
 
 /**
  * This interface is used by the {@link JDBCInputFormat} to compute the list of parallel query to run (i.e. splits).
  * Each query will be parameterized using a row of the matrix provided by each {@link ParameterValuesProvider}
  * implementation.
+ *
+ * @deprecated Please use {@link JdbcParameterValuesProvider}.
+ * Flink proposes class name start with "Jdbc" rather than "JDBC".
  */
-public interface ParameterValuesProvider {
+@Deprecated
+public interface ParameterValuesProvider extends JdbcParameterValuesProvider {
 
-	/** Returns the necessary parameters array to use for query in parallel a table. */
-	Serializable[][] getParameterValues();
 }

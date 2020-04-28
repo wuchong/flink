@@ -33,8 +33,8 @@ import java.sql.SQLException;
 abstract class AbstractJdbcOutputFormat<T> extends RichOutputFormat<T> implements Flushable {
 
 	private static final long serialVersionUID = 1L;
-	static final int DEFAULT_FLUSH_MAX_SIZE = 5000;
-	static final long DEFAULT_FLUSH_INTERVAL_MILLS = 0;
+	public static final int DEFAULT_FLUSH_MAX_SIZE = 5000;
+	public static final long DEFAULT_FLUSH_INTERVAL_MILLS = 0;
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcOutputFormat.class);
 	protected transient Connection connection;

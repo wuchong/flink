@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connectors.jdbc.JdbcTestFixture;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -49,17 +48,17 @@ import java.util.List;
 import static org.apache.flink.table.api.Expressions.$;
 
 /**
- * IT case for {@link JDBCLookupFunction}.
+ * IT case for {@link JdbcLookupFunction}.
  */
 @RunWith(Parameterized.class)
-public class JDBCLookupFunctionITCase extends AbstractTestBase {
+public class JdbcLookupFunctionITCase extends AbstractTestBase {
 
 	public static final String DB_URL = "jdbc:derby:memory:lookup";
 	public static final String LOOKUP_TABLE = "lookup_table";
 
 	private final boolean useCache;
 
-	public JDBCLookupFunctionITCase(boolean useCache) {
+	public JdbcLookupFunctionITCase(boolean useCache) {
 		this.useCache = useCache;
 	}
 
@@ -149,8 +148,8 @@ public class JDBCLookupFunctionITCase extends AbstractTestBase {
 
 		tEnv.registerTable("T", t);
 
-		JDBCTableSource.Builder builder = JDBCTableSource.builder()
-				.setOptions(JDBCOptions.builder()
+		JdbcTableSource.Builder builder = JdbcTableSource.builder()
+				.setOptions(JdbcOptions.builder()
 						.setDBUrl(DB_URL)
 						.setTableName(LOOKUP_TABLE)
 						.build())
@@ -159,7 +158,7 @@ public class JDBCLookupFunctionITCase extends AbstractTestBase {
 						new DataType[]{DataTypes.INT(), DataTypes.INT(), DataTypes.STRING(), DataTypes.STRING()})
 						.build());
 		if (useCache) {
-			builder.setLookupOptions(JDBCLookupOptions.builder()
+			builder.setLookupOptions(JdbcLookupOptions.builder()
 					.setCacheMaxSize(1000).setCacheExpireMs(1000 * 1000).build());
 		}
 		tEnv.registerFunction("jdbcLookup",

@@ -71,9 +71,9 @@ public class JdbcLookupOptions implements Serializable {
 	 * Builder of {@link JdbcLookupOptions}.
 	 */
 	public static class Builder {
-		private long cacheMaxSize = -1L;
-		private long cacheExpireMs = -1L;
-		private int maxRetryTimes = DEFAULT_MAX_RETRY_TIMES;
+		protected long cacheMaxSize = -1L;
+		protected long cacheExpireMs = -1L;
+		protected int maxRetryTimes = DEFAULT_MAX_RETRY_TIMES;
 
 		/**
 		 * optional, lookup cache max size, over this value, the old data will be eliminated.

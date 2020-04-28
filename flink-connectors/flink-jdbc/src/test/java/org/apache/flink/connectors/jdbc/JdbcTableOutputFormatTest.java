@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.connectors.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.types.Row;
 
 import org.junit.After;
@@ -39,16 +39,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.flink.api.java.io.jdbc.JDBCOutputFormatTest.toRow;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TEST_DATA;
+import static org.apache.flink.connectors.jdbc.JdbcOutputFormatTest.toRow;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.OUTPUT_TABLE;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.doReturn;
 
 /**
  * Tests for the {@link JdbcBatchingOutputFormat}.
  */
-public class JdbcTableOutputFormatTest extends JDBCDataTestBase {
+public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
 
 	private TableJdbcUpsertOutputFormat format;
 	private String[] fieldNames;
@@ -61,8 +61,8 @@ public class JdbcTableOutputFormatTest extends JDBCDataTestBase {
 	}
 
 	@Test
-	public void testJDBCOutputFormat() throws Exception {
-		JDBCOptions options = JDBCOptions.builder()
+	public void testJdbcOutputFormat() throws Exception {
+		JdbcOptions options = JdbcOptions.builder()
 				.setDBUrl(getDbMetadata().getUrl())
 				.setTableName(OUTPUT_TABLE)
 				.build();
@@ -81,14 +81,14 @@ public class JdbcTableOutputFormatTest extends JDBCDataTestBase {
 			format.writeRecord(Tuple2.of(true, toRow(entry)));
 		}
 		format.flush();
-		check(Arrays.stream(TEST_DATA).map(JDBCOutputFormatTest::toRow).toArray(Row[]::new));
+		check(Arrays.stream(TEST_DATA).map(JdbcOutputFormatTest::toRow).toArray(Row[]::new));
 
 		// override
 		for (TestEntry entry : TEST_DATA) {
 			format.writeRecord(Tuple2.of(true, toRow(entry)));
 		}
 		format.flush();
-		check(Arrays.stream(TEST_DATA).map(JDBCOutputFormatTest::toRow).toArray(Row[]::new));
+		check(Arrays.stream(TEST_DATA).map(JdbcOutputFormatTest::toRow).toArray(Row[]::new));
 
 		// delete
 		for (int i = 0; i < TEST_DATA.length / 2; i++) {
@@ -106,7 +106,7 @@ public class JdbcTableOutputFormatTest extends JDBCDataTestBase {
 		check(rows, getDbMetadata().getUrl(), OUTPUT_TABLE, fieldNames);
 	}
 
-	static void check(Row[] rows, String url, String table, String[] fields) throws SQLException {
+	public static void check(Row[] rows, String url, String table, String[] fields) throws SQLException {
 		try (
 				Connection dbConn = DriverManager.getConnection(url);
 				PreparedStatement statement = dbConn.prepareStatement("select * from " + table);

@@ -35,7 +35,7 @@ import java.io.Serializable;
  * <p>You can take advantage of this class to automatically generate the parameters of the BETWEEN clause,
  * based on the passed constructor parameters.
  */
-public class NumericBetweenParametersProvider implements ParameterValuesProvider {
+public class JdbcNumericBetweenParametersProvider implements JdbcParameterValuesProvider {
 
 	private final long minVal;
 	private final long maxVal;
@@ -44,32 +44,32 @@ public class NumericBetweenParametersProvider implements ParameterValuesProvider
 	private int batchNum;
 
 	/**
-	 * NumericBetweenParametersProvider constructor.
+	 * NumericBetweenParametersProviderJdbc constructor.
 	 *
 	 * @param minVal the lower bound of the produced "from" values
 	 * @param maxVal the upper bound of the produced "to" values
 	 */
-	public NumericBetweenParametersProvider(long minVal, long maxVal) {
+	public JdbcNumericBetweenParametersProvider(long minVal, long maxVal) {
 		Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
 		this.minVal = minVal;
 		this.maxVal = maxVal;
 	}
 
 	/**
-	 * NumericBetweenParametersProvider constructor.
+	 * NumericBetweenParametersProviderJdbc constructor.
 	 *
 	 * @param fetchSize the max distance between the produced from/to pairs
 	 * @param minVal the lower bound of the produced "from" values
 	 * @param maxVal the upper bound of the produced "to" values
 	 */
-	public NumericBetweenParametersProvider(long fetchSize, long minVal, long maxVal) {
+	public JdbcNumericBetweenParametersProvider(long fetchSize, long minVal, long maxVal) {
 		Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
 		this.minVal = minVal;
 		this.maxVal = maxVal;
 		ofBatchSize(fetchSize);
 	}
 
-	public NumericBetweenParametersProvider ofBatchSize(long batchSize) {
+	public JdbcNumericBetweenParametersProvider ofBatchSize(long batchSize) {
 		Preconditions.checkArgument(batchSize > 0, "Batch size must be positive");
 
 		long maxElemCount = (maxVal - minVal) + 1;
@@ -81,7 +81,7 @@ public class NumericBetweenParametersProvider implements ParameterValuesProvider
 		return this;
 	}
 
-	public NumericBetweenParametersProvider ofBatchNum(int batchNum) {
+	public JdbcNumericBetweenParametersProvider ofBatchNum(int batchNum) {
 		Preconditions.checkArgument(batchNum > 0, "Batch number must be positive");
 
 		long maxElemCount = (maxVal - minVal) + 1;

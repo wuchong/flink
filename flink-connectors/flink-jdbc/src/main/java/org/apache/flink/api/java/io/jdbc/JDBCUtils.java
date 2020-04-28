@@ -22,6 +22,8 @@ import org.apache.flink.connectors.jdbc.JdbcUtils;
 
 /**
  * Utils for jdbc connectors.
+ *
+ * @deprecated Please use {@link JdbcUtils}, Flink proposes class name start with "Jdbc" rather than "JDBC".
  */
 @Deprecated
 public class JDBCUtils extends JdbcUtils {

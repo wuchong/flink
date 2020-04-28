@@ -27,7 +27,7 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRowConverter;
-import org.apache.flink.connectors.jdbc.split.ParameterValuesProvider;
+import org.apache.flink.connectors.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.core.io.InputSplitAssigner;
@@ -76,7 +76,7 @@ import java.util.Arrays;
  *
  * <p>In order to query the JDBC source in parallel, you need to provide a
  * parameterized query template (i.e. a valid {@link PreparedStatement}) and
- * a {@link ParameterValuesProvider} which provides binding values for the
+ * a {@link JdbcParameterValuesProvider} which provides binding values for the
  * query parameters. E.g.:
  *
  * <pre><code>
@@ -90,39 +90,39 @@ import java.util.Arrays;
  *				.setDBUrl("jdbc:derby:memory:ebookshop")
  *				.setQuery("select * from books WHERE author = ?")
  *				.setRowTypeInfo(rowTypeInfo)
- *				.setParametersProvider(new GenericParameterValuesProvider(queryParameters))
+ *				.setParametersProvider(new JdbcGenericParameterValuesProvider(queryParameters))
  *				.finish();
  * </code></pre>
  *
  * @see Row
- * @see ParameterValuesProvider
+ * @see JdbcParameterValuesProvider
  * @see PreparedStatement
  * @see DriverManager
  */
 public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements ResultTypeQueryable<Row> {
 
-	private static final long serialVersionUID = 1L;
-	private static final Logger LOG = LoggerFactory.getLogger(JdbcInputFormat.class);
+	protected static final long serialVersionUID = 1L;
+	protected static final Logger LOG = LoggerFactory.getLogger(JdbcInputFormat.class);
 
-	private String username;
-	private String password;
-	private String drivername;
-	private String dbURL;
-	private String queryTemplate;
-	private int resultSetType;
-	private int resultSetConcurrency;
-	private RowTypeInfo rowTypeInfo;
-	private JdbcRowConverter rowConverter;
+	protected String username;
+	protected String password;
+	protected String drivername;
+	protected String dbURL;
+	protected String queryTemplate;
+	protected int resultSetType;
+	protected int resultSetConcurrency;
+	protected RowTypeInfo rowTypeInfo;
+	protected JdbcRowConverter rowConverter;
 
-	private transient Connection dbConn;
-	private transient PreparedStatement statement;
-	private transient ResultSet resultSet;
-	private int fetchSize;
+	protected transient Connection dbConn;
+	protected transient PreparedStatement statement;
+	protected transient ResultSet resultSet;
+	protected int fetchSize;
 	// Boolean to distinguish between default value and explicitly set autoCommit mode.
-	private Boolean autoCommit;
+	protected Boolean autoCommit;
 
-	private boolean hasNext;
-	private Object[][] parameterValues;
+	protected boolean hasNext;
+	protected Object[][] parameterValues;
 
 	public JdbcInputFormat() {
 	}
@@ -196,7 +196,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 	 * fashion</b> if
 	 * this {@link InputFormat} is built using a parameterized query (i.e. using
 	 * a {@link PreparedStatement})
-	 * and a proper {@link ParameterValuesProvider}, in a <b>non-parallel
+	 * and a proper {@link JdbcParameterValuesProvider}, in a <b>non-parallel
 	 * fashion</b> otherwise.
 	 *
 	 * @param inputSplit which is ignored if this InputFormat is executed as a
@@ -328,12 +328,12 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 	}
 
 	@VisibleForTesting
-	PreparedStatement getStatement() {
+	protected PreparedStatement getStatement() {
 		return statement;
 	}
 
 	@VisibleForTesting
-	Connection getDbConn() {
+	protected Connection getDbConn() {
 		return dbConn;
 	}
 
@@ -341,81 +341,82 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 	 * A builder used to set parameters to the output format's configuration in a fluent way.
 	 * @return builder
 	 */
-	public static JDBCInputFormatBuilder buildJDBCInputFormat() {
-		return new JDBCInputFormatBuilder();
+	public static JdbcInputFormatBuilder buildJdbcInputFormat() {
+		return new JdbcInputFormatBuilder();
 	}
 
 	/**
 	 * Builder for {@link JdbcInputFormat}.
 	 */
-	public static class JDBCInputFormatBuilder {
+	public static class JdbcInputFormatBuilder {
+
 		private final JdbcInputFormat format;
 
-		public JDBCInputFormatBuilder() {
+		public JdbcInputFormatBuilder() {
 			this.format = new JdbcInputFormat();
 			//using TYPE_FORWARD_ONLY for high performance reads
 			this.format.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
 			this.format.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
 		}
 
-		public JDBCInputFormatBuilder setUsername(String username) {
+		public JdbcInputFormatBuilder setUsername(String username) {
 			format.username = username;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setPassword(String password) {
+		public JdbcInputFormatBuilder setPassword(String password) {
 			format.password = password;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setDrivername(String drivername) {
+		public JdbcInputFormatBuilder setDrivername(String drivername) {
 			format.drivername = drivername;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setDBUrl(String dbURL) {
+		public JdbcInputFormatBuilder setDBUrl(String dbURL) {
 			format.dbURL = dbURL;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setQuery(String query) {
+		public JdbcInputFormatBuilder setQuery(String query) {
 			format.queryTemplate = query;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setResultSetType(int resultSetType) {
+		public JdbcInputFormatBuilder setResultSetType(int resultSetType) {
 			format.resultSetType = resultSetType;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setResultSetConcurrency(int resultSetConcurrency) {
+		public JdbcInputFormatBuilder setResultSetConcurrency(int resultSetConcurrency) {
 			format.resultSetConcurrency = resultSetConcurrency;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setParametersProvider(ParameterValuesProvider parameterValuesProvider) {
+		public JdbcInputFormatBuilder setParametersProvider(JdbcParameterValuesProvider parameterValuesProvider) {
 			format.parameterValues = parameterValuesProvider.getParameterValues();
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setRowTypeInfo(RowTypeInfo rowTypeInfo) {
+		public JdbcInputFormatBuilder setRowTypeInfo(RowTypeInfo rowTypeInfo) {
 			format.rowTypeInfo = rowTypeInfo;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setRowConverter(JdbcRowConverter rowConverter) {
+		public JdbcInputFormatBuilder setRowConverter(JdbcRowConverter rowConverter) {
 			format.rowConverter = rowConverter;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setFetchSize(int fetchSize) {
+		public JdbcInputFormatBuilder setFetchSize(int fetchSize) {
 			Preconditions.checkArgument(fetchSize == Integer.MIN_VALUE || fetchSize > 0,
 				"Illegal value %s for fetchSize, has to be positive or Integer.MIN_VALUE.", fetchSize);
 			format.fetchSize = fetchSize;
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setAutoCommit(Boolean autoCommit) {
+		public JdbcInputFormatBuilder setAutoCommit(Boolean autoCommit) {
 			format.autoCommit = autoCommit;
 			return this;
 		}

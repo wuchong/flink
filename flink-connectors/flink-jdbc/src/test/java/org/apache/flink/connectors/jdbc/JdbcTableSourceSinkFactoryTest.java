@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
@@ -43,10 +43,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
- * Test for {@link JDBCTableSource} and {@link JDBCUpsertTableSink} created
- * by {@link JDBCTableSourceSinkFactory}.
+ * Test for {@link JdbcTableSource} and {@link JdbcUpsertTableSink} created
+ * by {@link JdbcTableSourceSinkFactory}.
  */
-public class JDBCTableSourceSinkFactoryTest {
+public class JdbcTableSourceSinkFactoryTest {
 
 	private static final TableSchema schema = TableSchema.builder()
 		.field("aaa", DataTypes.INT())
@@ -57,7 +57,7 @@ public class JDBCTableSourceSinkFactoryTest {
 		.build();
 
 	@Test
-	public void testJDBCCommonProperties() {
+	public void testJdbcCommonProperties() {
 		Map<String, String> properties = getBasicProperties();
 		properties.put("connector.driver", "org.apache.derby.jdbc.EmbeddedDriver");
 		properties.put("connector.username", "user");
@@ -66,14 +66,14 @@ public class JDBCTableSourceSinkFactoryTest {
 		final StreamTableSource<?> actual = TableFactoryService.find(StreamTableSourceFactory.class, properties)
 			.createStreamTableSource(properties);
 
-		final JDBCOptions options = JDBCOptions.builder()
+		final JdbcOptions options = JdbcOptions.builder()
 			.setDBUrl("jdbc:derby:memory:mydb")
 			.setTableName("mytable")
 			.setDriverName("org.apache.derby.jdbc.EmbeddedDriver")
 			.setUsername("user")
 			.setPassword("pass")
 			.build();
-		final JDBCTableSource expected = JDBCTableSource.builder()
+		final JdbcTableSource expected = JdbcTableSource.builder()
 			.setOptions(options)
 			.setSchema(schema)
 			.build();
@@ -84,7 +84,7 @@ public class JDBCTableSourceSinkFactoryTest {
 	}
 
 	@Test
-	public void testJDBCReadProperties() {
+	public void testJdbcReadProperties() {
 		Map<String, String> properties = getBasicProperties();
 		properties.put("connector.read.partition.column", "aaa");
 		properties.put("connector.read.partition.lower-bound", "-10");
@@ -95,18 +95,18 @@ public class JDBCTableSourceSinkFactoryTest {
 		final StreamTableSource<?> actual = TableFactoryService.find(StreamTableSourceFactory.class, properties)
 			.createStreamTableSource(properties);
 
-		final JDBCOptions options = JDBCOptions.builder()
+		final JdbcOptions options = JdbcOptions.builder()
 			.setDBUrl("jdbc:derby:memory:mydb")
 			.setTableName("mytable")
 			.build();
-		final JDBCReadOptions readOptions = JDBCReadOptions.builder()
+		final JdbcReadOptions readOptions = JdbcReadOptions.builder()
 			.setPartitionColumnName("aaa")
 			.setPartitionLowerBound(-10)
 			.setPartitionUpperBound(100)
 			.setNumPartitions(10)
 			.setFetchSize(20)
 			.build();
-		final JDBCTableSource expected = JDBCTableSource.builder()
+		final JdbcTableSource expected = JdbcTableSource.builder()
 			.setOptions(options)
 			.setReadOptions(readOptions)
 			.setSchema(schema)
@@ -116,7 +116,7 @@ public class JDBCTableSourceSinkFactoryTest {
 	}
 
 	@Test
-	public void testJDBCLookupProperties() {
+	public void testJdbcLookupProperties() {
 		Map<String, String> properties = getBasicProperties();
 		properties.put("connector.lookup.cache.max-rows", "1000");
 		properties.put("connector.lookup.cache.ttl", "10s");
@@ -125,16 +125,16 @@ public class JDBCTableSourceSinkFactoryTest {
 		final StreamTableSource<?> actual = TableFactoryService.find(StreamTableSourceFactory.class, properties)
 			.createStreamTableSource(properties);
 
-		final JDBCOptions options = JDBCOptions.builder()
+		final JdbcOptions options = JdbcOptions.builder()
 			.setDBUrl("jdbc:derby:memory:mydb")
 			.setTableName("mytable")
 			.build();
-		final JDBCLookupOptions lookupOptions = JDBCLookupOptions.builder()
+		final JdbcLookupOptions lookupOptions = JdbcLookupOptions.builder()
 			.setCacheMaxSize(1000)
 			.setCacheExpireMs(10_000)
 			.setMaxRetryTimes(10)
 			.build();
-		final JDBCTableSource expected = JDBCTableSource.builder()
+		final JdbcTableSource expected = JdbcTableSource.builder()
 			.setOptions(options)
 			.setLookupOptions(lookupOptions)
 			.setSchema(schema)
@@ -144,7 +144,7 @@ public class JDBCTableSourceSinkFactoryTest {
 	}
 
 	@Test
-	public void testJDBCSinkProperties() {
+	public void testJdbcSinkProperties() {
 		Map<String, String> properties = getBasicProperties();
 		properties.put("connector.write.flush.max-rows", "1000");
 		properties.put("connector.write.flush.interval", "2min");
@@ -153,11 +153,11 @@ public class JDBCTableSourceSinkFactoryTest {
 		final StreamTableSink<?> actual = TableFactoryService.find(StreamTableSinkFactory.class, properties)
 			.createStreamTableSink(properties);
 
-		final JDBCOptions options = JDBCOptions.builder()
+		final JdbcOptions options = JdbcOptions.builder()
 			.setDBUrl("jdbc:derby:memory:mydb")
 			.setTableName("mytable")
 			.build();
-		final JDBCUpsertTableSink expected = JDBCUpsertTableSink.builder()
+		final JdbcUpsertTableSink expected = JdbcUpsertTableSink.builder()
 			.setOptions(options)
 			.setTableSchema(schema)
 			.setFlushMaxSize(1000)
@@ -169,13 +169,13 @@ public class JDBCTableSourceSinkFactoryTest {
 	}
 
 	@Test
-	public void testJDBCFieldsProjection() {
+	public void testJdbcFieldsProjection() {
 		Map<String, String> properties = getBasicProperties();
 		properties.put("connector.driver", "org.apache.derby.jdbc.EmbeddedDriver");
 		properties.put("connector.username", "user");
 		properties.put("connector.password", "pass");
 
-		final TableSource<?> actual = ((JDBCTableSource) TableFactoryService
+		final TableSource<?> actual = ((JdbcTableSource) TableFactoryService
 			.find(StreamTableSourceFactory.class, properties)
 			.createStreamTableSource(properties))
 			.projectFields(new int[] {0, 2});
@@ -193,7 +193,7 @@ public class JDBCTableSourceSinkFactoryTest {
 	}
 
 	@Test
-	public void testJDBCValidation() {
+	public void testJdbcValidation() {
 		// only password, no username
 		try {
 			Map<String, String> properties = getBasicProperties();

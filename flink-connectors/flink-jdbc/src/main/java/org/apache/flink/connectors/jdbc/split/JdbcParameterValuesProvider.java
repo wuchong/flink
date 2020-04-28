@@ -16,13 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc.split;
 
-import org.apache.flink.connectors.jdbc.JdbcTableSourceSinkFactory;
+import org.apache.flink.connectors.jdbc.JdbcInputFormat;
+
+import java.io.Serializable;
 
 /**
- * Factory for creating configured instances of {@link JDBCTableSource} and {@link JDBCUpsertTableSink}.
+ * This interface is used by the {@link JdbcInputFormat} to compute the list of parallel query to run (i.e. splits).
+ * Each query will be parameterized using a row of the matrix provided by each {@link JdbcParameterValuesProvider}
+ * implementation.
  */
-@Deprecated
-public class JDBCTableSourceSinkFactory extends JdbcTableSourceSinkFactory {
+public interface JdbcParameterValuesProvider {
+
+	/** Returns the necessary parameters array to use for query in parallel a table. */
+	Serializable[][] getParameterValues();
 }

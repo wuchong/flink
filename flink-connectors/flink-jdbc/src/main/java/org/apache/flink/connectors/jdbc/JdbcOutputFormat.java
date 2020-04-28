@@ -45,7 +45,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormat.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormat.class);
 
 	final JdbcInsertOptions insertOptions;
 	private final JdbcExecutionOptions batchOptions;
@@ -54,7 +54,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	private transient int batchCount = 0;
 
 	/**
-	 * @deprecated use {@link JDBCOutputFormatBuilder builder} instead.
+	 * @deprecated use {@link JdbcOutputFormatBuilder builder} instead.
 	 */
 	@Deprecated
 	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, int[] typesArray) {
@@ -63,7 +63,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
 	}
 
-	private JdbcOutputFormat(JdbcConnectionProvider connectionProvider, JdbcInsertOptions insertOptions, JdbcExecutionOptions batchOptions) {
+	protected JdbcOutputFormat(JdbcConnectionProvider connectionProvider, JdbcInsertOptions insertOptions, JdbcExecutionOptions batchOptions) {
 		super(connectionProvider);
 		this.insertOptions = insertOptions;
 		this.batchOptions = batchOptions;
@@ -137,8 +137,8 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		super.close();
 	}
 
-	public static JDBCOutputFormatBuilder buildJDBCOutputFormat() {
-		return new JDBCOutputFormatBuilder();
+	public static JdbcOutputFormatBuilder buildJdbcOutputFormat() {
+		return new JdbcOutputFormatBuilder();
 	}
 
 	public int[] getFieldTypes() {
@@ -148,48 +148,48 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	/**
 	 * Builder for {@link JdbcOutputFormat}.
 	 */
-	public static class JDBCOutputFormatBuilder {
-		private String username;
-		private String password;
-		private String drivername;
-		private String dbURL;
-		private String query;
-		private int batchInterval = DEFAULT_FLUSH_MAX_SIZE;
-		private int[] typesArray;
+	public static class JdbcOutputFormatBuilder {
+		protected String username;
+		protected String password;
+		protected String drivername;
+		protected String dbURL;
+		protected String query;
+		protected int batchInterval = DEFAULT_FLUSH_MAX_SIZE;
+		protected int[] typesArray;
 
-		protected JDBCOutputFormatBuilder() {}
+		protected JdbcOutputFormatBuilder() {}
 
-		public JDBCOutputFormatBuilder setUsername(String username) {
+		public JdbcOutputFormatBuilder setUsername(String username) {
 			this.username = username;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setPassword(String password) {
+		public JdbcOutputFormatBuilder setPassword(String password) {
 			this.password = password;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setDrivername(String drivername) {
+		public JdbcOutputFormatBuilder setDrivername(String drivername) {
 			this.drivername = drivername;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setDBUrl(String dbURL) {
+		public JdbcOutputFormatBuilder setDBUrl(String dbURL) {
 			this.dbURL = dbURL;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setQuery(String query) {
+		public JdbcOutputFormatBuilder setQuery(String query) {
 			this.query = query;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setBatchInterval(int batchInterval) {
+		public JdbcOutputFormatBuilder setBatchInterval(int batchInterval) {
 			this.batchInterval = batchInterval;
 			return this;
 		}
 
-		public JDBCOutputFormatBuilder setSqlTypes(int[] typesArray) {
+		public JdbcOutputFormatBuilder setSqlTypes(int[] typesArray) {
 			this.typesArray = typesArray;
 			return this;
 		}

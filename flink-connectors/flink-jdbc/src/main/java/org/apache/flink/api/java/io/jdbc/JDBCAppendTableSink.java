@@ -19,7 +19,6 @@
 package org.apache.flink.api.java.io.jdbc;
 
 import org.apache.flink.connectors.jdbc.JdbcAppendTableSink;
-import org.apache.flink.connectors.jdbc.JdbcOutputFormat;
 
 /**
  * An at-least-once Table sink for JDBC.
@@ -28,10 +27,17 @@ import org.apache.flink.connectors.jdbc.JdbcOutputFormat;
  * checkpointing is enabled). However, one common use case is to run idempotent queries
  * (e.g., <code>REPLACE</code> or <code>INSERT OVERWRITE</code>) to upsert into the database and
  * achieve exactly-once semantic.</p>
+ *
+ * @deprecated Please use {@link JdbcAppendTableSink}, Flink proposes class name start with "Jdbc" rather than "JDBC".
  */
 @Deprecated
 public class JDBCAppendTableSink extends JdbcAppendTableSink {
-	public JDBCAppendTableSink(JDBCOutputFormat outputFormat) {
+
+	JDBCAppendTableSink(JDBCOutputFormat outputFormat) {
 		super(outputFormat);
+	}
+
+	public static JDBCAppendTableSinkBuilder builder() {
+		return new JDBCAppendTableSinkBuilder();
 	}
 }

@@ -165,11 +165,11 @@ public class JdbcUpsertTableSink implements UpsertStreamTableSink<Row> {
 	 * Builder for a {@link JdbcUpsertTableSink}.
 	 */
 	public static class Builder {
-		private TableSchema schema;
+		protected TableSchema schema;
 		private JdbcOptions options;
-		private int flushMaxSize = DEFAULT_FLUSH_MAX_SIZE;
-		private long flushIntervalMills = DEFAULT_FLUSH_INTERVAL_MILLS;
-		private int maxRetryTimes = DEFAULT_MAX_RETRY_TIMES;
+		protected int flushMaxSize = DEFAULT_FLUSH_MAX_SIZE;
+		protected long flushIntervalMills = DEFAULT_FLUSH_INTERVAL_MILLS;
+		protected int maxRetryTimes = DEFAULT_MAX_RETRY_TIMES;
 
 		/**
 		 * required, table schema of this table source.

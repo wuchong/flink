@@ -30,7 +30,7 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 
 	private final String query;
 
-	JdbcInsertOptions(String query, int[] typesArray) {
+	public JdbcInsertOptions(String query, int[] typesArray) {
 		super(typesArray);
 		this.query = Preconditions.checkNotNull(query, "query is empty");
 	}

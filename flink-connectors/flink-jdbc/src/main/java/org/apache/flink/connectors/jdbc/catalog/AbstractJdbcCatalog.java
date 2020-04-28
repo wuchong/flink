@@ -77,7 +77,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
 		checkArgument(!StringUtils.isNullOrWhitespaceOnly(pwd));
 		checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-		JdbcCatalogUtils.validateJDBCUrl(baseUrl);
+		JdbcCatalogUtils.validateJdbcUrl(baseUrl);
 
 		this.username = username;
 		this.pwd = pwd;

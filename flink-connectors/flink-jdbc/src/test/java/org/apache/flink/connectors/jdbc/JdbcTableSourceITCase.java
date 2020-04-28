@@ -16,21 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
-import org.apache.flink.connectors.jdbc.JdbcTestBase;
+import org.apache.flink.api.java.io.jdbc.JDBCTableSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.runtime.utils.StreamITCase;
-import org.apache.flink.table.types.DataType;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,10 +37,11 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 
+
 /**
  * ITCase for {@link JDBCTableSource}.
  */
-public class JDBCTableSourceITCase extends AbstractTestBase {
+public class JdbcTableSourceITCase extends AbstractTestBase {
 
 	public static final String DRIVER_CLASS = "org.apache.derby.jdbc.EmbeddedDriver";
 	public static final String DB_URL = "jdbc:derby:memory:test";
@@ -86,36 +83,29 @@ public class JDBCTableSourceITCase extends AbstractTestBase {
 	}
 
 	@Test
-	public void testJDBCSource() throws Exception {
+	public void testJdbcSource() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		EnvironmentSettings envSettings = EnvironmentSettings.newInstance()
 			.useBlinkPlanner()
 			.inStreamingMode()
 			.build();
 		StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, envSettings);
-		JDBCTableSource tableSource = JDBCTableSource.builder()
-			.setSchema(TableSchema.builder()
-				.field("id", DataTypes.BIGINT())
-				.field("timestamp6_col", DataTypes.TIMESTAMP(6))
-				.field("timestamp9_col", DataTypes.TIMESTAMP(9))
-				.field("time_col", DataTypes.TIME())
-				.field("real_col", DataTypes.FLOAT())
-				.field("double_col", DataTypes.DOUBLE())
-				.field("decimal_col", DataTypes.DECIMAL(10, 4))
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setDBUrl(DB_URL)
-				.setTableName(INPUT_TABLE)
-				.build())
-			.build();
 
-		JDBCTableSource projected = (JDBCTableSource) tableSource.projectFields(new int[] {1, 6});
-		DataType expectedRowType = DataTypes.ROW(
-			DataTypes.FIELD("timestamp6_col", DataTypes.TIMESTAMP(6)),
-			DataTypes.FIELD("decimal_col", DataTypes.DECIMAL(10, 4)));
-		Assert.assertEquals(expectedRowType.toString(), projected.getProducedDataType().toString());
-
-		tEnv.registerTableSource(INPUT_TABLE, tableSource);
+		tEnv.sqlUpdate(
+			"CREATE TABLE " + INPUT_TABLE + "(" +
+				"id BIGINT," +
+				"timestamp6_col TIMESTAMP(6)," +
+				"timestamp9_col TIMESTAMP(9)," +
+				"time_col TIME," +
+				"real_col FLOAT," +
+				"double_col DOUBLE," +
+				"decimal_col DECIMAL(10, 4)" +
+				") WITH (" +
+				"  'connector.type'='jdbc'," +
+				"  'connector.url'='" + DB_URL + "'," +
+				"  'connector.table'='" + INPUT_TABLE + "'" +
+				")"
+		);
 
 		StreamITCase.clear();
 		tEnv.toAppendStream(tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE), Row.class)
@@ -130,30 +120,29 @@ public class JDBCTableSourceITCase extends AbstractTestBase {
 	}
 
 	@Test
-	public void testProjectableJDBCSource() throws Exception {
+	public void testProjectableJdbcSource() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		EnvironmentSettings envSettings = EnvironmentSettings.newInstance()
 				.useBlinkPlanner()
 				.inStreamingMode()
 				.build();
 		StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, envSettings);
-		JDBCTableSource tableSource = (JDBCTableSource) JDBCTableSource.builder()
-			.setSchema(TableSchema.builder()
-				.field("id", DataTypes.BIGINT())
-				.field("timestamp6_col", DataTypes.TIMESTAMP(6))
-				.field("timestamp9_col", DataTypes.TIMESTAMP(9))
-				.field("time_col", DataTypes.TIME())
-				.field("real_col", DataTypes.FLOAT())
-				.field("double_col", DataTypes.DOUBLE())
-				.field("decimal_col", DataTypes.DECIMAL(10, 4))
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setDBUrl(DB_URL)
-				.setTableName(INPUT_TABLE)
-				.build())
-			.build();
 
-		tEnv.registerTableSource(INPUT_TABLE, tableSource);
+		tEnv.sqlUpdate(
+			"CREATE TABLE " + INPUT_TABLE + "(" +
+				"id BIGINT," +
+				"timestamp6_col TIMESTAMP(6)," +
+				"timestamp9_col TIMESTAMP(9)," +
+				"time_col TIME," +
+				"real_col FLOAT," +
+				"decimal_col DECIMAL(10, 4)" +
+				") WITH (" +
+				"  'connector.type'='jdbc'," +
+				"  'connector.url'='" + DB_URL + "'," +
+				"  'connector.table'='" + INPUT_TABLE + "'" +
+				")"
+		);
+
 		StreamITCase.clear();
 		tEnv.toAppendStream(tEnv.sqlQuery("SELECT timestamp6_col, decimal_col FROM " + INPUT_TABLE), Row.class)
 				.addSink(new StreamITCase.StringSink<>());

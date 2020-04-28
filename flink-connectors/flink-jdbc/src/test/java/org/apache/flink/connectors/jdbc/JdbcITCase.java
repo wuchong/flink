@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TestEntry;
+import org.apache.flink.connectors.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import org.junit.Ignore;
@@ -34,15 +34,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.INPUT_TABLE;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
-import static org.apache.flink.api.java.io.jdbc.JdbcTestFixture.TEST_DATA;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.INPUT_TABLE;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
+import static org.apache.flink.connectors.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.junit.Assert.assertEquals;
 
 /**
  * Smoke tests for the {@link JdbcSink} and the underlying classes.
  */
-public class JdbcITCase extends JDBCTestBase {
+public class JdbcITCase extends JdbcTestBase {
 
 	@Test
 	@Ignore
@@ -50,8 +50,7 @@ public class JdbcITCase extends JDBCTestBase {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
 		env.setParallelism(1);
-		env
-			.fromElements(TEST_DATA)
+		env.fromElements(TEST_DATA)
 			.addSink(JdbcSink.sink(
 				String.format(INSERT_TEMPLATE, INPUT_TABLE),
 				(ps, t) -> {
@@ -65,7 +64,7 @@ public class JdbcITCase extends JDBCTestBase {
 					}
 					ps.setInt(5, t.qty);
 				},
-				new JdbcConnectionOptionsBuilder()
+				new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
 					.withUrl(getDbMetadata().getUrl())
 					.withDriverName(getDbMetadata().getDriverClass())
 					.build()));

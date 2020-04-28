@@ -24,6 +24,8 @@ import org.apache.flink.connectors.jdbc.JdbcLookupOptions;
 import org.apache.flink.connectors.jdbc.JdbcOptions;
 import org.apache.flink.table.functions.TableFunction;
 
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 /**
  * A {@link TableFunction} to query fields from JDBC by keys.
  * The query template like:
@@ -34,10 +36,89 @@ import org.apache.flink.table.functions.TableFunction;
  * <p>Support cache the result to avoid frequent accessing to remote databases.
  * 1.The cacheMaxSize is -1 means not use cache.
  * 2.For real-time data, you need to set the TTL of cache.
+ *
+ * @deprecated Please use {@link JdbcLookupFunction}, Flink proposes class name start with "Jdbc" rather than "JDBC".
  */
 @Deprecated
 public class JDBCLookupFunction extends JdbcLookupFunction {
-	public JDBCLookupFunction(JdbcOptions options, JdbcLookupOptions lookupOptions, String[] fieldNames, TypeInformation[] fieldTypes, String[] keyNames) {
+
+	public JDBCLookupFunction(
+			JdbcOptions options,
+			JdbcLookupOptions lookupOptions,
+			String[] fieldNames,
+			TypeInformation[] fieldTypes,
+			String[] keyNames) {
 		super(options, lookupOptions, fieldNames, fieldTypes, keyNames);
 	}
+
+	public static Builder builder() {
+		return new Builder();
+	}
+
+	/**
+	 * Builder for a {@link JdbcLookupFunction}.
+	 */
+	public static class Builder extends JdbcLookupFunction.Builder {
+
+		private JDBCOptions options;
+		private JDBCLookupOptions lookupOptions;
+
+		/**
+		 * required, jdbc options.
+		 */
+		public Builder setOptions(JDBCOptions options) {
+			this.options = options;
+			return this;
+		}
+
+		/**
+		 * optional, lookup related options.
+		 */
+		public Builder setLookupOptions(JDBCLookupOptions lookupOptions) {
+			this.lookupOptions = lookupOptions;
+			return this;
+		}
+
+		/**
+		 * required, field names of this jdbc table.
+		 */
+		public Builder setFieldNames(String[] fieldNames) {
+			this.fieldNames = fieldNames;
+			return this;
+		}
+
+		/**
+		 * required, field types of this jdbc table.
+		 */
+		public Builder setFieldTypes(TypeInformation[] fieldTypes) {
+			this.fieldTypes = fieldTypes;
+			return this;
+		}
+
+		/**
+		 * required, key names to query this jdbc table.
+		 */
+		public Builder setKeyNames(String[] keyNames) {
+			this.keyNames = keyNames;
+			return this;
+		}
+
+		/**
+		 * Finalizes the configuration and checks validity.
+		 *
+		 * @return Configured JdbcLookupFunction
+		 */
+		public JDBCLookupFunction build() {
+			checkNotNull(options, "No JdbcOptions supplied.");
+			if (lookupOptions == null) {
+				lookupOptions = JDBCLookupOptions.builder().build();
+			}
+			checkNotNull(fieldNames, "No fieldNames supplied.");
+			checkNotNull(fieldTypes, "No fieldTypes supplied.");
+			checkNotNull(keyNames, "No keyNames supplied.");
+
+			return new JDBCLookupFunction(options, lookupOptions, fieldNames, fieldTypes, keyNames);
+		}
+	}
+
 }

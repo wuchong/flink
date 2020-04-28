@@ -16,19 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.tuple.Tuple4;
-import org.apache.flink.connectors.jdbc.JdbcTestFixture;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
-import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
@@ -50,9 +47,9 @@ import static org.apache.flink.connectors.jdbc.JdbcTableOutputFormatTest.check;
 import static org.apache.flink.table.api.Expressions.$;
 
 /**
- * IT case for {@link JDBCUpsertTableSink}.
+ * IT case for {@link JdbcUpsertTableSink}.
  */
-public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
+public class JdbcUpsertTableSinkITCase extends AbstractTestBase {
 
 	public static final String DB_URL = "jdbc:derby:memory:upsert";
 	public static final String OUTPUT_TABLE1 = "upsertSink";
@@ -134,17 +131,15 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 		env.getConfig().enableObjectReuse();
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 		StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
-		JDBCUpsertTableSink upsertTableSink = JDBCUpsertTableSink.builder()
-			.setTableSchema(TableSchema.builder()
-				.field("real_data", DataTypes.FLOAT())
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setTableName("REAL_TABLE")
-				.setDBUrl(DB_URL)
-				.build())
-			.build();
 
-		tEnv.registerTableSink("upsertSink", upsertTableSink);
+		tEnv.sqlUpdate(
+				"CREATE TABLE upsertSink (" +
+						"  real_data float" +
+						") WITH (" +
+						"  'connector.type'='jdbc'," +
+						"  'connector.url'='" + DB_URL + "'," +
+						"  'connector.table'='REAL_TABLE'" +
+						")");
 
 		tEnv.sqlUpdate("INSERT INTO upsertSink SELECT CAST(1.0 as FLOAT)");
 		tEnv.execute("job name");
@@ -167,21 +162,18 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 			}), $("id"), $("num"), $("text"), $("ts"));
 
 		tEnv.createTemporaryView("T", t);
+		tEnv.sqlUpdate(
+			"CREATE TABLE upsertSink (" +
+				"  cnt BIGINT," +
+				"  lencnt BIGINT," +
+				"  cTag INT," +
+				"  ts TIMESTAMP(3)" +
+				") WITH (" +
+				"  'connector.type'='jdbc'," +
+				"  'connector.url'='" + DB_URL + "'," +
+				"  'connector.table'='" + OUTPUT_TABLE1 + "'" +
+				")");
 
-		JDBCUpsertTableSink upsertTableSink = JDBCUpsertTableSink.builder()
-			.setTableSchema(TableSchema.builder()
-				.field("cnt", DataTypes.BIGINT())
-				.field("lencnt", DataTypes.BIGINT())
-				.field("cTag", DataTypes.INT())
-				.field("ts", DataTypes.TIMESTAMP(3))
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setTableName(OUTPUT_TABLE1)
-				.setDBUrl(DB_URL)
-				.build())
-			.build();
-
-		tEnv.registerTableSink("upsertSink", upsertTableSink);
 		tEnv.sqlUpdate("INSERT INTO upsertSink \n" +
 			"SELECT cnt, COUNT(len) AS lencnt, cTag, MAX(ts) AS ts\n" +
 			"FROM (\n" +
@@ -190,7 +182,7 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 			"  GROUP BY len, cTag\n" +
 			")\n" +
 			"GROUP BY cnt, cTag");
-		tEnv.execute("test JDBCUpsertTableSink upsert");
+		tEnv.execute("job name");
 		check(new Row[] {
 				Row.of(1, 5, 1, Timestamp.valueOf("1970-01-01 00:00:00.006")),
 				Row.of(7, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.021")),
@@ -208,19 +200,7 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 		Table t = tEnv.fromDataStream(get4TupleDataStream(env), $("id"), $("num"), $("text"), $("ts"));
 
 		tEnv.registerTable("T", t);
-		JDBCUpsertTableSink upsertTableSink = JDBCUpsertTableSink.builder()
-			.setTableSchema(TableSchema.builder()
-				.field("id", DataTypes.INT())
-				.field("num", DataTypes.BIGINT())
-				.field("ts", DataTypes.TIMESTAMP(3))
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setTableName(OUTPUT_TABLE2)
-				.setDBUrl(DB_URL)
-				.build())
-			.build();
 
-		tEnv.registerTableSink("upsertSink", upsertTableSink);
 		tEnv.sqlUpdate(
 			"CREATE TABLE upsertSink (" +
 				"  id INT," +
@@ -233,7 +213,7 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 				")");
 
 		tEnv.sqlUpdate("INSERT INTO upsertSink SELECT id, num, ts FROM T WHERE id IN (2, 10, 20)");
-		tEnv.execute("test JDBCUpsertTableSink append");
+		tEnv.execute("job name");
 		check(new Row[] {
 				Row.of(2, 2, Timestamp.valueOf("1970-01-01 00:00:00.002")),
 				Row.of(10, 4, Timestamp.valueOf("1970-01-01 00:00:00.01")),
@@ -247,18 +227,15 @@ public class JDBCUpsertTableSinkITCase extends AbstractTestBase {
 				.useBlinkPlanner().inBatchMode().build();
 		TableEnvironment tEnv = TableEnvironment.create(bsSettings);
 
-		JDBCUpsertTableSink upsertTableSink = JDBCUpsertTableSink.builder()
-			.setTableSchema(TableSchema.builder()
-				.field("NAME", DataTypes.STRING())
-				.field("SCORE", DataTypes.BIGINT())
-				.build())
-			.setOptions(JDBCOptions.builder()
-				.setTableName(OUTPUT_TABLE3)
-				.setDBUrl(DB_URL)
-				.build())
-			.build();
-
-		tEnv.registerTableSink("USER_RESULT", upsertTableSink);
+		tEnv.sqlUpdate(
+			"CREATE TABLE USER_RESULT(" +
+				"NAME VARCHAR," +
+				"SCORE BIGINT" +
+				") WITH ( " +
+				"'connector.type' = 'jdbc'," +
+				"'connector.url'='" + DB_URL + "'," +
+				"'connector.table' = '" + OUTPUT_TABLE3 + "'" +
+				")");
 
 		tEnv.sqlUpdate("INSERT INTO USER_RESULT\n" +
 				"SELECT user_name, score " +

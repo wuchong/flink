@@ -48,10 +48,10 @@ import java.util.stream.Stream;
  */
 public class JdbcAppendTableSink implements AppendStreamTableSink<Row>, BatchTableSink<Row> {
 
-	private final JdbcOutputFormat outputFormat;
+	protected final JdbcOutputFormat outputFormat;
 
-	private String[] fieldNames;
-	private TypeInformation[] fieldTypes;
+	protected String[] fieldNames;
+	protected TypeInformation[] fieldTypes;
 
 	protected JdbcAppendTableSink(JdbcOutputFormat outputFormat) {
 		this.outputFormat = outputFormat;
@@ -120,7 +120,7 @@ public class JdbcAppendTableSink implements AppendStreamTableSink<Row>, BatchTab
 	}
 
 	@VisibleForTesting
-	JdbcOutputFormat getOutputFormat() {
+	protected JdbcOutputFormat getOutputFormat() {
 		return outputFormat;
 	}
 }

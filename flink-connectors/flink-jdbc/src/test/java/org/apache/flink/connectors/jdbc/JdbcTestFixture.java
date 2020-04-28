@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -38,16 +38,16 @@ import static org.apache.flink.table.types.utils.TypeConversions.fromLegacyInfoT
 public class JdbcTestFixture {
 
 	public static final String INPUT_TABLE = "books";
-	static final String OUTPUT_TABLE = "newbooks";
-	static final String OUTPUT_TABLE_2 = "newbooks2";
-	static final String SELECT_ALL_BOOKS = "select * from " + INPUT_TABLE;
-	static final String SELECT_ID_BOOKS = "select id from " + INPUT_TABLE;
-	static final String SELECT_ALL_NEWBOOKS = "select * from " + OUTPUT_TABLE;
-	static final String SELECT_ALL_NEWBOOKS_2 = "select * from " + OUTPUT_TABLE_2;
-	static final String SELECT_EMPTY = "select * from books WHERE QTY < 0";
+	public static final String OUTPUT_TABLE = "newbooks";
+	public static final String OUTPUT_TABLE_2 = "newbooks2";
+	public static final String SELECT_ALL_BOOKS = "select * from " + INPUT_TABLE;
+	public static final String SELECT_ID_BOOKS = "select id from " + INPUT_TABLE;
+	public static final String SELECT_ALL_NEWBOOKS = "select * from " + OUTPUT_TABLE;
+	public static final String SELECT_ALL_NEWBOOKS_2 = "select * from " + OUTPUT_TABLE_2;
+	public static final String SELECT_EMPTY = "select * from books WHERE QTY < 0";
 	public static final String INSERT_TEMPLATE = "insert into %s (id, title, author, price, qty) values (?,?,?,?,?)";
-	static final String SELECT_ALL_BOOKS_SPLIT_BY_ID = SELECT_ALL_BOOKS + " WHERE id BETWEEN ? AND ?";
-	static final String SELECT_ALL_BOOKS_SPLIT_BY_AUTHOR = SELECT_ALL_BOOKS + " WHERE author = ?";
+	public static final String SELECT_ALL_BOOKS_SPLIT_BY_ID = SELECT_ALL_BOOKS + " WHERE id BETWEEN ? AND ?";
+	public static final String SELECT_ALL_BOOKS_SPLIT_BY_AUTHOR = SELECT_ALL_BOOKS + " WHERE author = ?";
 
 	public static final TestEntry[] TEST_DATA = {
 			new TestEntry(1001, ("Java public for dummies"), ("Tan Ah Teck"), 11.11, 11),
@@ -75,7 +75,7 @@ public class JdbcTestFixture {
 		public final Double price;
 		public final Integer qty;
 
-		TestEntry(Integer id, String title, String author, Double price, Integer qty) {
+		public TestEntry(Integer id, String title, String author, Double price, Integer qty) {
 			this.id = id;
 			this.title = title;
 			this.author = author;
@@ -99,14 +99,14 @@ public class JdbcTestFixture {
 		}
 	}
 
-	static final RowTypeInfo ROW_TYPE_INFO = new RowTypeInfo(
+	public static final RowTypeInfo ROW_TYPE_INFO = new RowTypeInfo(
 		BasicTypeInfo.INT_TYPE_INFO,
 		BasicTypeInfo.STRING_TYPE_INFO,
 		BasicTypeInfo.STRING_TYPE_INFO,
 		BasicTypeInfo.DOUBLE_TYPE_INFO,
 		BasicTypeInfo.INT_TYPE_INFO);
 
-	static final RowType ROW_TYPE = (RowType) fromLegacyInfoToDataType(ROW_TYPE_INFO).getLogicalType();
+	public static final RowType ROW_TYPE = (RowType) fromLegacyInfoToDataType(ROW_TYPE_INFO).getLogicalType();
 
 	private static String getCreateQuery(String tableName) {
 		return "CREATE TABLE " + tableName + " (" +

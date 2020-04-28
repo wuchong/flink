@@ -235,9 +235,9 @@ public class JdbcLookupFunction extends TableFunction<Row> {
 	public static class Builder {
 		private JdbcOptions options;
 		private JdbcLookupOptions lookupOptions;
-		private String[] fieldNames;
-		private TypeInformation[] fieldTypes;
-		private String[] keyNames;
+		protected String[] fieldNames;
+		protected TypeInformation[] fieldTypes;
+		protected String[] keyNames;
 
 		/**
 		 * required, jdbc options.

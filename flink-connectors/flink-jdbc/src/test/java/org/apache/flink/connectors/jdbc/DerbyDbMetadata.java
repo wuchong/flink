@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.api.java.io.jdbc;
+package org.apache.flink.connectors.jdbc;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
 

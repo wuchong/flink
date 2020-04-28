@@ -54,8 +54,8 @@ public class JdbcExecutionOptions implements Serializable {
 		return maxRetries;
 	}
 
-	public static JdbcExecutionOptionsBuilder builder() {
-		return new JdbcExecutionOptionsBuilder();
+	public static Builder builder() {
+		return new Builder();
 	}
 
 	public static JdbcExecutionOptions defaults() {
@@ -65,22 +65,22 @@ public class JdbcExecutionOptions implements Serializable {
 	/**
 	 * Builder for {@link JdbcExecutionOptions}.
 	 */
-	public static final class JdbcExecutionOptionsBuilder {
+	public static final class Builder {
 		private long intervalMs = DEFAULT_INTERVAL_MILLIS;
 		private int size = DEFAULT_SIZE;
 		private int maxRetries = DEFAULT_MAX_RETRY_TIMES;
 
-		public JdbcExecutionOptionsBuilder withBatchSize(int size) {
+		public Builder withBatchSize(int size) {
 			this.size = size;
 			return this;
 		}
 
-		public JdbcExecutionOptionsBuilder withBatchIntervalMs(long intervalMs) {
+		public Builder withBatchIntervalMs(long intervalMs) {
 			this.intervalMs = intervalMs;
 			return this;
 		}
 
-		public JdbcExecutionOptionsBuilder withMaxRetries(int maxRetries) {
+		public Builder withMaxRetries(int maxRetries) {
 			this.maxRetries = maxRetries;
 			return this;
 		}

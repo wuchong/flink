@@ -90,12 +90,12 @@ public class JdbcReadOptions implements Serializable {
 	 * Builder of {@link JdbcReadOptions}.
 	 */
 	public static class Builder {
-		private String partitionColumnName;
-		private Long partitionLowerBound;
-		private Long partitionUpperBound;
-		private Integer numPartitions;
+		protected String partitionColumnName;
+		protected Long partitionLowerBound;
+		protected Long partitionUpperBound;
+		protected Integer numPartitions;
 
-		private int fetchSize = 0;
+		protected int fetchSize = 0;
 
 		/**
 		 * optional, name of the column used for partitioning the input.
