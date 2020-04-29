@@ -85,7 +85,7 @@ public class JdbcFullTest extends JdbcDataTestBase {
 				.setDBUrl(getDbMetadata().getUrl())
 				.setQuery(JdbcTestFixture.SELECT_ALL_BOOKS)
 				.setRowTypeInfo(ROW_TYPE_INFO)
-				.setRowConverter(JdbcDialects.get(getDbMetadata().getUrl()).get().getRowConverter(ROW_TYPE));
+				.setRowConverter(JdbcDialects.get(getDbMetadata().getUrl()).get().getInputConverter(ROW_TYPE));
 
 		if (exploitParallelism) {
 			final int fetchSize = 1;

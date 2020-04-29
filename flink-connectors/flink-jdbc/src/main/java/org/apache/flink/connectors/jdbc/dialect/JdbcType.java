@@ -16,33 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connectors.jdbc.source.row.converter;
-
-import org.apache.flink.types.Row;
-
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+package org.apache.flink.connectors.jdbc.dialect;
 
 /**
- * Convert row from JDBC result set to a Flink row.
+ * The class to describe a JDBC data type.
+ * For example:
+ * JdbcType jdbcType = new JdbcType("DOUBLE", java.sql.Types.DOUBLE) can describe a "DOUBLE" type.
+ * the dialectTypeName "DOUBLE" describe the dialect type name in a database,
+ * the genericSqlType "java.sql.Types.DOUBLE" describes corresponding generic type
+ * which should be a integer constant from java.sql.Types.
  */
-@FunctionalInterface
-public interface JdbcRowConverter extends Serializable {
+public class JdbcType {
+	private final String dialectTypeName;
+	private final int genericSqlType;
 
-	/**
-	 * Convert data retrieved from {@link ResultSet} to {@link Row}.
-	 *
-	 * @param resultSet ResultSet from JDBC
-	 * @param reuse The row to set
-	 */
-	Row convert(ResultSet resultSet, Row reuse) throws SQLException;
+	public JdbcType(String dialectTypeName, int genericSqlType) {
+		this.dialectTypeName = dialectTypeName;
+		this.genericSqlType = genericSqlType;
+	}
 
-	/**
-	 * Runtime converter to convert JDBC field to Java objects.
-	 */
-	@FunctionalInterface
-	interface JDBCFieldConverter extends Serializable {
-		Object convert(Object value) throws SQLException;
+	public String getDialectTypeName() {
+		return dialectTypeName;
+	}
+
+	public int getGenericSqlType() {
+		return genericSqlType;
 	}
 }

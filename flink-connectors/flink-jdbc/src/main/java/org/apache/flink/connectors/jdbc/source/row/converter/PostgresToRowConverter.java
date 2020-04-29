@@ -31,14 +31,14 @@ import org.postgresql.util.PGobject;
 /**
  * Row converter for Postgres.
  */
-public class PostgresRowConverter extends AbstractJdbcRowConverter {
+public class PostgresToRowConverter extends AbstractJdbcToRowConverter {
 
-	public PostgresRowConverter(RowType rowType) {
+	public PostgresToRowConverter(RowType rowType) {
 		super(rowType);
 	}
 
 	@Override
-	public JDBCFieldConverter createConverter(LogicalType type) {
+	public JDBCFieldConverter createInternalConverter(LogicalType type) {
 		LogicalTypeRoot root = type.getTypeRoot();
 
 		if (root == LogicalTypeRoot.ARRAY) {
@@ -68,7 +68,7 @@ public class PostgresRowConverter extends AbstractJdbcRowConverter {
 
 	// Have its own method so that Postgres can support primitives that super class doesn't support in the future
 	private JDBCFieldConverter createPrimitiveConverter(LogicalType type) {
-		return super.createConverter(type);
+		return super.createInternalConverter(type);
 	}
 
 }

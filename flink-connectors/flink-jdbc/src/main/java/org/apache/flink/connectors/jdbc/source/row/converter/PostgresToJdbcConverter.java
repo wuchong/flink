@@ -18,14 +18,13 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 
 /**
- * Row converter for MySQL.
+ * Row to JDBC object converter for Postgres.
  */
-public class MySQLRowConverter extends AbstractJdbcRowConverter {
-
-	public MySQLRowConverter(RowType rowType) {
-		super(rowType);
+public class PostgresToJdbcConverter extends AbstractRowToJdbcConverter{
+	public PostgresToJdbcConverter(JdbcType[] externalTypes) {
+		super(externalTypes);
 	}
 }

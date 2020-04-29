@@ -178,7 +178,7 @@ public class JdbcTableSource implements
 				" BETWEEN ? AND ?";
 		}
 		builder.setQuery(query);
-		builder.setRowConverter(dialect.getRowConverter((RowType) producedDataType.getLogicalType()));
+		builder.setRowConverter(dialect.getInputConverter((RowType) producedDataType.getLogicalType()));
 
 		return builder.finish();
 	}

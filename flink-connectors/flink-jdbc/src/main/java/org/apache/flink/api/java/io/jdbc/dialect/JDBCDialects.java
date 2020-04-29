@@ -18,18 +18,25 @@
 
 package org.apache.flink.api.java.io.jdbc.dialect;
 
-import org.apache.flink.connectors.jdbc.source.row.converter.DerbyRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.MySQLRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.PostgresRowConverter;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.source.row.converter.DefaultToJdbcConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.DerbyToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.MySQLToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.PostgresToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.DecimalType;
+import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.table.types.logical.VarBinaryType;
+
+import javax.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +68,97 @@ public final class JDBCDialects {
 			}
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Utils to brige old interface to new interface for compatibility purpose.
+	 */
+	public static JdbcDialect brigeToJdbcDialect(JDBCDialect dialect) {
+		return new JdbcDialect() {
+			@Override
+			public boolean canHandle(String jdbcUrl) {
+				return dialect.canHandle(jdbcUrl);
+			}
+
+			@Override
+			public String defaultDriverName() {
+				return dialect.defaultDriverName().orElse(null);
+			}
+
+			@Override
+			public void validateInternalType(LogicalType type) {
+			}
+
+			@Override
+			public void validateExternalType(JdbcType type) {
+			}
+
+			@Override
+			public LogicalType getInternalType(JdbcType externalType) {
+				return null;
+			}
+
+			@Override
+			public JdbcType getExternalType(LogicalType internalType) {
+				return null;
+			}
+
+			@Override
+			public JdbcToRowConverter getInputConverter(RowType rowType) {
+				return dialect.getRowConverter(rowType);
+			}
+
+			@Override
+			public RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes) {
+				return new DefaultToJdbcConverter(jdbcTypes);
+			}
+
+			@Override
+			public String quoteIdentifier(String identifier) {
+				return dialect.quoteIdentifier(identifier);
+			}
+
+			@Override
+			public String getSelectFromStatement(String tableName, String[] selectFields, String[] conditionFields) {
+				return dialect.getSelectFromStatement(tableName, selectFields, conditionFields);
+			}
+
+			@Override
+			public String getInsertIntoStatement(String tableName, String[] fieldNames) {
+				return dialect.getInsertIntoStatement(tableName, fieldNames);
+			}
+
+			@Override
+			public String getUpdateStatement(String tableName, String[] fieldNames, String[] conditionFields) {
+				return dialect.getUpdateStatement(tableName, fieldNames, conditionFields);
+			}
+
+			@Override
+			public String getDeleteStatement(String tableName, String[] conditionFields) {
+				return dialect.getDeleteStatement(tableName, conditionFields);
+			}
+
+			@Nullable
+			@Override
+			public String getUpsertStatement(String tableName, String[] fieldNames, String[] uniqueKeyFields) {
+				return dialect.getUpdateStatement(tableName, fieldNames, uniqueKeyFields);
+			}
+
+			@Override
+			public String getRowExistsStatement(String tableName, String[] conditionFields) {
+				return dialect.getRowExistsStatement(tableName, conditionFields);
+			}
+
+			@Override
+			public String getTableExistsStatement(String tableName) {
+				return null;
+			}
+
+			@Override
+			public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields) {
+				return null;
+			}
+		};
 	}
 
 	private abstract static class AbstractDialect implements JDBCDialect {
@@ -152,8 +250,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcRowConverter getRowConverter(RowType rowType) {
-			return new DerbyRowConverter(rowType);
+		public JdbcToRowConverter getRowConverter(RowType rowType) {
+			return new DerbyToRowConverter(rowType);
 		}
 
 		@Override
@@ -240,8 +338,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcRowConverter getRowConverter(RowType rowType) {
-			return new MySQLRowConverter(rowType);
+		public JdbcToRowConverter getRowConverter(RowType rowType) {
+			return new MySQLToRowConverter(rowType);
 		}
 
 		@Override
@@ -346,8 +444,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcRowConverter getRowConverter(RowType rowType) {
-			return new PostgresRowConverter(rowType);
+		public JdbcToRowConverter getRowConverter(RowType rowType) {
+			return new PostgresToRowConverter(rowType);
 		}
 
 		@Override

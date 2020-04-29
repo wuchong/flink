@@ -106,11 +106,11 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 		int[] pkFields = Arrays.stream(opt.getKeyFields().get()).mapToInt(Arrays.asList(opt.getFieldNames())::indexOf).toArray();
 		int[] pkTypes = opt.getFieldTypes() == null ? null : Arrays.stream(pkFields).map(f -> opt.getFieldTypes()[f]).toArray();
 
-		return opt.getDialect()
-			.getUpsertStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get())
-			.map(sql -> createSimpleRowExecutor(sql, opt.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled()))
-			.orElseGet(() ->
-				new InsertOrUpdateJdbcExecutor<>(
+		String upsertStatement = opt.getDialect()
+			.getUpsertStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get());
+
+		if (upsertStatement == null) {
+			return new InsertOrUpdateJdbcExecutor<>(
 					opt.getDialect().getRowExistsStatement(opt.getTableName(), opt.getKeyFields().get()),
 					opt.getDialect().getInsertIntoStatement(opt.getTableName(), opt.getFieldNames()),
 					opt.getDialect().getUpdateStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get()),
@@ -118,7 +118,12 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 					createRowJdbcStatementBuilder(opt.getFieldTypes()),
 					createRowJdbcStatementBuilder(opt.getFieldTypes()),
 					createRowKeyExtractor(pkFields),
-					ctx.getExecutionConfig().isObjectReuseEnabled() ? Row::copy : Function.identity()));
+					ctx.getExecutionConfig().isObjectReuseEnabled() ? Row::copy : Function.identity());
+		} else {
+			return createSimpleRowExecutor(upsertStatement, opt.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled());
+
+		}
+
 	}
 
 	private static Function<Row, Row> createRowKeyExtractor(int[] pkFields) {

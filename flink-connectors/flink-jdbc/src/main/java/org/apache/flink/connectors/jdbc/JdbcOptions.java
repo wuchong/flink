@@ -79,7 +79,7 @@ public class JdbcOptions extends JdbcConnectionOptions {
 		protected String driverName;
 		protected String username;
 		protected String password;
-		private JdbcDialect dialect;
+		protected JdbcDialect dialect;
 
 		/**
 		 * required, table name.
@@ -141,10 +141,11 @@ public class JdbcOptions extends JdbcConnectionOptions {
 				});
 			}
 			if (this.driverName == null) {
-				Optional<String> optional = dialect.defaultDriverName();
-				this.driverName = optional.orElseGet(() -> {
+				String defaultDriverName = dialect.defaultDriverName();
+				if (defaultDriverName == null) {
 					throw new NullPointerException("No driverName supplied.");
-				});
+				}
+				this.driverName = defaultDriverName;
 			}
 
 			return new JdbcOptions(dbURL, tableName, driverName, username, password, dialect);

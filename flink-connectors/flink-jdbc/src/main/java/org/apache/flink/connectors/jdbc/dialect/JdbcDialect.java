@@ -18,134 +18,64 @@
 
 package org.apache.flink.connectors.jdbc.dialect;
 
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRowConverter;
-import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
+import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
+import javax.annotation.Nullable;
+
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 /**
- * Handle the SQL dialect of jdbc driver.
+ * This interface is responsible for defining a JDBC dialect which used to interact with Flink SQL system.
  */
+@PublicEvolving
 public interface JdbcDialect extends Serializable {
 
-	/**
-	 * Check if this dialect instance can handle a certain jdbc url.
-	 * @param url the jdbc url.
-	 * @return True if the dialect can be applied on the given jdbc url.
-	 */
-	boolean canHandle(String url);
+	boolean canHandle(String jdbcUrl);
+
+	String defaultDriverName();
 
 	/**
-	 * Get a row converter for the database according to the given row type.
-	 * @param rowType the given row type
-	 * @return a row converter for the database
+	 * validate supported internalType before write data to db.
+	 * @param type
 	 */
-	JdbcRowConverter getRowConverter(RowType rowType);
+	void validateInternalType(LogicalType type);
 
 	/**
-	 * Check if this dialect instance support a specific data type in table schema.
-	 * @param schema the table schema.
-	 * @exception ValidationException in case of the table schema contains unsupported type.
+	 * validate supported external before write data to db.
+	 * @param type
 	 */
-	default void validate(TableSchema schema) throws ValidationException {
-	}
+	void validateExternalType(JdbcType type);
 
-	/**
-	 * @return the default driver class name, if user not configure the driver class name,
-	 * then will use this one.
-	 */
-	default Optional<String> defaultDriverName() {
-		return Optional.empty();
-	}
+	LogicalType getInternalType(JdbcType externalType);
 
-	/**
-	 * Quotes the identifier. This is used to put quotes around the identifier in case the column
-	 * name is a reserved keyword, or in case it contains characters that require quotes (e.g. space).
-	 * Default using double quotes {@code "} to quote.
-	 */
-	default String quoteIdentifier(String identifier) {
-		return "\"" + identifier + "\"";
-	}
+	JdbcType getExternalType(LogicalType internalType);
 
-	/**
-	 * Get dialect upsert statement, the database has its own upsert syntax, such as Mysql
-	 * using DUPLICATE KEY UPDATE, and PostgresSQL using ON CONFLICT... DO UPDATE SET..
-	 *
-	 * @return None if dialect does not support upsert statement, the writer will degrade to
-	 * the use of select + update/insert, this performance is poor.
-	 */
-	default Optional<String> getUpsertStatement(
-		String tableName, String[] fieldNames, String[] uniqueKeyFields) {
-		return Optional.empty();
-	}
+	JdbcToRowConverter getInputConverter(RowType rowType);
 
-	/**
-	 * Get row exists statement by condition fields. Default use SELECT.
-	 */
-	default String getRowExistsStatement(String tableName, String[] conditionFields) {
-		String fieldExpressions = Arrays.stream(conditionFields)
-			.map(f -> quoteIdentifier(f) + "=?")
-			.collect(Collectors.joining(" AND "));
-		return "SELECT 1 FROM " + quoteIdentifier(tableName) + " WHERE " + fieldExpressions;
-	}
+	RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes);
 
-	/**
-	 * Get insert into statement.
-	 */
-	default String getInsertIntoStatement(String tableName, String[] fieldNames) {
-		String columns = Arrays.stream(fieldNames)
-			.map(this::quoteIdentifier)
-			.collect(Collectors.joining(", "));
-		String placeholders = Arrays.stream(fieldNames)
-			.map(f -> "?")
-			.collect(Collectors.joining(", "));
-		return "INSERT INTO " + quoteIdentifier(tableName) +
-			"(" + columns + ")" + " VALUES (" + placeholders + ")";
-	}
+	String quoteIdentifier(String identifier);
 
-	/**
-	 * Get update one row statement by condition fields, default not use limit 1,
-	 * because limit 1 is a sql dialect.
-	 */
-	default String getUpdateStatement(String tableName, String[] fieldNames, String[] conditionFields) {
-		String setClause = Arrays.stream(fieldNames)
-			.map(f -> quoteIdentifier(f) + "=?")
-			.collect(Collectors.joining(", "));
-		String conditionClause = Arrays.stream(conditionFields)
-			.map(f -> quoteIdentifier(f) + "=?")
-			.collect(Collectors.joining(" AND "));
-		return "UPDATE " + quoteIdentifier(tableName) +
-			" SET " + setClause +
-			" WHERE " + conditionClause;
-	}
+	String getSelectFromStatement(String tableName, String[] selectFields, String[] conditionFields);
 
-	/**
-	 * Get delete one row statement by condition fields, default not use limit 1,
-	 * because limit 1 is a sql dialect.
-	 */
-	default String getDeleteStatement(String tableName, String[] conditionFields) {
-		String conditionClause = Arrays.stream(conditionFields)
-			.map(f -> quoteIdentifier(f) + "=?")
-			.collect(Collectors.joining(" AND "));
-		return "DELETE FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
-	}
+	String getInsertIntoStatement(String tableName, String[] fieldNames);
 
-	/**
-	 * Get select fields statement by condition fields. Default use SELECT.
-	 */
-	default String getSelectFromStatement(String tableName, String[] selectFields, String[] conditionFields) {
-		String selectExpressions = Arrays.stream(selectFields)
-				.map(this::quoteIdentifier)
-				.collect(Collectors.joining(", "));
-		String fieldExpressions = Arrays.stream(conditionFields)
-				.map(f -> quoteIdentifier(f) + "=?")
-				.collect(Collectors.joining(" AND "));
-		return "SELECT " + selectExpressions + " FROM " +
-				quoteIdentifier(tableName) + (conditionFields.length > 0 ? " WHERE " + fieldExpressions : "");
-	}
+	String getUpdateStatement(String tableName, String[] fieldNames, String[] conditionFields);
+
+	String getDeleteStatement(String tableName, String[] conditionFields);
+
+	@Nullable
+	String getUpsertStatement(String tableName, String[] fieldNames, String[] uniqueKeyFields);
+
+	String getRowExistsStatement(String tableName, String[] conditionFields);
+
+	String getTableExistsStatement(String tableName);
+
+	String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields);
 }
+

@@ -108,19 +108,19 @@ public class JdbcDataTypeTest {
 			createTestItem("derby", "TIMESTAMP(3) WITH LOCAL TIME ZONE",
 					"The derby dialect doesn't support type: TIMESTAMP(3) WITH LOCAL TIME ZONE."),
 			createTestItem("derby", "DECIMAL(38, 18)",
-					"The precision of field 'f0' is out of the DECIMAL precision range [1, 31] supported by derby dialect."),
+					"The precision of field type 'DECIMAL(38, 18)' is out of the DECIMAL precision range [1, 31] supported by derby dialect."),
 
 			createTestItem("mysql", "BINARY", "The mysql dialect doesn't support type: BINARY(1)."),
 			createTestItem("mysql", "VARBINARY(10)", "The mysql dialect doesn't support type: VARBINARY(10)."),
 			createTestItem("mysql", "TIMESTAMP(9) WITHOUT TIME ZONE",
-					"The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by mysql dialect."),
+					"The precision of field type 'TIMESTAMP(9)' is out of the TIMESTAMP precision range [1, 6] supported by mysql dialect."),
 			createTestItem("mysql", "TIMESTAMP(3) WITH LOCAL TIME ZONE",
 					"The mysql dialect doesn't support type: TIMESTAMP(3) WITH LOCAL TIME ZONE."),
 
 			createTestItem("postgresql", "BINARY", "The postgresql dialect doesn't support type: BINARY(1)."),
 			createTestItem("postgresql", "VARBINARY(10)", "The postgresql dialect doesn't support type: VARBINARY(10)."),
 			createTestItem("postgresql", "TIMESTAMP(9) WITHOUT TIME ZONE",
-					"The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by postgresql dialect."),
+					"The precision of field type 'TIMESTAMP(9)' is out of the TIMESTAMP precision range [1, 6] supported by postgresql dialect."),
 			createTestItem("postgresql", "TIMESTAMP(3) WITH LOCAL TIME ZONE",
 					"The postgresql dialect doesn't support type: TIMESTAMP(3) WITH LOCAL TIME ZONE.")
 		);

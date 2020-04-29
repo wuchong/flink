@@ -25,6 +25,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.utils.TableSchemaUtils;
 import org.apache.flink.util.Preconditions;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.apache.flink.table.descriptors.Schema.SCHEMA;
@@ -78,7 +79,7 @@ public class JdbcValidator extends ConnectorDescriptorValidator {
 		Preconditions.checkState(dialect.isPresent(), "Cannot handle such jdbc url: " + url);
 
 		TableSchema schema = TableSchemaUtils.getPhysicalSchema(properties.getTableSchema(SCHEMA));
-		dialect.get().validate(schema);
+		validateDiallect(dialect.get(), schema);
 
 		Optional<String> password = properties.getOptionalString(CONNECTOR_PASSWORD);
 		if (password.isPresent()) {
@@ -86,6 +87,11 @@ public class JdbcValidator extends ConnectorDescriptorValidator {
 				properties.getOptionalString(CONNECTOR_USERNAME).isPresent(),
 				"Database username must be provided when database password is provided");
 		}
+	}
+
+	private void validateDiallect(JdbcDialect dialect, TableSchema tableSchema) {
+		Arrays.stream(tableSchema.getFieldDataTypes()).forEach(
+			dataType -> dialect.validateInternalType(dataType.getLogicalType()));
 	}
 
 	private void validateReadProperties(DescriptorProperties properties) {

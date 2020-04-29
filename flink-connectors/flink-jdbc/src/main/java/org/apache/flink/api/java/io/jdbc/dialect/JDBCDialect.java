@@ -19,7 +19,7 @@
 package org.apache.flink.api.java.io.jdbc.dialect;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.types.logical.RowType;
@@ -49,7 +49,7 @@ public interface JDBCDialect extends Serializable {
 	 * @param rowType the given row type
 	 * @return a row converter for the database
 	 */
-	JdbcRowConverter getRowConverter(RowType rowType);
+	JdbcToRowConverter getRowConverter(RowType rowType);
 
 	/**
 	 * Check if this dialect instance support a specific data type in table schema.
