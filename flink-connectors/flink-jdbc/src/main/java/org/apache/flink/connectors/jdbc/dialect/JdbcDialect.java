@@ -19,6 +19,7 @@
 package org.apache.flink.connectors.jdbc.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connectors.jdbc.JdbcType;
 import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.types.logical.LogicalType;

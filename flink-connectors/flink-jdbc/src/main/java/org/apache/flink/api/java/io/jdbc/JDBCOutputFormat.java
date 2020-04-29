@@ -25,8 +25,8 @@ import org.apache.flink.connectors.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connectors.jdbc.JdbcInsertOptions;
 import org.apache.flink.connectors.jdbc.JdbcOutputFormat;
 import org.apache.flink.connectors.jdbc.SimpleJdbcConnectionProvider;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
+import org.apache.flink.connectors.jdbc.JdbcType;
 
 import java.util.Arrays;
 
@@ -115,7 +115,7 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 			return new JDBCOutputFormat(
 				new SimpleJdbcConnectionProvider(buildConnectionOptions()),
 				new JdbcInsertOptions(
-					JdbcDialects.get(dbURL).orElseThrow(() ->
+					JdbcDialectService.get(dbURL).orElseThrow(() ->
 						new IllegalArgumentException(String.format("Can not handle the db url: %s", dbURL))),
 					query,
 					typesArray),

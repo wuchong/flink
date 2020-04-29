@@ -19,7 +19,7 @@
 package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -124,7 +124,7 @@ public class JdbcOptions extends JdbcConnectionOptions {
 
 		/**
 		 * optional, Handle the SQL dialect of jdbc driver. If not set, it will be infer by
-		 * {@link JdbcDialects#get} from DB url.
+		 * {@link JdbcDialectService#get} from DB url.
 		 */
 		public Builder setDialect(JdbcDialect dialect) {
 			this.dialect = dialect;
@@ -135,7 +135,7 @@ public class JdbcOptions extends JdbcConnectionOptions {
 			checkNotNull(dbURL, "No dbURL supplied.");
 			checkNotNull(tableName, "No tableName supplied.");
 			if (this.dialect == null) {
-				Optional<JdbcDialect> optional = JdbcDialects.get(dbURL);
+				Optional<JdbcDialect> optional = JdbcDialectService.get(dbURL);
 				this.dialect = optional.orElseGet(() -> {
 					throw new NullPointerException("No dialect supplied.");
 				});

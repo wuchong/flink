@@ -18,7 +18,6 @@
 
 package org.apache.flink.connectors.jdbc;
 
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.types.Row;
 
 import org.junit.After;

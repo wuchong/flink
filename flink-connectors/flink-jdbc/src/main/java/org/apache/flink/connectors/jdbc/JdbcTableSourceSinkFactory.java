@@ -19,7 +19,7 @@
 package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.descriptors.JdbcValidator;
@@ -73,6 +73,7 @@ public class JdbcTableSourceSinkFactory implements
 	StreamTableSourceFactory<Row>,
 	StreamTableSinkFactory<Tuple2<Boolean, Row>> {
 
+
 	@Override
 	public Map<String, String> requiredContext() {
 		Map<String, String> context = new HashMap<>();
@@ -80,6 +81,7 @@ public class JdbcTableSourceSinkFactory implements
 		context.put(CONNECTOR_PROPERTY_VERSION, "1"); // backwards compatibility
 		return context;
 	}
+
 
 	@Override
 	public List<String> supportedProperties() {
@@ -131,9 +133,9 @@ public class JdbcTableSourceSinkFactory implements
 			descriptorProperties.getTableSchema(SCHEMA));
 
 		return JdbcTableSource.builder()
-			.setOptions(getJDBCOptions(descriptorProperties))
-			.setReadOptions(getJDBCReadOptions(descriptorProperties))
-			.setLookupOptions(getJDBCLookupOptions(descriptorProperties))
+			.setOptions(getJdbcOptions(descriptorProperties))
+			.setReadOptions(getJdbcReadOptions(descriptorProperties))
+			.setLookupOptions(getJdbcLookupOptions(descriptorProperties))
 			.setSchema(schema)
 			.build();
 	}
@@ -145,7 +147,7 @@ public class JdbcTableSourceSinkFactory implements
 			descriptorProperties.getTableSchema(SCHEMA));
 
 		final JdbcUpsertTableSink.Builder builder = JdbcUpsertTableSink.builder()
-			.setOptions(getJDBCOptions(descriptorProperties))
+			.setOptions(getJdbcOptions(descriptorProperties))
 			.setTableSchema(schema);
 
 		descriptorProperties.getOptionalInt(CONNECTOR_WRITE_FLUSH_MAX_ROWS).ifPresent(builder::setFlushMaxSize);
@@ -166,12 +168,12 @@ public class JdbcTableSourceSinkFactory implements
 		return descriptorProperties;
 	}
 
-	private JdbcOptions getJDBCOptions(DescriptorProperties descriptorProperties) {
+	private JdbcOptions getJdbcOptions(DescriptorProperties descriptorProperties) {
 		final String url = descriptorProperties.getString(CONNECTOR_URL);
 		final JdbcOptions.Builder builder = JdbcOptions.builder()
 			.setDBUrl(url)
 			.setTableName(descriptorProperties.getString(CONNECTOR_TABLE))
-			.setDialect(JdbcDialects.get(url).get());
+			.setDialect(JdbcDialectService.get(url).get());
 
 		descriptorProperties.getOptionalString(CONNECTOR_DRIVER).ifPresent(builder::setDriverName);
 		descriptorProperties.getOptionalString(CONNECTOR_USERNAME).ifPresent(builder::setUsername);
@@ -180,7 +182,7 @@ public class JdbcTableSourceSinkFactory implements
 		return builder.build();
 	}
 
-	private JdbcReadOptions getJDBCReadOptions(DescriptorProperties descriptorProperties) {
+	private JdbcReadOptions getJdbcReadOptions(DescriptorProperties descriptorProperties) {
 		final Optional<String> partitionColumnName =
 			descriptorProperties.getOptionalString(CONNECTOR_READ_PARTITION_COLUMN);
 		final Optional<Long> partitionLower = descriptorProperties.getOptionalLong(CONNECTOR_READ_PARTITION_LOWER_BOUND);
@@ -199,7 +201,7 @@ public class JdbcTableSourceSinkFactory implements
 		return builder.build();
 	}
 
-	private JdbcLookupOptions getJDBCLookupOptions(DescriptorProperties descriptorProperties) {
+	private JdbcLookupOptions getJdbcLookupOptions(DescriptorProperties descriptorProperties) {
 		final JdbcLookupOptions.Builder builder = JdbcLookupOptions.builder();
 
 		descriptorProperties.getOptionalLong(CONNECTOR_LOOKUP_CACHE_MAX_ROWS).ifPresent(builder::setCacheMaxSize);

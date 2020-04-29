@@ -22,7 +22,7 @@ import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialect;
 import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialects;
 import org.apache.flink.connectors.jdbc.JdbcOptions;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 
 import java.util.Optional;
 
@@ -102,7 +102,7 @@ public class JDBCOptions extends JdbcOptions {
 			checkNotNull(dbURL, "No dbURL supplied.");
 			checkNotNull(tableName, "No tableName supplied.");
 			if (this.dialect == null) {
-				Optional<JdbcDialect> optional = JdbcDialects.get(dbURL);
+				Optional<JdbcDialect> optional = JdbcDialectService.get(dbURL);
 				this.dialect = optional.orElseGet(() -> {
 					throw new NullPointerException("No dialect supplied.");
 				});

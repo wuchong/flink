@@ -18,7 +18,7 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcType;
 
 /**
  * Row to JDBC object converter for MySQL.

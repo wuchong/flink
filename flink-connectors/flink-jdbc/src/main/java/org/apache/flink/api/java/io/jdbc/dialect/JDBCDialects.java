@@ -19,7 +19,8 @@
 package org.apache.flink.api.java.io.jdbc.dialect;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.connectors.jdbc.source.row.converter.DefaultToJdbcConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.DerbyToRowConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * Default JDBC dialects.
  *
- * @deprecated Please use {@link org.apache.flink.connectors.jdbc.dialect.JdbcDialects},
+ * @deprecated Please use {@link JdbcDialectService},
  * Flink proposes class name start with "Jdbc" rather than "JDBC".
  */
 @Deprecated

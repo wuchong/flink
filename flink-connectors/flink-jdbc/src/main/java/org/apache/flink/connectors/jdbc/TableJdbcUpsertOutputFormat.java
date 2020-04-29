@@ -20,7 +20,6 @@ package org.apache.flink.connectors.jdbc;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.connectors.jdbc.executor.InsertOrUpdateJdbcExecutor;
 import org.apache.flink.connectors.jdbc.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.types.Row;

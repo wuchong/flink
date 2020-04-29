@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connectors.jdbc.dialect;
+package org.apache.flink.connectors.jdbc;
 
 import java.io.Serializable;
 

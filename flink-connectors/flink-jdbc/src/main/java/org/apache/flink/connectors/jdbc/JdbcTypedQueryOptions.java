@@ -18,7 +18,6 @@
 package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;

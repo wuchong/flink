@@ -20,8 +20,7 @@ package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.connectors.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.types.Row;
 
@@ -91,7 +90,7 @@ public class JdbcFullTest extends JdbcDataTestBase {
 				.setDBUrl(getDbMetadata().getUrl())
 				.setQuery(JdbcTestFixture.SELECT_ALL_BOOKS)
 				.setRowTypeInfo(ROW_TYPE_INFO)
-				.setRowConverter(JdbcDialects.get(getDbMetadata().getUrl()).get().getInputConverter(ROW_TYPE));
+				.setRowConverter(JdbcDialectService.get(getDbMetadata().getUrl()).get().getInputConverter(ROW_TYPE));
 
 		if (exploitParallelism) {
 			final int fetchSize = 1;

@@ -18,8 +18,7 @@
 
 package org.apache.flink.connectors.jdbc;
 
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.types.Row;
 
 import org.slf4j.Logger;
@@ -59,7 +58,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	@Deprecated
 	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, JdbcType[] typesArray) {
 		this(new SimpleJdbcConnectionProvider(new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(dbURL).withDriverName(drivername).withUsername(username).withPassword(password).build()),
-				new JdbcInsertOptions(JdbcDialects.get(dbURL).get(), query, typesArray),
+				new JdbcInsertOptions(JdbcDialectService.get(dbURL).get(), query, typesArray),
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
 	}
 
@@ -204,7 +203,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 			return new JdbcOutputFormat(
 				new SimpleJdbcConnectionProvider(buildConnectionOptions()),
 				new JdbcInsertOptions(
-					JdbcDialects.get(dbURL).orElseThrow(() ->
+					JdbcDialectService.get(dbURL).orElseThrow(() ->
 						new IllegalArgumentException(String.format("Can not handle the db url: %s", dbURL))),
 					query,
 					typesArray),

@@ -20,7 +20,7 @@ package org.apache.flink.table.descriptors;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.utils.TableSchemaUtils;
 import org.apache.flink.util.Preconditions;
@@ -75,7 +75,7 @@ public class JdbcValidator extends ConnectorDescriptorValidator {
 		properties.validateString(CONNECTOR_PASSWORD, true);
 
 		final String url = properties.getString(CONNECTOR_URL);
-		final Optional<JdbcDialect> dialect = JdbcDialects.get(url);
+		final Optional<JdbcDialect> dialect = JdbcDialectService.get(url);
 		Preconditions.checkState(dialect.isPresent(), "Cannot handle such jdbc url: " + url);
 
 		TableSchema schema = TableSchemaUtils.getPhysicalSchema(properties.getTableSchema(SCHEMA));

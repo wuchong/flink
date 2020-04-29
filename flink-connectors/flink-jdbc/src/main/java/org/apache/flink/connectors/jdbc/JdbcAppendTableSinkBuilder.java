@@ -19,7 +19,6 @@
 package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.util.Preconditions;
 
 import static org.apache.flink.connectors.jdbc.AbstractJdbcOutputFormat.DEFAULT_FLUSH_MAX_SIZE;
