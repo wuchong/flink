@@ -18,6 +18,7 @@
 
 package org.apache.flink.connectors.jdbc;
 
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.types.Row;
 
 import org.junit.After;
@@ -65,7 +66,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
 		jdbcOutputFormat.open(0, 1);
 	}
 
-	@Test(expected = IOException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidURL() throws IOException {
 		jdbcOutputFormat = JdbcOutputFormat.buildJdbcOutputFormat()
 				.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -119,12 +120,12 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
 			.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())
 			.setDBUrl(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUrl())
 			.setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
-			.setSqlTypes(new int[] {
-				Types.INTEGER,
-				Types.VARCHAR,
-				Types.VARCHAR,
-				Types.DOUBLE,
-				Types.INTEGER})
+			.setSqlTypes(new JdbcType[] {
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.DOUBLE),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER)})
 			.finish();
 		jdbcOutputFormat.open(0, 1);
 
@@ -145,12 +146,12 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
 			.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())
 			.setDBUrl(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUrl())
 			.setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
-			.setSqlTypes(new int[] {
-				Types.INTEGER,
-				Types.VARCHAR,
-				Types.VARCHAR,
-				Types.DOUBLE,
-				Types.INTEGER})
+			.setSqlTypes(new JdbcType [] {
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.DOUBLE),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER)})
 			.finish();
 		jdbcOutputFormat.open(0, 1);
 

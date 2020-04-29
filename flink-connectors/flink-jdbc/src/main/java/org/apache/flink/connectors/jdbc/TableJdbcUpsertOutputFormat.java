@@ -19,6 +19,8 @@ package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.connectors.jdbc.executor.InsertOrUpdateJdbcExecutor;
 import org.apache.flink.connectors.jdbc.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.types.Row;
@@ -31,8 +33,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.function.Function;
 
-import static org.apache.flink.api.java.io.jdbc.JDBCUtils.getPrimaryKey;
-import static org.apache.flink.api.java.io.jdbc.JDBCUtils.setRecordToStatement;
+import static org.apache.flink.connectors.jdbc.JdbcUtils.getPrimaryKey;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolean, Row>, Row, JdbcBatchStatementExecutor<Row>> {
@@ -59,10 +60,10 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 
 	private JdbcBatchStatementExecutor<Row> createDeleteExecutor() {
 		int[] pkFields = Arrays.stream(dmlOptions.getFieldNames()).mapToInt(Arrays.asList(dmlOptions.getFieldNames())::indexOf).toArray();
-		int[] pkTypes = dmlOptions.getFieldTypes() == null ? null :
-				Arrays.stream(pkFields).map(f -> dmlOptions.getFieldTypes()[f]).toArray();
+		JdbcType[] pkTypes = dmlOptions.getFieldTypes() == null ? null :
+				Arrays.stream(pkFields).mapToObj(f -> dmlOptions.getFieldTypes()[f]).toArray(JdbcType[]::new);
 		String deleteSql = dmlOptions.getDialect().getDeleteStatement(dmlOptions.getTableName(), dmlOptions.getFieldNames());
-		return createKeyedRowExecutor(pkFields, pkTypes, deleteSql);
+		return createKeyedRowExecutor(dmlOptions.getDialect(), pkFields, pkTypes, deleteSql);
 	}
 
 	@Override
@@ -93,34 +94,38 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 		deleteExecutor.executeBatch();
 	}
 
-	private static JdbcBatchStatementExecutor<Row> createKeyedRowExecutor(int[] pkFields, int[] pkTypes, String sql) {
+	private static JdbcBatchStatementExecutor<Row> createKeyedRowExecutor(JdbcDialect dialect, int[] pkFields, JdbcType[] pkTypes, String sql) {
 		return JdbcBatchStatementExecutor.keyed(
 			sql,
 			createRowKeyExtractor(pkFields),
-			(st, record) -> setRecordToStatement(st, pkTypes, createRowKeyExtractor(pkFields).apply(record)));
+			(st, record) -> dialect
+				.getOutputConverter(pkTypes)
+				.toExternal(createRowKeyExtractor(pkFields).apply(record), st));
 	}
 
 	private static JdbcBatchStatementExecutor<Row> createUpsertRowExecutor(JdbcDmlOptions opt, RuntimeContext ctx) {
 		checkArgument(opt.getKeyFields().isPresent());
 
 		int[] pkFields = Arrays.stream(opt.getKeyFields().get()).mapToInt(Arrays.asList(opt.getFieldNames())::indexOf).toArray();
-		int[] pkTypes = opt.getFieldTypes() == null ? null : Arrays.stream(pkFields).map(f -> opt.getFieldTypes()[f]).toArray();
+		JdbcType[] pkTypes = opt.getFieldTypes() == null ? null : Arrays.stream(pkFields).mapToObj(f -> opt.getFieldTypes()[f])
+			.toArray(JdbcType[]::new);
 
 		String upsertStatement = opt.getDialect()
 			.getUpsertStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get());
 
+		JdbcDialect dialect = opt.getDialect();
 		if (upsertStatement == null) {
 			return new InsertOrUpdateJdbcExecutor<>(
 					opt.getDialect().getRowExistsStatement(opt.getTableName(), opt.getKeyFields().get()),
 					opt.getDialect().getInsertIntoStatement(opt.getTableName(), opt.getFieldNames()),
 					opt.getDialect().getUpdateStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get()),
-					createRowJdbcStatementBuilder(pkTypes),
-					createRowJdbcStatementBuilder(opt.getFieldTypes()),
-					createRowJdbcStatementBuilder(opt.getFieldTypes()),
+					createRowJdbcStatementBuilder(dialect, pkTypes),
+					createRowJdbcStatementBuilder(dialect, opt.getFieldTypes()),
+					createRowJdbcStatementBuilder(dialect, opt.getFieldTypes()),
 					createRowKeyExtractor(pkFields),
 					ctx.getExecutionConfig().isObjectReuseEnabled() ? Row::copy : Function.identity());
 		} else {
-			return createSimpleRowExecutor(upsertStatement, opt.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled());
+			return createSimpleRowExecutor(dialect, upsertStatement, opt.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled());
 
 		}
 

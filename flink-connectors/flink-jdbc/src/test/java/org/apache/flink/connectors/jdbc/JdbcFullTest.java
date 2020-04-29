@@ -21,6 +21,7 @@ package org.apache.flink.connectors.jdbc;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.connectors.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.types.Row;
 
@@ -69,7 +70,12 @@ public class JdbcFullTest extends JdbcDataTestBase {
 			.setDrivername(getDbMetadata().getDriverClass())
 			.setDBUrl(getDbMetadata().getUrl())
 			.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
-			.setSqlTypes(new int[]{Types.INTEGER, Types.VARCHAR, Types.VARCHAR, Types.DOUBLE, Types.INTEGER})
+			.setSqlTypes(new JdbcType[]{
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.DOUBLE),
+				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER)})
 			.finish();
 
 		jdbcOutputFormat.open(1, 1);
@@ -105,7 +111,13 @@ public class JdbcFullTest extends JdbcDataTestBase {
 				.setDrivername(getDbMetadata().getDriverClass())
 				.setDBUrl(getDbMetadata().getUrl())
 				.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
-				.setSqlTypes(new int[]{Types.INTEGER, Types.VARCHAR, Types.VARCHAR, Types.DOUBLE, Types.INTEGER})
+				.setSqlTypes(
+					new JdbcType []{
+						JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
+						JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+						JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
+						JdbcTypeUtil.sqlTypeToJdbcType(Types.DOUBLE),
+						JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER)})
 				.finish());
 
 		environment.execute();

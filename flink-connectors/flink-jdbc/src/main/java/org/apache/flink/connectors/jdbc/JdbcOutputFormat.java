@@ -18,6 +18,8 @@
 
 package org.apache.flink.connectors.jdbc;
 
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.types.Row;
 
 import org.slf4j.Logger;
@@ -26,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
-import static org.apache.flink.api.java.io.jdbc.JDBCUtils.setRecordToStatement;
 
 /**
  * OutputFormat to write Rows into a JDBC database.
@@ -57,9 +57,9 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	 * @deprecated use {@link JdbcOutputFormatBuilder builder} instead.
 	 */
 	@Deprecated
-	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, int[] typesArray) {
+	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, JdbcType[] typesArray) {
 		this(new SimpleJdbcConnectionProvider(new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(dbURL).withDriverName(drivername).withUsername(username).withPassword(password).build()),
-				new JdbcInsertOptions(query, typesArray),
+				new JdbcInsertOptions(JdbcDialects.get(dbURL).get(), query, typesArray),
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
 	}
 
@@ -89,7 +89,8 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	@Override
 	public void writeRecord(Row row) {
 		try {
-			setRecordToStatement(upload, insertOptions.getFieldTypes(), row);
+			insertOptions.getDialect().getOutputConverter(insertOptions.getFieldTypes())
+				.toExternal(row, upload);
 			upload.addBatch();
 		} catch (SQLException e) {
 			throw new RuntimeException("Preparation of JDBC statement failed.", e);
@@ -113,7 +114,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		}
 	}
 
-	int[] getTypesArray() {
+	JdbcType[] getTypesArray() {
 		return insertOptions.getFieldTypes();
 	}
 
@@ -141,7 +142,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		return new JdbcOutputFormatBuilder();
 	}
 
-	public int[] getFieldTypes() {
+	public JdbcType[] getFieldTypes() {
 		return insertOptions.getFieldTypes();
 	}
 
@@ -155,7 +156,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		protected String dbURL;
 		protected String query;
 		protected int batchInterval = DEFAULT_FLUSH_MAX_SIZE;
-		protected int[] typesArray;
+		protected JdbcType[] typesArray;
 
 		protected JdbcOutputFormatBuilder() {}
 
@@ -189,7 +190,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 			return this;
 		}
 
-		public JdbcOutputFormatBuilder setSqlTypes(int[] typesArray) {
+		public JdbcOutputFormatBuilder setSqlTypes(JdbcType[] typesArray) {
 			this.typesArray = typesArray;
 			return this;
 		}
@@ -202,7 +203,11 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		public JdbcOutputFormat finish() {
 			return new JdbcOutputFormat(
 				new SimpleJdbcConnectionProvider(buildConnectionOptions()),
-				new JdbcInsertOptions(query, typesArray),
+				new JdbcInsertOptions(
+					JdbcDialects.get(dbURL).orElseThrow(() ->
+						new IllegalArgumentException(String.format("Can not handle the db url: %s", dbURL))),
+					query,
+					typesArray),
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
 		}
 

@@ -22,6 +22,7 @@ import org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo;
 import org.apache.flink.api.common.typeinfo.SqlTimeTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ObjectArrayTypeInfo;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
@@ -100,6 +101,27 @@ class JDBCTypeUtil {
 			return Types.ARRAY;
 		} else {
 			throw new IllegalArgumentException("Unsupported type: " + type);
+		}
+	}
+
+	static JdbcType typeInformationToJdbcType(TypeInformation<?> type) {
+
+		if (TYPE_MAPPING.containsKey(type)) {
+			return new JdbcType(SQL_TYPE_NAMES.get(type), TYPE_MAPPING.get(type));
+		} else if (type instanceof ObjectArrayTypeInfo || type instanceof PrimitiveArrayTypeInfo) {
+			return new JdbcType("ARRAY", Types.ARRAY);
+		} else {
+			throw new IllegalArgumentException("Unsupported type: " + type);
+		}
+	}
+
+	static JdbcType sqlTypeToJdbcType(int sqlType) {
+		if (TYPE_MAPPING.containsValue(sqlType)) {
+			return new JdbcType(getTypeName(sqlType), sqlType);
+		} else if (sqlType == Types.ARRAY) {
+			return new JdbcType("ARRAY", Types.ARRAY);
+		} else {
+			throw new IllegalArgumentException("Unsupported type: " + sqlType);
 		}
 	}
 

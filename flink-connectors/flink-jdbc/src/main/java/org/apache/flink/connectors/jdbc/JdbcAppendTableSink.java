@@ -23,6 +23,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.operators.DataSink;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
@@ -34,8 +35,8 @@ import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -91,10 +92,12 @@ public class JdbcAppendTableSink implements AppendStreamTableSink<Row>, BatchTab
 
 	@Override
 	public TableSink<Row> configure(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
-		int[] types = outputFormat.getFieldTypes();
+		JdbcType[] types = outputFormat.getFieldTypes();
 
 		String sinkSchema =
-			String.join(", ", IntStream.of(types).mapToObj(JdbcTypeUtil::getTypeName).collect(Collectors.toList()));
+			String.join(", ", Arrays.stream(types)
+				.map(jdbcType -> JdbcTypeUtil.getTypeName(jdbcType.getGenericSqlType()))
+				.collect(Collectors.toList()));
 		String tableSchema =
 			String.join(", ", Stream.of(fieldTypes).map(JdbcTypeUtil::getTypeName).collect(Collectors.toList()));
 		String msg = String.format("Schema of output table is incompatible with JdbcAppendTableSink schema. " +
@@ -103,7 +106,7 @@ public class JdbcAppendTableSink implements AppendStreamTableSink<Row>, BatchTab
 		Preconditions.checkArgument(fieldTypes.length == types.length, msg);
 		for (int i = 0; i < types.length; ++i) {
 			Preconditions.checkArgument(
-				JdbcTypeUtil.typeInformationToSqlType(fieldTypes[i]) == types[i],
+				JdbcTypeUtil.typeInformationToSqlType(fieldTypes[i]) == types[i].getGenericSqlType(),
 				msg);
 		}
 

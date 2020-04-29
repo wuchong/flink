@@ -20,6 +20,8 @@ package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.connectors.jdbc.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.runtime.util.ExecutorThreadFactory;
 import org.apache.flink.types.Row;
@@ -39,7 +41,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.apache.flink.api.java.io.jdbc.JDBCUtils.setRecordToStatement;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -214,7 +215,7 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		private JdbcOptions options;
 		private String[] fieldNames;
 		private String[] keyFields;
-		private int[] fieldTypes;
+		private JdbcType[] fieldTypes;
 		private JdbcExecutionOptions.Builder executionOptionsBuilder = JdbcExecutionOptions.builder();
 
 		/**
@@ -244,7 +245,7 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		/**
 		 * required, field types of this jdbc sink.
 		 */
-		Builder setFieldTypes(int[] fieldTypes) {
+		Builder setFieldTypes(JdbcType[] fieldTypes) {
 			this.fieldTypes = fieldTypes;
 			return this;
 		}
@@ -283,8 +284,12 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 			checkNotNull(options, "No options supplied.");
 			checkNotNull(fieldNames, "No fieldNames supplied.");
 			JdbcDmlOptions dml = JdbcDmlOptions.builder()
-				.withTableName(options.getTableName()).withDialect(options.getDialect())
-				.withFieldNames(fieldNames).withKeyFields(keyFields).withFieldTypes(fieldTypes).build();
+				.withTableName(options.getTableName())
+				.withDialect(options.getDialect())
+				.withFieldNames(fieldNames)
+				.withKeyFields(keyFields)
+				.withFieldTypes(fieldTypes)
+				.build();
 			if (dml.getKeyFields().isPresent() && dml.getKeyFields().get().length > 0) {
 				return new TableJdbcUpsertOutputFormat(
 					new SimpleJdbcConnectionProvider(options),
@@ -293,10 +298,11 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 			} else {
 				// warn: don't close over builder fields
 				String sql = options.getDialect().getInsertIntoStatement(dml.getTableName(), dml.getFieldNames());
+				JdbcDialect dialect = options.getDialect();
 				return new JdbcBatchingOutputFormat<>(
 					new SimpleJdbcConnectionProvider(options),
 					executionOptionsBuilder.build(),
-					ctx -> createSimpleRowExecutor(sql, dml.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled()),
+					ctx -> createSimpleRowExecutor(dialect, sql, dml.getFieldTypes(), ctx.getExecutionConfig().isObjectReuseEnabled()),
 					tuple2 -> {
 						Preconditions.checkArgument(tuple2.f0);
 						return tuple2.f1;
@@ -305,16 +311,17 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		}
 	}
 
-	static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(String sql, int[] fieldTypes, boolean objectReuse) {
-		return JdbcBatchStatementExecutor.simple(sql, createRowJdbcStatementBuilder(fieldTypes), objectReuse ? Row::copy : Function.identity());
+	static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(JdbcDialect dialect, String sql, JdbcType[] fieldTypes, boolean objectReuse) {
+		return JdbcBatchStatementExecutor.simple(sql, createRowJdbcStatementBuilder(dialect, fieldTypes), objectReuse ? Row::copy : Function.identity());
 	}
 
 	/**
-	 * Creates a {@link JdbcStatementBuilder} for {@link Row} using the provided SQL types array.
-	 * Uses {@link JdbcUtils#setRecordToStatement}
+	 * Creates a {@link JdbcStatementBuilder} for {@link Row} using the provided JDBC types array.
+	 * Uses {@link JdbcDialect#getOutputConverter(JdbcType[])}
 	 */
-	static JdbcStatementBuilder<Row> createRowJdbcStatementBuilder(int[] types) {
-		return (st, record) -> setRecordToStatement(st, types, record);
+	static JdbcStatementBuilder<Row> createRowJdbcStatementBuilder(JdbcDialect dialect, JdbcType[] types) {
+		return (st, record) ->
+			dialect.getOutputConverter(types).toExternal(record, st);
 	}
 
 }

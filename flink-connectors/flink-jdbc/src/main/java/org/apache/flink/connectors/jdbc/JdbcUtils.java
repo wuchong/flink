@@ -18,6 +18,7 @@
 
 package org.apache.flink.connectors.jdbc;
 
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.types.Row;
 
 import org.slf4j.Logger;
@@ -29,7 +30,11 @@ import java.sql.SQLException;
 
 /**
  * Utils for jdbc connectors.
+ *
+ * @deprecated please use {@link org.apache.flink.connectors.jdbc.dialect.JdbcDialect#getOutputConverter(JdbcType[])} to
+ * add record to prepared statement.
  */
+@Deprecated
 public class JdbcUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JdbcUtils.class);

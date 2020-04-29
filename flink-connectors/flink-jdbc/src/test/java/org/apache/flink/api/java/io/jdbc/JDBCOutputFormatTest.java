@@ -67,7 +67,7 @@ public class JDBCOutputFormatTest extends JdbcDataTestBase {
 		jdbcOutputFormat.open(0, 1);
 	}
 
-	@Test(expected = IOException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidURL() throws IOException {
 		jdbcOutputFormat = JDBCOutputFormat.buildJDBCOutputFormat()
 				.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())

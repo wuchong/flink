@@ -18,12 +18,12 @@
 
 package org.apache.flink.api.java.io.jdbc;
 
+import org.apache.flink.api.java.io.jdbc.dialect.JDBCDialects;
 import org.apache.flink.api.java.io.jdbc.split.GenericParameterValuesProvider;
 import org.apache.flink.api.java.io.jdbc.split.NumericBetweenParametersProvider;
 import org.apache.flink.api.java.io.jdbc.split.ParameterValuesProvider;
 import org.apache.flink.connectors.jdbc.JdbcDataTestBase;
 import org.apache.flink.connectors.jdbc.JdbcTestFixture;
-import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.types.Row;
 
@@ -134,7 +134,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 			.setRowTypeInfo(ROW_TYPE_INFO)
 			.setFetchSize(Integer.MIN_VALUE)
 			.setRowConverter(
-				JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+				JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 			.finish();
 	}
 
@@ -146,7 +146,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 			.setQuery(SELECT_ALL_BOOKS)
 			.setRowTypeInfo(ROW_TYPE_INFO)
 			.setRowConverter(
-				JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+				JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 			.finish();
 		jdbcInputFormat.openInputFormat();
 
@@ -166,7 +166,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 			.setRowTypeInfo(ROW_TYPE_INFO)
 			.setFetchSize(desiredFetchSize)
 			.setRowConverter(
-				JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+				JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 			.finish();
 		jdbcInputFormat.openInputFormat();
 		Assert.assertEquals(desiredFetchSize, jdbcInputFormat.getStatement().getFetchSize());
@@ -181,7 +181,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 			.setQuery(SELECT_ALL_BOOKS)
 			.setRowTypeInfo(ROW_TYPE_INFO)
 			.setRowConverter(
-				JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+				JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 			.finish();
 		jdbcInputFormat.openInputFormat();
 
@@ -203,7 +203,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 			.setRowTypeInfo(ROW_TYPE_INFO)
 			.setAutoCommit(desiredAutoCommit)
 			.setRowConverter(
-				JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+				JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 			.finish();
 
 		jdbcInputFormat.openInputFormat();
@@ -220,7 +220,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 				.setRowTypeInfo(ROW_TYPE_INFO)
 				.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
 				.setRowConverter(
-					JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+					JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 				.finish();
 		//this query does not exploit parallelism
 		Assert.assertEquals(1, jdbcInputFormat.createInputSplits(1).length);
@@ -254,7 +254,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 				.setParametersProvider(pramProvider)
 				.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
 				.setRowConverter(
-					JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+					JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 				.finish();
 
 		jdbcInputFormat.openInputFormat();
@@ -292,7 +292,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 				.setParametersProvider(pramProvider)
 				.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
 				.setRowConverter(
-					JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+					JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 				.finish();
 
 		jdbcInputFormat.openInputFormat();
@@ -330,7 +330,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 				.setParametersProvider(paramProvider)
 				.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
 				.setRowConverter(
-					JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+					JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 				.finish();
 
 		jdbcInputFormat.openInputFormat();
@@ -371,7 +371,7 @@ public class JDBCInputFormatTest extends JdbcDataTestBase {
 				.setRowTypeInfo(ROW_TYPE_INFO)
 				.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
 				.setRowConverter(
-					JdbcDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getInputConverter(ROW_TYPE))
+					JDBCDialects.get(DERBY_EBOOKSHOP_DB.getUrl()).get().getRowConverter(ROW_TYPE))
 				.finish();
 		try {
 			jdbcInputFormat.openInputFormat();

@@ -32,6 +32,8 @@ import org.apache.flink.util.Preconditions;
 @Deprecated
 public class JDBCAppendTableSinkBuilder extends JdbcAppendTableSinkBuilder {
 
+	private int[] parameterTypes;
+
 	/**
 	 * Specify the username of the JDBC connection.
 	 * @param username the username of the JDBC connection.

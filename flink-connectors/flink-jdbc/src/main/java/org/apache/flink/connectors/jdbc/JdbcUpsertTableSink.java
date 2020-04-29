@@ -23,6 +23,7 @@ import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TupleTypeInfo;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.connectors.jdbc.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -76,8 +77,9 @@ public class JdbcUpsertTableSink implements UpsertStreamTableSink<Row> {
 		}
 
 		// sql types
-		int[] jdbcSqlTypes = Arrays.stream(schema.getFieldTypes())
-				.mapToInt(JdbcTypeUtil::typeInformationToSqlType).toArray();
+		JdbcType[] jdbcTypes = Arrays.stream(schema.getFieldTypes())
+				.map(type -> JdbcTypeUtil.typeInformationToJdbcType(type))
+				.toArray(JdbcType[]::new);
 
 		return JdbcBatchingOutputFormat.builder()
 			.setOptions(options)
@@ -85,7 +87,7 @@ public class JdbcUpsertTableSink implements UpsertStreamTableSink<Row> {
 			.setFlushMaxSize(flushMaxSize)
 			.setFlushIntervalMills(flushIntervalMills)
 			.setMaxRetryTimes(maxRetryTime)
-			.setFieldTypes(jdbcSqlTypes)
+			.setFieldTypes(jdbcTypes)
 			.setKeyFields(keyFields)
 			.build();
 	}

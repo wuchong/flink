@@ -17,9 +17,12 @@
 
 package org.apache.flink.connectors.jdbc;
 
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.util.Preconditions;
 
-import java.util.stream.IntStream;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * JDBC sink insert options.
@@ -30,8 +33,8 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 
 	private final String query;
 
-	public JdbcInsertOptions(String query, int[] typesArray) {
-		super(typesArray);
+	public JdbcInsertOptions(JdbcDialect dialect, String query, JdbcType[] typesArray) {
+		super(dialect, typesArray);
 		this.query = Preconditions.checkNotNull(query, "query is empty");
 	}
 
@@ -39,15 +42,15 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 		return query;
 	}
 
-	public static JdbcInsertOptions from(String query, int firstFieldType, int... nextFieldTypes) {
-		return new JdbcInsertOptions(query, concat(firstFieldType, nextFieldTypes));
+	public static JdbcInsertOptions from(JdbcDialect dialect, String query, JdbcType firstFieldType, JdbcType... nextFieldTypes) {
+		return new JdbcInsertOptions(dialect, query, concat(firstFieldType, nextFieldTypes));
 	}
 
-	private static int[] concat(int first, int... next) {
+	private static JdbcType[] concat(JdbcType first, JdbcType... next) {
 		if (next == null || next.length == 0) {
-			return new int[]{first};
+			return new JdbcType[]{first};
 		} else {
-			return IntStream.concat(IntStream.of(new int[]{first}), IntStream.of(next)).toArray();
+			return Stream.concat(Arrays.stream(new JdbcType[]{first}), Arrays.stream(next)).toArray(JdbcType[]::new);
 		}
 	}
 

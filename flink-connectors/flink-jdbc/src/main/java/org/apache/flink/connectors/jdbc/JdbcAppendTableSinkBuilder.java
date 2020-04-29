@@ -19,6 +19,7 @@
 package org.apache.flink.connectors.jdbc;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
 import org.apache.flink.util.Preconditions;
 
 import static org.apache.flink.connectors.jdbc.AbstractJdbcOutputFormat.DEFAULT_FLUSH_MAX_SIZE;
@@ -34,7 +35,7 @@ public class JdbcAppendTableSinkBuilder {
 	protected String dbURL;
 	protected String query;
 	protected int batchSize = DEFAULT_FLUSH_MAX_SIZE;
-	protected int[] parameterTypes;
+	private JdbcType[] parameterTypes;
 
 	/**
 	 * Specify the username of the JDBC connection.
@@ -99,9 +100,9 @@ public class JdbcAppendTableSinkBuilder {
 	 * @param types the type of each field
 	 */
 	public JdbcAppendTableSinkBuilder setParameterTypes(TypeInformation<?>... types) {
-		int[] ty = new int[types.length];
+		JdbcType[] ty = new JdbcType[types.length];
 		for (int i = 0; i < types.length; ++i) {
-			ty[i] = JdbcTypeUtil.typeInformationToSqlType(types[i]);
+			ty[i] = JdbcTypeUtil.typeInformationToJdbcType(types[i]);
 		}
 		this.parameterTypes = ty;
 		return this;
@@ -111,7 +112,7 @@ public class JdbcAppendTableSinkBuilder {
 	 * Specify the type of the rows that the sink will be accepting.
 	 * @param types the type of each field defined by {@see java.sql.Types}.
 	 */
-	public JdbcAppendTableSinkBuilder setParameterTypes(int... types) {
+	public JdbcAppendTableSinkBuilder setParameterTypes(JdbcType... types) {
 		this.parameterTypes = types;
 		return this;
 	}

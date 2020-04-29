@@ -51,7 +51,7 @@ public class JdbcAppendTableSinkTest {
 	public void testAppendTableSink() throws IOException {
 		JdbcAppendTableSink sink = JdbcAppendTableSink.builder()
 			.setDrivername("foo")
-			.setDBUrl("bar")
+			.setDBUrl("jdbc:derby:memory:test")
 			.setQuery("insert into %s (id) values (?)")
 			.setParameterTypes(FIELD_TYPES)
 			.build();

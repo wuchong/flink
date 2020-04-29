@@ -114,6 +114,7 @@ public class JDBCOptions extends JdbcOptions {
 				}
 				this.driverName = defaultDriverName;
 			}
+
 			return new JDBCOptions(dbURL, tableName, driverName, username, password, dialect);
 		}
 	}

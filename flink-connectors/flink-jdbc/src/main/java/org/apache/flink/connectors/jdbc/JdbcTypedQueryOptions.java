@@ -17,29 +17,39 @@
 
 package org.apache.flink.connectors.jdbc;
 
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+import org.apache.flink.util.Preconditions;
+
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
 
 abstract class JdbcTypedQueryOptions implements Serializable {
 
+	private final JdbcDialect dialect;
 	@Nullable
-	private final int[] fieldTypes;
+	private final JdbcType[] fieldTypes;
 
-	JdbcTypedQueryOptions(int[] fieldTypes) {
+	public JdbcTypedQueryOptions(JdbcDialect dialect, @Nullable JdbcType[] fieldTypes) {
+		this.dialect = Preconditions.checkNotNull(dialect, "dialect name is empty");
 		this.fieldTypes = fieldTypes;
 	}
 
-	public int[] getFieldTypes() {
+	public JdbcDialect getDialect() {
+		return dialect;
+	}
+
+	public JdbcType[] getFieldTypes() {
 		return fieldTypes;
 	}
 
 	public abstract static class JDBCUpdateQueryOptionsBuilder<T extends JDBCUpdateQueryOptionsBuilder<T>> {
-		int[] fieldTypes;
+		JdbcType[] fieldTypes;
 
 		protected abstract T self();
 
-		T withFieldTypes(int[] fieldTypes) {
+		T withFieldTypes(JdbcType[] fieldTypes) {
 			this.fieldTypes = fieldTypes;
 			return self();
 		}

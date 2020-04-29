@@ -25,6 +25,10 @@ import org.apache.flink.connectors.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connectors.jdbc.JdbcInsertOptions;
 import org.apache.flink.connectors.jdbc.JdbcOutputFormat;
 import org.apache.flink.connectors.jdbc.SimpleJdbcConnectionProvider;
+import org.apache.flink.connectors.jdbc.dialect.JdbcDialects;
+import org.apache.flink.connectors.jdbc.dialect.JdbcType;
+
+import java.util.Arrays;
 
 /**
  * OutputFormat to write Rows into a JDBC database.
@@ -40,7 +44,13 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 	 */
 	@Deprecated
 	public JDBCOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, int[] typesArray) {
-		super(username, password, drivername, dbURL, query, batchInterval, typesArray);
+		super(username,
+			password,
+			drivername,
+			dbURL,
+			query,
+			batchInterval,
+			Arrays.stream(typesArray).mapToObj(type -> JDBCTypeUtil.sqlTypeToJdbcType(type)).toArray(JdbcType[]::new));
 	}
 
 	private JDBCOutputFormat(JdbcConnectionProvider connectionProvider, JdbcInsertOptions insertOptions, JdbcExecutionOptions batchOptions) {
@@ -90,7 +100,9 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 		}
 
 		public JDBCOutputFormatBuilder setSqlTypes(int[] typesArray) {
-			this.typesArray = typesArray;
+			this.typesArray = Arrays.stream(typesArray)
+				.mapToObj(type -> JDBCTypeUtil.sqlTypeToJdbcType(type))
+				.toArray(JdbcType[]::new);
 			return this;
 		}
 
@@ -102,7 +114,11 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 		public JDBCOutputFormat finish() {
 			return new JDBCOutputFormat(
 				new SimpleJdbcConnectionProvider(buildConnectionOptions()),
-				new JdbcInsertOptions(query, typesArray),
+				new JdbcInsertOptions(
+					JdbcDialects.get(dbURL).orElseThrow(() ->
+						new IllegalArgumentException(String.format("Can not handle the db url: %s", dbURL))),
+					query,
+					typesArray),
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
 		}
 

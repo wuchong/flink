@@ -18,6 +18,8 @@
 
 package org.apache.flink.connectors.jdbc.dialect;
 
+import java.io.Serializable;
+
 /**
  * The class to describe a JDBC data type.
  * For example:
@@ -26,7 +28,9 @@ package org.apache.flink.connectors.jdbc.dialect;
  * the genericSqlType "java.sql.Types.DOUBLE" describes corresponding generic type
  * which should be a integer constant from java.sql.Types.
  */
-public class JdbcType {
+public class JdbcType implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	private final String dialectTypeName;
 	private final int genericSqlType;
 

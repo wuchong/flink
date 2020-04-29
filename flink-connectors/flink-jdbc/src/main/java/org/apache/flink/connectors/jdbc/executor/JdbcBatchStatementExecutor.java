@@ -21,6 +21,7 @@ package org.apache.flink.connectors.jdbc.executor;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connectors.jdbc.JdbcStatementBuilder;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Function;
@@ -29,7 +30,7 @@ import java.util.function.Function;
  * Executes the given JDBC statement in batch for the accumulated records.
  */
 @Internal
-public interface JdbcBatchStatementExecutor<T> {
+public interface JdbcBatchStatementExecutor<T> extends Serializable {
 
 	/**
 	 * Open the writer by JDBC Connection. It can create Statement from Connection.
