@@ -18,7 +18,7 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.types.Row;
 
 import java.io.Serializable;
@@ -41,6 +41,6 @@ public interface RowToJdbcConverter extends Serializable {
 	 */
 	@FunctionalInterface
 	interface RowFieldConverter extends Serializable {
-		void convert(PreparedStatement statement, int index, JdbcType jdbcType, Object value) throws SQLException;
+		void convert(PreparedStatement statement, int index, JdbcDataType jdbcDataType, Object value) throws SQLException;
 	}
 }

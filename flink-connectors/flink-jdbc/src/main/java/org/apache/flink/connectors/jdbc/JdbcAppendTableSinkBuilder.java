@@ -34,7 +34,7 @@ public class JdbcAppendTableSinkBuilder {
 	protected String dbURL;
 	protected String query;
 	protected int batchSize = DEFAULT_FLUSH_MAX_SIZE;
-	private JdbcType[] parameterTypes;
+	private JdbcDataType[] parameterTypes;
 
 	/**
 	 * Specify the username of the JDBC connection.
@@ -99,7 +99,7 @@ public class JdbcAppendTableSinkBuilder {
 	 * @param types the type of each field
 	 */
 	public JdbcAppendTableSinkBuilder setParameterTypes(TypeInformation<?>... types) {
-		JdbcType[] ty = new JdbcType[types.length];
+		JdbcDataType[] ty = new JdbcDataType[types.length];
 		for (int i = 0; i < types.length; ++i) {
 			ty[i] = JdbcTypeUtil.typeInformationToJdbcType(types[i]);
 		}
@@ -111,7 +111,7 @@ public class JdbcAppendTableSinkBuilder {
 	 * Specify the type of the rows that the sink will be accepting.
 	 * @param types the type of each field defined by {@see java.sql.Types}.
 	 */
-	public JdbcAppendTableSinkBuilder setParameterTypes(JdbcType... types) {
+	public JdbcAppendTableSinkBuilder setParameterTypes(JdbcDataType... types) {
 		this.parameterTypes = types;
 		return this;
 	}

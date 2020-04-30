@@ -28,13 +28,13 @@ import java.io.Serializable;
  * the genericSqlType "java.sql.Types.DOUBLE" describes corresponding generic type
  * which should be a integer constant from java.sql.Types.
  */
-public class JdbcType implements Serializable {
+public class JdbcDataType implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	private final String dialectTypeName;
 	private final int genericSqlType;
 
-	public JdbcType(String dialectTypeName, int genericSqlType) {
+	public JdbcDataType(String dialectTypeName, int genericSqlType) {
 		this.dialectTypeName = dialectTypeName;
 		this.genericSqlType = genericSqlType;
 	}

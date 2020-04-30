@@ -214,7 +214,7 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		private JdbcOptions options;
 		private String[] fieldNames;
 		private String[] keyFields;
-		private JdbcType[] fieldTypes;
+		private JdbcDataType[] fieldTypes;
 		private JdbcExecutionOptions.Builder executionOptionsBuilder = JdbcExecutionOptions.builder();
 
 		/**
@@ -244,7 +244,7 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		/**
 		 * required, field types of this jdbc sink.
 		 */
-		Builder setFieldTypes(JdbcType[] fieldTypes) {
+		Builder setFieldTypes(JdbcDataType[] fieldTypes) {
 			this.fieldTypes = fieldTypes;
 			return this;
 		}
@@ -310,15 +310,15 @@ public class JdbcBatchingOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStat
 		}
 	}
 
-	static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(JdbcDialect dialect, String sql, JdbcType[] fieldTypes, boolean objectReuse) {
+	static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(JdbcDialect dialect, String sql, JdbcDataType[] fieldTypes, boolean objectReuse) {
 		return JdbcBatchStatementExecutor.simple(sql, createRowJdbcStatementBuilder(dialect, fieldTypes), objectReuse ? Row::copy : Function.identity());
 	}
 
 	/**
 	 * Creates a {@link JdbcStatementBuilder} for {@link Row} using the provided JDBC types array.
-	 * Uses {@link JdbcDialect#getOutputConverter(JdbcType[])}
+	 * Uses {@link JdbcDialect#getOutputConverter(JdbcDataType[])}
 	 */
-	static JdbcStatementBuilder<Row> createRowJdbcStatementBuilder(JdbcDialect dialect, JdbcType[] types) {
+	static JdbcStatementBuilder<Row> createRowJdbcStatementBuilder(JdbcDialect dialect, JdbcDataType[] types) {
 		return (st, record) ->
 			dialect.getOutputConverter(types).toExternal(record, st);
 	}

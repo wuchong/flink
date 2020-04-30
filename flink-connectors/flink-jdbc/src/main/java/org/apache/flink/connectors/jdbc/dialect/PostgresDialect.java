@@ -19,10 +19,10 @@
 package org.apache.flink.connectors.jdbc.dialect;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connectors.jdbc.JdbcType;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.PostgresToJdbcConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.PostgresToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.PostgresRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
@@ -83,23 +83,23 @@ public class PostgresDialect extends AbstractDialect {
 	}
 
 	@Override
-	public LogicalType getInternalType(JdbcType externalType) {
+	public LogicalType getInternalType(JdbcDataType externalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcType getExternalType(LogicalType internalType) {
+	public JdbcDataType getExternalType(LogicalType internalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcToRowConverter getInputConverter(RowType rowType) {
-		return new PostgresToRowConverter(rowType);
+	public JdbcRuntimeConverter getInputConverter(RowType rowType) {
+		return new PostgresRuntimeConverter(rowType);
 	}
 
 	@Override
-	public RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes) {
-		return new PostgresToJdbcConverter(jdbcTypes);
+	public RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes) {
+		return new PostgresToJdbcConverter(jdbcDataTypes);
 	}
 
 	/**

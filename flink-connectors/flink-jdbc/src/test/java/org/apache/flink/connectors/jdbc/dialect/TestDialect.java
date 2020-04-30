@@ -18,8 +18,8 @@
 
 package org.apache.flink.connectors.jdbc.dialect;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
@@ -46,27 +46,27 @@ public class TestDialect implements JdbcDialect {
 	}
 
 	@Override
-	public void validateExternalType(JdbcType type) {
+	public void validateExternalType(JdbcDataType type) {
 
 	}
 
 	@Override
-	public LogicalType getInternalType(JdbcType externalType) {
+	public LogicalType getInternalType(JdbcDataType externalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcType getExternalType(LogicalType internalType) {
+	public JdbcDataType getExternalType(LogicalType internalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcToRowConverter getInputConverter(RowType rowType) {
+	public JdbcRuntimeConverter getInputConverter(RowType rowType) {
 		return null;
 	}
 
 	@Override
-	public RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes) {
+	public RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes) {
 		return null;
 	}
 
@@ -112,7 +112,7 @@ public class TestDialect implements JdbcDialect {
 	}
 
 	@Override
-	public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields) {
+	public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcDataType[] types, String[] uniqueKeyFields) {
 		return null;
 	}
 }

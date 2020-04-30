@@ -18,7 +18,7 @@
 
 package org.apache.flink.connectors.jdbc.dialect;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -86,7 +86,7 @@ abstract class AbstractDialect implements JdbcDialect {
 	}
 
 	@Override
-	public void validateExternalType(JdbcType type) {
+	public void validateExternalType(JdbcDataType type) {
 	}
 
 	@Override
@@ -158,7 +158,7 @@ abstract class AbstractDialect implements JdbcDialect {
 	}
 
 	@Override
-	public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields) {
+	public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcDataType[] types, String[] uniqueKeyFields) {
 		return null;
 	}
 }

@@ -28,9 +28,9 @@ abstract class JdbcTypedQueryOptions implements Serializable {
 
 	private final JdbcDialect dialect;
 	@Nullable
-	private final JdbcType[] fieldTypes;
+	private final JdbcDataType[] fieldTypes;
 
-	public JdbcTypedQueryOptions(JdbcDialect dialect, @Nullable JdbcType[] fieldTypes) {
+	public JdbcTypedQueryOptions(JdbcDialect dialect, @Nullable JdbcDataType[] fieldTypes) {
 		this.dialect = Preconditions.checkNotNull(dialect, "dialect name is empty");
 		this.fieldTypes = fieldTypes;
 	}
@@ -39,16 +39,16 @@ abstract class JdbcTypedQueryOptions implements Serializable {
 		return dialect;
 	}
 
-	public JdbcType[] getFieldTypes() {
+	public JdbcDataType[] getFieldTypes() {
 		return fieldTypes;
 	}
 
 	public abstract static class JDBCUpdateQueryOptionsBuilder<T extends JDBCUpdateQueryOptionsBuilder<T>> {
-		JdbcType[] fieldTypes;
+		JdbcDataType[] fieldTypes;
 
 		protected abstract T self();
 
-		T withFieldTypes(JdbcType[] fieldTypes) {
+		T withFieldTypes(JdbcDataType[] fieldTypes) {
 			this.fieldTypes = fieldTypes;
 			return self();
 		}

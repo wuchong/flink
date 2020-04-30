@@ -30,7 +30,7 @@ import java.sql.SQLException;
 /**
  * Utils for jdbc connectors.
  *
- * @deprecated please use {@link org.apache.flink.connectors.jdbc.dialect.JdbcDialect#getOutputConverter(JdbcType[])} to
+ * @deprecated please use {@link org.apache.flink.connectors.jdbc.dialect.JdbcDialect#getOutputConverter(JdbcDataType[])} to
  * add record to prepared statement.
  */
 @Deprecated

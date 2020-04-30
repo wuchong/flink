@@ -76,9 +76,9 @@ public class JdbcUpsertTableSink implements UpsertStreamTableSink<Row> {
 		}
 
 		// sql types
-		JdbcType[] jdbcTypes = Arrays.stream(schema.getFieldTypes())
+		JdbcDataType[] jdbcDataTypes = Arrays.stream(schema.getFieldTypes())
 				.map(type -> JdbcTypeUtil.typeInformationToJdbcType(type))
-				.toArray(JdbcType[]::new);
+				.toArray(JdbcDataType[]::new);
 
 		return JdbcBatchingOutputFormat.builder()
 			.setOptions(options)
@@ -86,7 +86,7 @@ public class JdbcUpsertTableSink implements UpsertStreamTableSink<Row> {
 			.setFlushMaxSize(flushMaxSize)
 			.setFlushIntervalMills(flushIntervalMills)
 			.setMaxRetryTimes(maxRetryTime)
-			.setFieldTypes(jdbcTypes)
+			.setFieldTypes(jdbcDataTypes)
 			.setKeyFields(keyFields)
 			.build();
 	}

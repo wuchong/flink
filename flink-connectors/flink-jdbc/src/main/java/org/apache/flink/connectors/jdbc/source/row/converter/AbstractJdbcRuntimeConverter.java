@@ -18,7 +18,7 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
@@ -35,13 +35,13 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /**
  * Base for all row converters.
  */
-public abstract class AbstractJdbcToRowConverter implements JdbcToRowConverter {
+public abstract class AbstractJdbcRuntimeConverter implements JdbcRuntimeConverter {
 
-	protected static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcToRowConverter.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcRuntimeConverter.class);
 	protected final RowType rowType;
 	protected final JDBCFieldConverter[] toInternalConverters;
 
-	public AbstractJdbcToRowConverter(RowType rowType) {
+	public AbstractJdbcRuntimeConverter(RowType rowType) {
 		this.rowType = checkNotNull(rowType);
 
 		toInternalConverters = new JDBCFieldConverter[rowType.getFieldCount()];
@@ -51,7 +51,7 @@ public abstract class AbstractJdbcToRowConverter implements JdbcToRowConverter {
 	}
 
 	@Override
-	public Row toInternal(ResultSet externalData, Row reuse) throws SQLException {
+	public Row toRowData(ResultSet externalData, Row reuse) throws SQLException {
 		for (int pos = 0; pos < rowType.getFieldCount(); pos++) {
 			reuse.setField(pos, toInternalConverters[pos].convert(externalData.getObject(pos + 1)));
 		}
@@ -74,7 +74,7 @@ public abstract class AbstractJdbcToRowConverter implements JdbcToRowConverter {
 	}
 
 	/**
-	 * Create a runtime JDBC field converter from given {@link JdbcType}.
+	 * Create a runtime JDBC field converter from given {@link JdbcDataType}.
 	 */
 	public JDBCFieldConverter createExternalConverter(int sqlType) {
 		return field -> {

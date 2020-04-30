@@ -19,15 +19,15 @@
 package org.apache.flink.connectors.jdbc.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connectors.jdbc.JdbcType;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
+import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
-import javax.annotation.Nullable;
-
 import java.io.Serializable;
+import java.util.Optional;
 
 
 /**
@@ -36,7 +36,11 @@ import java.io.Serializable;
 @PublicEvolving
 public interface JdbcDialect extends Serializable {
 
-	boolean canHandle(String jdbcUrl);
+	/**
+	 *
+	 * @return
+	 */
+	String dialectName();
 
 	String defaultDriverName();
 
@@ -44,39 +48,32 @@ public interface JdbcDialect extends Serializable {
 	 * validate supported internalType before write data to db.
 	 * @param type
 	 */
-	void validateInternalType(LogicalType type);
+	void supportsLogicalType(LogicalType type);
 
-	/**
-	 * validate supported external before write data to db.
-	 * @param type
-	 */
-	void validateExternalType(JdbcType type);
+	JdbcRuntimeConverter getInputConverter(RowType rowType);
 
-	LogicalType getInternalType(JdbcType externalType);
-
-	JdbcType getExternalType(LogicalType internalType);
-
-	JdbcToRowConverter getInputConverter(RowType rowType);
-
-	RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes);
+	RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes);
 
 	String quoteIdentifier(String identifier);
 
-	String getSelectFromStatement(String tableName, String[] selectFields, String[] conditionFields);
+	String getSelectStatement(String tableName, String[] selectFields, String[] conditionFields);
 
-	String getInsertIntoStatement(String tableName, String[] fieldNames);
+	String getInsertStatement(String tableName, String[] fieldNames);
 
 	String getUpdateStatement(String tableName, String[] fieldNames, String[] conditionFields);
 
 	String getDeleteStatement(String tableName, String[] conditionFields);
 
-	@Nullable
-	String getUpsertStatement(String tableName, String[] fieldNames, String[] uniqueKeyFields);
+	Optional<String> getUpsertStatement(String tableName, String[] fieldNames, String[] uniqueKeyFields);
 
 	String getRowExistsStatement(String tableName, String[] conditionFields);
 
-	String getTableExistsStatement(String tableName);
-
-	String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields);
+//	Optional<LogicalType> getFlinkLogicalType(int jdbcType, String typeName, int precision, int scale);
+//
+//	JdbcDataType getJdbcDataType(LogicalType flinkType);
+//
+//	String getTableExistsStatement(String tableName);
+//
+//	String getCreateTableStatement(String tableName, TableSchema schema);
 }
 

@@ -19,10 +19,10 @@
 package org.apache.flink.connectors.jdbc.dialect;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.connectors.jdbc.source.row.converter.DerbyToJdbcConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.DerbyToRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.DerbyRuntimeConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
@@ -64,23 +64,23 @@ public class DerbyDialect extends AbstractDialect {
 	}
 
 	@Override
-	public LogicalType getInternalType(JdbcType externalType) {
+	public LogicalType getInternalType(JdbcDataType externalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcType getExternalType(LogicalType internalType) {
+	public JdbcDataType getExternalType(LogicalType internalType) {
 		return null;
 	}
 
 	@Override
-	public JdbcToRowConverter getInputConverter(RowType rowType) {
-		return new DerbyToRowConverter(rowType);
+	public JdbcRuntimeConverter getInputConverter(RowType rowType) {
+		return new DerbyRuntimeConverter(rowType);
 	}
 
 	@Override
-	public RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes) {
-		return new DerbyToJdbcConverter(jdbcTypes);
+	public RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes) {
+		return new DerbyToJdbcConverter(jdbcDataTypes);
 	}
 
 	@Override

@@ -19,13 +19,13 @@
 package org.apache.flink.api.java.io.jdbc.dialect;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
 import org.apache.flink.connectors.jdbc.source.row.converter.DefaultToJdbcConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.DerbyToRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.MySQLToRowConverter;
-import org.apache.flink.connectors.jdbc.source.row.converter.PostgresToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.DerbyRuntimeConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.MySQLRuntimeConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.PostgresRuntimeConverter;
 import org.apache.flink.connectors.jdbc.source.row.converter.RowToJdbcConverter;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
@@ -91,27 +91,27 @@ public final class JDBCDialects {
 			}
 
 			@Override
-			public void validateExternalType(JdbcType type) {
+			public void validateExternalType(JdbcDataType type) {
 			}
 
 			@Override
-			public LogicalType getInternalType(JdbcType externalType) {
+			public LogicalType getInternalType(JdbcDataType externalType) {
 				return null;
 			}
 
 			@Override
-			public JdbcType getExternalType(LogicalType internalType) {
+			public JdbcDataType getExternalType(LogicalType internalType) {
 				return null;
 			}
 
 			@Override
-			public JdbcToRowConverter getInputConverter(RowType rowType) {
+			public JdbcRuntimeConverter getInputConverter(RowType rowType) {
 				return dialect.getRowConverter(rowType);
 			}
 
 			@Override
-			public RowToJdbcConverter getOutputConverter(JdbcType[] jdbcTypes) {
-				return new DefaultToJdbcConverter(jdbcTypes);
+			public RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes) {
+				return new DefaultToJdbcConverter(jdbcDataTypes);
 			}
 
 			@Override
@@ -156,7 +156,7 @@ public final class JDBCDialects {
 			}
 
 			@Override
-			public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcType[] types, String[] uniqueKeyFields) {
+			public String getCreateTableStatement(String tableName, String[] fieldNames, JdbcDataType[] types, String[] uniqueKeyFields) {
 				return null;
 			}
 		};
@@ -251,8 +251,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcToRowConverter getRowConverter(RowType rowType) {
-			return new DerbyToRowConverter(rowType);
+		public JdbcRuntimeConverter getRowConverter(RowType rowType) {
+			return new DerbyRuntimeConverter(rowType);
 		}
 
 		@Override
@@ -339,8 +339,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcToRowConverter getRowConverter(RowType rowType) {
-			return new MySQLToRowConverter(rowType);
+		public JdbcRuntimeConverter getRowConverter(RowType rowType) {
+			return new MySQLRuntimeConverter(rowType);
 		}
 
 		@Override
@@ -445,8 +445,8 @@ public final class JDBCDialects {
 		}
 
 		@Override
-		public JdbcToRowConverter getRowConverter(RowType rowType) {
-			return new PostgresToRowConverter(rowType);
+		public JdbcRuntimeConverter getRowConverter(RowType rowType) {
+			return new PostgresRuntimeConverter(rowType);
 		}
 
 		@Override

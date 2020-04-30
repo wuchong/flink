@@ -31,9 +31,9 @@ import org.postgresql.util.PGobject;
 /**
  * Row converter for Postgres.
  */
-public class PostgresToRowConverter extends AbstractJdbcToRowConverter {
+public class PostgresRuntimeConverter extends AbstractJdbcRuntimeConverter {
 
-	public PostgresToRowConverter(RowType rowType) {
+	public PostgresRuntimeConverter(RowType rowType) {
 		super(rowType);
 	}
 

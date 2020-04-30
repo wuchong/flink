@@ -18,7 +18,7 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 import org.apache.flink.types.Row;
 
 import java.sql.PreparedStatement;
@@ -29,10 +29,10 @@ import java.sql.SQLException;
  */
 public abstract class AbstractRowToJdbcConverter implements RowToJdbcConverter {
 
-	protected final JdbcType[] externalTypes;
+	protected final JdbcDataType[] externalTypes;
 	protected final RowFieldConverter[] toExternalConverters;
 
-	public AbstractRowToJdbcConverter(JdbcType[] externalTypes) {
+	public AbstractRowToJdbcConverter(JdbcDataType[] externalTypes) {
 		if (externalTypes != null && externalTypes.length > 0) {
 			this.externalTypes = externalTypes;
 			this.toExternalConverters = new RowToJdbcConverter.RowFieldConverter[externalTypes.length];
@@ -65,7 +65,7 @@ public abstract class AbstractRowToJdbcConverter implements RowToJdbcConverter {
 	}
 
 	/**
-	 * Create a runtime JDBC field converter from given {@link JdbcType}.
+	 * Create a runtime JDBC field converter from given {@link JdbcDataType}.
 	 */
 	public RowFieldConverter createExternalConverter(int sqlType) {
 		return (statement, index, type, val) -> {

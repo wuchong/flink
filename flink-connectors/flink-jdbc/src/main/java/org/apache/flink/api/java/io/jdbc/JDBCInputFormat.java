@@ -21,7 +21,7 @@ package org.apache.flink.api.java.io.jdbc;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.connectors.jdbc.JdbcInputFormat;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.util.Preconditions;
 
@@ -149,7 +149,7 @@ public class JDBCInputFormat extends JdbcInputFormat {
 			return this;
 		}
 
-		public JDBCInputFormatBuilder setRowConverter(JdbcToRowConverter rowConverter) {
+		public JDBCInputFormatBuilder setRowConverter(JdbcRuntimeConverter rowConverter) {
 			format.rowConverter = rowConverter;
 			return this;
 		}

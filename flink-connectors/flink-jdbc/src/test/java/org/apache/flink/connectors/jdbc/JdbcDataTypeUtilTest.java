@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 /**
  * Testing the type conversions from Flink to SQL types.
  */
-public class JdbcTypeUtilTest {
+public class JdbcDataTypeUtilTest {
 
 	@Test
 	public void testTypeConversions() {

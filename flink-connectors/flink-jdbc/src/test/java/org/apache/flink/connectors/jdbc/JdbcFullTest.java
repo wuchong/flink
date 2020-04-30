@@ -69,7 +69,7 @@ public class JdbcFullTest extends JdbcDataTestBase {
 			.setDrivername(getDbMetadata().getDriverClass())
 			.setDBUrl(getDbMetadata().getUrl())
 			.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
-			.setSqlTypes(new JdbcType[]{
+			.setSqlTypes(new JdbcDataType[]{
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
@@ -111,7 +111,7 @@ public class JdbcFullTest extends JdbcDataTestBase {
 				.setDBUrl(getDbMetadata().getUrl())
 				.setQuery("insert into newbooks (id, title, author, price, qty) values (?,?,?,?,?)")
 				.setSqlTypes(
-					new JdbcType []{
+					new JdbcDataType[]{
 						JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
 						JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
 						JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),

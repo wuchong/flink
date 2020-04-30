@@ -32,7 +32,7 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 
 	private final String query;
 
-	public JdbcInsertOptions(JdbcDialect dialect, String query, JdbcType[] typesArray) {
+	public JdbcInsertOptions(JdbcDialect dialect, String query, JdbcDataType[] typesArray) {
 		super(dialect, typesArray);
 		this.query = Preconditions.checkNotNull(query, "query is empty");
 	}
@@ -41,15 +41,15 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 		return query;
 	}
 
-	public static JdbcInsertOptions from(JdbcDialect dialect, String query, JdbcType firstFieldType, JdbcType... nextFieldTypes) {
+	public static JdbcInsertOptions from(JdbcDialect dialect, String query, JdbcDataType firstFieldType, JdbcDataType... nextFieldTypes) {
 		return new JdbcInsertOptions(dialect, query, concat(firstFieldType, nextFieldTypes));
 	}
 
-	private static JdbcType[] concat(JdbcType first, JdbcType... next) {
+	private static JdbcDataType[] concat(JdbcDataType first, JdbcDataType... next) {
 		if (next == null || next.length == 0) {
-			return new JdbcType[]{first};
+			return new JdbcDataType[]{first};
 		} else {
-			return Stream.concat(Arrays.stream(new JdbcType[]{first}), Arrays.stream(next)).toArray(JdbcType[]::new);
+			return Stream.concat(Arrays.stream(new JdbcDataType[]{first}), Arrays.stream(next)).toArray(JdbcDataType[]::new);
 		}
 	}
 

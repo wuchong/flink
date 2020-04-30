@@ -18,13 +18,13 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 
 /**
  * Row to JDBC object converter for MySQL.
  */
 public class MySQLToJdbcConverter extends AbstractRowToJdbcConverter {
-	public MySQLToJdbcConverter(JdbcType[] externalTypes) {
+	public MySQLToJdbcConverter(JdbcDataType[] externalTypes) {
 		super(externalTypes);
 	}
 }

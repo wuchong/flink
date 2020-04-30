@@ -19,7 +19,7 @@
 package org.apache.flink.api.java.io.jdbc.dialect;
 
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.types.logical.RowType;
@@ -49,7 +49,7 @@ public interface JDBCDialect extends Serializable {
 	 * @param rowType the given row type
 	 * @return a row converter for the database
 	 */
-	JdbcToRowConverter getRowConverter(RowType rowType);
+	JdbcRuntimeConverter getRowConverter(RowType rowType);
 
 	/**
 	 * Check if this dialect instance support a specific data type in table schema.
@@ -134,7 +134,7 @@ public interface JDBCDialect extends Serializable {
 	 */
 	default String getDeleteStatement(String tableName, String[] conditionFields) {
 		String conditionClause = Arrays.stream(conditionFields)
-			.map(f -> quoteIdentifier(f) + "=?")
+			.map(f -> quoteIdentifier(f) + "=${" + f + "}")
 			.collect(Collectors.joining(" AND "));
 		return "DELETE FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
 	}

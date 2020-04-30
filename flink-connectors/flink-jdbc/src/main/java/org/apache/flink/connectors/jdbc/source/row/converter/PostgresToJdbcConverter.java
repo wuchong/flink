@@ -18,13 +18,13 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 
 /**
  * Row to JDBC object converter for Postgres.
  */
 public class PostgresToJdbcConverter extends AbstractRowToJdbcConverter{
-	public PostgresToJdbcConverter(JdbcType[] externalTypes) {
+	public PostgresToJdbcConverter(JdbcDataType[] externalTypes) {
 		super(externalTypes);
 	}
 }

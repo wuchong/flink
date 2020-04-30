@@ -26,7 +26,7 @@ import org.apache.flink.api.common.io.statistics.BaseStatistics;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connectors.jdbc.source.row.converter.JdbcToRowConverter;
+import org.apache.flink.connectors.jdbc.source.row.converter.JdbcRuntimeConverter;
 import org.apache.flink.connectors.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
@@ -112,7 +112,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 	protected int resultSetType;
 	protected int resultSetConcurrency;
 	protected RowTypeInfo rowTypeInfo;
-	protected JdbcToRowConverter rowConverter;
+	protected JdbcRuntimeConverter rowConverter;
 
 	protected transient Connection dbConn;
 	protected transient PreparedStatement statement;
@@ -294,7 +294,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 			if (!hasNext) {
 				return null;
 			}
-			Row row = rowConverter.toInternal(resultSet, reuse);
+			Row row = rowConverter.toRowData(resultSet, reuse);
 			//update hasNext after we've read the record
 			hasNext = resultSet.next();
 			return row;
@@ -404,7 +404,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit> implements
 			return this;
 		}
 
-		public JdbcInputFormatBuilder setRowConverter(JdbcToRowConverter rowConverter) {
+		public JdbcInputFormatBuilder setRowConverter(JdbcRuntimeConverter rowConverter) {
 			format.rowConverter = rowConverter;
 			return this;
 		}

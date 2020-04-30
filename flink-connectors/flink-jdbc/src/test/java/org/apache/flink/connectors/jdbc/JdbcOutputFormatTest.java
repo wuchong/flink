@@ -119,7 +119,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
 			.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())
 			.setDBUrl(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUrl())
 			.setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
-			.setSqlTypes(new JdbcType[] {
+			.setSqlTypes(new JdbcDataType[] {
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
@@ -145,7 +145,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
 			.setDrivername(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDriverClass())
 			.setDBUrl(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUrl())
 			.setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
-			.setSqlTypes(new JdbcType [] {
+			.setSqlTypes(new JdbcDataType[] {
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.INTEGER),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),
 				JdbcTypeUtil.sqlTypeToJdbcType(Types.VARCHAR),

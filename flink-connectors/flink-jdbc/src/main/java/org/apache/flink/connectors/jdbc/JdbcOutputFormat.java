@@ -56,7 +56,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 	 * @deprecated use {@link JdbcOutputFormatBuilder builder} instead.
 	 */
 	@Deprecated
-	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, JdbcType[] typesArray) {
+	public JdbcOutputFormat(String username, String password, String drivername, String dbURL, String query, int batchInterval, JdbcDataType[] typesArray) {
 		this(new SimpleJdbcConnectionProvider(new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(dbURL).withDriverName(drivername).withUsername(username).withPassword(password).build()),
 				new JdbcInsertOptions(JdbcDialectService.get(dbURL).get(), query, typesArray),
 				JdbcExecutionOptions.builder().withBatchSize(batchInterval).build());
@@ -113,7 +113,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		}
 	}
 
-	JdbcType[] getTypesArray() {
+	JdbcDataType[] getTypesArray() {
 		return insertOptions.getFieldTypes();
 	}
 
@@ -141,7 +141,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		return new JdbcOutputFormatBuilder();
 	}
 
-	public JdbcType[] getFieldTypes() {
+	public JdbcDataType[] getFieldTypes() {
 		return insertOptions.getFieldTypes();
 	}
 
@@ -155,7 +155,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 		protected String dbURL;
 		protected String query;
 		protected int batchInterval = DEFAULT_FLUSH_MAX_SIZE;
-		protected JdbcType[] typesArray;
+		protected JdbcDataType[] typesArray;
 
 		protected JdbcOutputFormatBuilder() {}
 
@@ -189,7 +189,7 @@ public class JdbcOutputFormat extends AbstractJdbcOutputFormat<Row> {
 			return this;
 		}
 
-		public JdbcOutputFormatBuilder setSqlTypes(JdbcType[] typesArray) {
+		public JdbcOutputFormatBuilder setSqlTypes(JdbcDataType[] typesArray) {
 			this.typesArray = typesArray;
 			return this;
 		}

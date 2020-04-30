@@ -18,14 +18,14 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 
 /**
  * Row to JDBC object converter for Derby.
  */
 public class DerbyToJdbcConverter extends AbstractRowToJdbcConverter {
 
-	public DerbyToJdbcConverter(JdbcType[] externalTypes) {
+	public DerbyToJdbcConverter(JdbcDataType[] externalTypes) {
 		super(externalTypes);
 	}
 }

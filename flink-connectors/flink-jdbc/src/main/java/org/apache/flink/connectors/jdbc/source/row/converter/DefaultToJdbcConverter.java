@@ -18,13 +18,13 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 
 /**
  * Default converter that convert flink internal row to JDBC objects.
  */
 public class DefaultToJdbcConverter extends AbstractRowToJdbcConverter {
-	public DefaultToJdbcConverter(JdbcType[] externalTypes) {
+	public DefaultToJdbcConverter(JdbcDataType[] externalTypes) {
 		super(externalTypes);
 	}
 }

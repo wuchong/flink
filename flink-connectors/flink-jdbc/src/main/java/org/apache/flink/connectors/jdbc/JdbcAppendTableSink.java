@@ -91,7 +91,7 @@ public class JdbcAppendTableSink implements AppendStreamTableSink<Row>, BatchTab
 
 	@Override
 	public TableSink<Row> configure(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
-		JdbcType[] types = outputFormat.getFieldTypes();
+		JdbcDataType[] types = outputFormat.getFieldTypes();
 
 		String sinkSchema =
 			String.join(", ", Arrays.stream(types)

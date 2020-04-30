@@ -18,30 +18,14 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.types.Row;
-
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import org.apache.flink.table.types.logical.RowType;
 
 /**
- * Converter between JDBC object and Flink row.
+ * JDBC object to row converter for MySQL.
  */
-public interface JdbcToRowConverter extends Serializable {
+public class MySQLRuntimeConverter extends AbstractJdbcRuntimeConverter {
 
-	/**
-	 * Convert data retrieved from JDBC Object to internal Row.
-	 *
-	 * @param externalData Objects from JDBC
-	 * @param reuse The row to set
-	 */
-	Row toInternal(ResultSet externalData, Row reuse) throws SQLException;
-
-	/**
-	 * Runtime converter to convert JDBC field to Java objects.
-	 */
-	@FunctionalInterface
-	interface JDBCFieldConverter extends Serializable {
-		Object convert(Object value) throws SQLException;
+	public MySQLRuntimeConverter(RowType rowType) {
+		super(rowType);
 	}
 }

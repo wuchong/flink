@@ -26,7 +26,7 @@ import org.apache.flink.connectors.jdbc.JdbcInsertOptions;
 import org.apache.flink.connectors.jdbc.JdbcOutputFormat;
 import org.apache.flink.connectors.jdbc.SimpleJdbcConnectionProvider;
 import org.apache.flink.connectors.jdbc.dialect.JdbcDialectService;
-import org.apache.flink.connectors.jdbc.JdbcType;
+import org.apache.flink.connectors.jdbc.JdbcDataType;
 
 import java.util.Arrays;
 
@@ -50,7 +50,7 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 			dbURL,
 			query,
 			batchInterval,
-			Arrays.stream(typesArray).mapToObj(type -> JDBCTypeUtil.sqlTypeToJdbcType(type)).toArray(JdbcType[]::new));
+			Arrays.stream(typesArray).mapToObj(type -> JDBCTypeUtil.sqlTypeToJdbcType(type)).toArray(JdbcDataType[]::new));
 	}
 
 	private JDBCOutputFormat(JdbcConnectionProvider connectionProvider, JdbcInsertOptions insertOptions, JdbcExecutionOptions batchOptions) {
@@ -102,7 +102,7 @@ public class JDBCOutputFormat extends JdbcOutputFormat {
 		public JDBCOutputFormatBuilder setSqlTypes(int[] typesArray) {
 			this.typesArray = Arrays.stream(typesArray)
 				.mapToObj(type -> JDBCTypeUtil.sqlTypeToJdbcType(type))
-				.toArray(JdbcType[]::new);
+				.toArray(JdbcDataType[]::new);
 			return this;
 		}
 

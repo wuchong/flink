@@ -59,8 +59,8 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 
 	private JdbcBatchStatementExecutor<Row> createDeleteExecutor() {
 		int[] pkFields = Arrays.stream(dmlOptions.getFieldNames()).mapToInt(Arrays.asList(dmlOptions.getFieldNames())::indexOf).toArray();
-		JdbcType[] pkTypes = dmlOptions.getFieldTypes() == null ? null :
-				Arrays.stream(pkFields).mapToObj(f -> dmlOptions.getFieldTypes()[f]).toArray(JdbcType[]::new);
+		JdbcDataType[] pkTypes = dmlOptions.getFieldTypes() == null ? null :
+				Arrays.stream(pkFields).mapToObj(f -> dmlOptions.getFieldTypes()[f]).toArray(JdbcDataType[]::new);
 		String deleteSql = dmlOptions.getDialect().getDeleteStatement(dmlOptions.getTableName(), dmlOptions.getFieldNames());
 		return createKeyedRowExecutor(dmlOptions.getDialect(), pkFields, pkTypes, deleteSql);
 	}
@@ -93,7 +93,7 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 		deleteExecutor.executeBatch();
 	}
 
-	private static JdbcBatchStatementExecutor<Row> createKeyedRowExecutor(JdbcDialect dialect, int[] pkFields, JdbcType[] pkTypes, String sql) {
+	private static JdbcBatchStatementExecutor<Row> createKeyedRowExecutor(JdbcDialect dialect, int[] pkFields, JdbcDataType[] pkTypes, String sql) {
 		return JdbcBatchStatementExecutor.keyed(
 			sql,
 			createRowKeyExtractor(pkFields),
@@ -106,8 +106,8 @@ class TableJdbcUpsertOutputFormat extends JdbcBatchingOutputFormat<Tuple2<Boolea
 		checkArgument(opt.getKeyFields().isPresent());
 
 		int[] pkFields = Arrays.stream(opt.getKeyFields().get()).mapToInt(Arrays.asList(opt.getFieldNames())::indexOf).toArray();
-		JdbcType[] pkTypes = opt.getFieldTypes() == null ? null : Arrays.stream(pkFields).mapToObj(f -> opt.getFieldTypes()[f])
-			.toArray(JdbcType[]::new);
+		JdbcDataType[] pkTypes = opt.getFieldTypes() == null ? null : Arrays.stream(pkFields).mapToObj(f -> opt.getFieldTypes()[f])
+			.toArray(JdbcDataType[]::new);
 
 		String upsertStatement = opt.getDialect()
 			.getUpsertStatement(opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get());

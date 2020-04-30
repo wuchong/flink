@@ -18,13 +18,19 @@
 
 package org.apache.flink.connectors.jdbc.source.row.converter;
 
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.data.RowData;
+
+import java.io.Serializable;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
- * JDBC object to row converter for Derby.
+ * Converter between JDBC object and Flink row.
  */
-public class DerbyToRowConverter extends AbstractJdbcToRowConverter {
-	public DerbyToRowConverter(RowType rowType) {
-		super(rowType);
-	}
+public interface JdbcRuntimeConverter extends Serializable {
+
+	RowData toRowData(ResultSet resultSet) throws SQLException;
+
+	PreparedStatement toStatement(RowData row, PreparedStatement reusedStatement) throws SQLException;
 }

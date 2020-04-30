@@ -96,22 +96,22 @@ class JdbcTypeUtil {
 		}
 	}
 
-	static JdbcType typeInformationToJdbcType(TypeInformation<?> type) {
+	static JdbcDataType typeInformationToJdbcType(TypeInformation<?> type) {
 
 		if (TYPE_MAPPING.containsKey(type)) {
-			return new JdbcType(SQL_TYPE_NAMES.get(type), TYPE_MAPPING.get(type));
+			return new JdbcDataType(SQL_TYPE_NAMES.get(type), TYPE_MAPPING.get(type));
 		} else if (type instanceof ObjectArrayTypeInfo || type instanceof PrimitiveArrayTypeInfo) {
-			return new JdbcType("ARRAY", Types.ARRAY);
+			return new JdbcDataType("ARRAY", Types.ARRAY);
 		} else {
 			throw new IllegalArgumentException("Unsupported type: " + type);
 		}
 	}
 
-	static JdbcType sqlTypeToJdbcType(int sqlType) {
+	static JdbcDataType sqlTypeToJdbcType(int sqlType) {
 		if (TYPE_MAPPING.containsValue(sqlType)) {
-			return new JdbcType(getTypeName(sqlType), sqlType);
+			return new JdbcDataType(getTypeName(sqlType), sqlType);
 		} else if (sqlType == Types.ARRAY) {
-			return new JdbcType("ARRAY", Types.ARRAY);
+			return new JdbcDataType("ARRAY", Types.ARRAY);
 		} else {
 			throw new IllegalArgumentException("Unsupported type: " + sqlType);
 		}

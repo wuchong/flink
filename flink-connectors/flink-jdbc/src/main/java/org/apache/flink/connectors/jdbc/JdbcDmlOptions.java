@@ -41,7 +41,7 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
 		return new JdbcDmlOptionsBuilder();
 	}
 
-	private JdbcDmlOptions(String tableName, JdbcDialect dialect, String[] fieldNames, JdbcType[] fieldTypes, String[] keyFields) {
+	private JdbcDmlOptions(String tableName, JdbcDialect dialect, String[] fieldNames, JdbcDataType[] fieldTypes, String[] keyFields) {
 		super(dialect, fieldTypes);
 		this.tableName = Preconditions.checkNotNull(tableName, "table is empty");
 		this.fieldNames = Preconditions.checkNotNull(fieldNames, "field names is empty");
