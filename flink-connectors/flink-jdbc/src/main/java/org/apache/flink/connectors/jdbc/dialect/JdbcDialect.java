@@ -52,8 +52,6 @@ public interface JdbcDialect extends Serializable {
 
 	JdbcRuntimeConverter getInputConverter(RowType rowType);
 
-	RowToJdbcConverter getOutputConverter(JdbcDataType[] jdbcDataTypes);
-
 	String quoteIdentifier(String identifier);
 
 	String getSelectStatement(String tableName, String[] selectFields, String[] conditionFields);
