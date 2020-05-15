@@ -19,33 +19,24 @@
 package org.apache.flink.table.connector.format;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.sink.DynamicTableSink;
+import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
-import org.apache.flink.table.factories.DynamicTableFactory;
+import org.apache.flink.table.types.DataType;
 
 /**
- * Base interface for connector formats.
+ * TODO
+ * A {@link Format} for a {@link ScanTableSource}.
  *
- * <p>Depending on the kind of external system, a connector might support different encodings for
- * reading and writing rows. This interface is an intermediate representation before constructing actual
- * runtime implementation.
- *
- * <p>Formats can be distinguished along two dimensions:
- * <ul>
- *     <li>Context in which the format is applied (e.g. {@link ScanTableSource} or {@link DynamicTableSink}).
- *     <li>Runtime implementation interface that is required (e.g. {@link DeserializationSchema} or
- *     some bulk interface).</li>
- * </ul>
- *
- * <p>A {@link DynamicTableFactory} can search for a format that it is accepted by the connector.
- *
- * @see ScanFormat
- * @see SinkFormat
+ * @param <I> type of runtime format reader interface needed by the table source
  */
 @PublicEvolving
-public interface Format {
+public interface FormatReaderProvider<I> {
+
+	/**
+	 * Creates runtime implementation that is configured to produce data of the given data type.
+	 */
+	I createFormatReader(DynamicTableSource.Context context, DataType producedDataType);
 
 	/**
 	 * Returns the set of changes that a connector (and transitively the planner) can expect during

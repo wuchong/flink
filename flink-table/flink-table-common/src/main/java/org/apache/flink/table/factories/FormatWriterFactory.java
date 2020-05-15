@@ -20,12 +20,11 @@ package org.apache.flink.table.factories;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.table.connector.format.Format;
-import org.apache.flink.table.connector.format.SinkFormat;
+import org.apache.flink.table.connector.format.FormatWriterProvider;
 import org.apache.flink.table.connector.source.ScanTableSource;
 
 /**
- * Base interface for configuring a {@link SinkFormat} for a {@link ScanTableSource}.
+ * Base interface for configuring a {@link FormatWriterProvider} for a {@link ScanTableSource}.
  *
  * <p>Depending on the kind of external system, a connector might support different encodings for
  * reading and writing rows. This interface helps in making such formats pluggable.
@@ -38,7 +37,7 @@ import org.apache.flink.table.connector.source.ScanTableSource;
  * @param <I> runtime interface needed by the table sink
  */
 @PublicEvolving
-public interface SinkFormatFactory<I> extends Factory {
+public interface FormatWriterFactory<I> extends Factory {
 
 	/**
 	 * Creates a format from the given context and format options.
@@ -46,5 +45,5 @@ public interface SinkFormatFactory<I> extends Factory {
 	 * <p>The format options have been projected to top-level options (e.g. from {@code key.format.ignore-errors}
 	 * to {@code format.ignore-errors}).
 	 */
-	SinkFormat<I> createSinkFormat(DynamicTableFactory.Context context, ReadableConfig formatOptions);
+	FormatWriterProvider<I> createFormatWriterProvider(DynamicTableFactory.Context context, ReadableConfig formatOptions);
 }

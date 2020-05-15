@@ -19,10 +19,6 @@
 package org.apache.flink.table.connector.source;
 
 import org.apache.flink.annotation.Experimental;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
 import java.io.Serializable;
@@ -75,7 +71,7 @@ public interface LookupTableSource extends DynamicTableSource {
 	 * <p>Methods should be called in {@link #getLookupRuntimeProvider(Context)}. Returned instances
 	 * that are {@link Serializable} can be directly passed into the runtime implementation class.
 	 */
-	interface Context {
+	interface Context extends DynamicTableSource.Context {
 
 		/**
 		 * Returns an array of key index paths that should be used during the lookup. The indices are
@@ -89,16 +85,6 @@ public interface LookupTableSource extends DynamicTableSource {
 		 */
 		int[][] getKeys();
 
-		/**
-		 * Creates a converter for mapping between objects specified by the given {@link DataType} and
-		 * Flink's internal data structures that can be passed into a runtime implementation.
-		 *
-		 * <p>For example, a {@link Row} and its fields can be converted into {@link RowData} or a (possibly
-		 * nested) POJO can be converted into the internal representation for structured types.
-		 *
-		 * @see LogicalType#supportsInputConversion(Class)
-		 */
-		DataStructureConverter createDataStructureConverter(DataType producedDataType);
 	}
 
 	/**

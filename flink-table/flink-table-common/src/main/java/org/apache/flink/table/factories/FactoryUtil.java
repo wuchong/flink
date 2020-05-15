@@ -29,8 +29,8 @@ import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ObjectIdentifier;
-import org.apache.flink.table.connector.format.ScanFormat;
-import org.apache.flink.table.connector.format.SinkFormat;
+import org.apache.flink.table.connector.format.FormatReaderProvider;
+import org.apache.flink.table.connector.format.FormatWriterProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.utils.EncodingUtils;
@@ -403,9 +403,9 @@ public final class FactoryUtil {
 		}
 
 		/**
-		 * Discovers a {@link ScanFormat} of the given type using the given option as factory identifier.
+		 * Discovers a {@link FormatReaderProvider} of the given type using the given option as factory identifier.
 		 */
-		public <I, F extends ScanFormatFactory<I>> ScanFormat<I> discoverScanFormat(
+		public <I, F extends FormatReaderFactory<I>> FormatReaderProvider<I> discoverScanFormat(
 				Class<F> formatFactoryClass,
 				ConfigOption<String> formatOption) {
 			return discoverOptionalScanFormat(formatFactoryClass, formatOption)
@@ -415,17 +415,17 @@ public final class FactoryUtil {
 		}
 
 		/**
-		 * Discovers a {@link ScanFormat} of the given type using the given option (if present) as factory
+		 * Discovers a {@link FormatReaderProvider} of the given type using the given option (if present) as factory
 		 * identifier.
 		 */
-		public <I, F extends ScanFormatFactory<I>> Optional<ScanFormat<I>> discoverOptionalScanFormat(
+		public <I, F extends FormatReaderFactory<I>> Optional<FormatReaderProvider<I>> discoverOptionalScanFormat(
 				Class<F> formatFactoryClass,
 				ConfigOption<String> formatOption) {
 			return discoverOptionalFormatFactory(formatFactoryClass, formatOption)
 				.map(formatFactory -> {
 					String formatPrefix = formatPrefix(formatFactory, formatOption);
 					try {
-						return formatFactory.createScanFormat(context, projectOptions(formatPrefix));
+						return formatFactory.createFormatReaderProvider(context, projectOptions(formatPrefix));
 					} catch (Throwable t) {
 						throw new ValidationException(
 							String.format(
@@ -438,9 +438,9 @@ public final class FactoryUtil {
 		}
 
 		/**
-		 * Discovers a {@link SinkFormat} of the given type using the given option as factory identifier.
+		 * Discovers a {@link FormatWriterProvider} of the given type using the given option as factory identifier.
 		 */
-		public <I, F extends SinkFormatFactory<I>> SinkFormat<I> discoverSinkFormat(
+		public <I, F extends FormatWriterFactory<I>> FormatWriterProvider<I> discoverSinkFormat(
 				Class<F> formatFactoryClass,
 				ConfigOption<String> formatOption) {
 			return discoverOptionalSinkFormat(formatFactoryClass, formatOption)
@@ -450,17 +450,17 @@ public final class FactoryUtil {
 		}
 
 		/**
-		 * Discovers a {@link SinkFormat} of the given type using the given option (if present) as factory
+		 * Discovers a {@link FormatWriterProvider} of the given type using the given option (if present) as factory
 		 * identifier.
 		 */
-		public <I, F extends SinkFormatFactory<I>> Optional<SinkFormat<I>> discoverOptionalSinkFormat(
+		public <I, F extends FormatWriterFactory<I>> Optional<FormatWriterProvider<I>> discoverOptionalSinkFormat(
 				Class<F> formatFactoryClass,
 				ConfigOption<String> formatOption) {
 			return discoverOptionalFormatFactory(formatFactoryClass, formatOption)
 				.map(formatFactory -> {
 					String formatPrefix = formatPrefix(formatFactory, formatOption);
 					try {
-						return formatFactory.createSinkFormat(context, projectOptions(formatPrefix));
+						return formatFactory.createFormatWriterProvider(context, projectOptions(formatPrefix));
 					} catch (Throwable t) {
 						throw new ValidationException(
 							String.format(
