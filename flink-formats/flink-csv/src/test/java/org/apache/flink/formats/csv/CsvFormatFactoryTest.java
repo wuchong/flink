@@ -83,7 +83,7 @@ public class CsvFormatFactoryTest extends TestLogger {
 				(TestDynamicTableFactory.DynamicTableSourceMock) actualSource;
 
 		DeserializationSchema<RowData> actualDeser = scanSourceMock.sourceValueFormat
-				.createScanFormat(
+				.createFormatReader(
 						ScanRuntimeProviderContext.INSTANCE,
 						SCHEMA.toRowDataType());
 
@@ -104,7 +104,7 @@ public class CsvFormatFactoryTest extends TestLogger {
 				(TestDynamicTableFactory.DynamicTableSinkMock) actualSink;
 
 		SerializationSchema<RowData> actualSer = sinkMock.sinkValueFormat
-				.createSinkFormat(
+				.createFormatWriter(
 						null,
 						SCHEMA.toRowDataType());
 
@@ -133,7 +133,7 @@ public class CsvFormatFactoryTest extends TestLogger {
 				(TestDynamicTableFactory.DynamicTableSinkMock) actualSink;
 
 		SerializationSchema<RowData> actualSer = sinkMock.sinkValueFormat
-				.createSinkFormat(
+				.createFormatWriter(
 						null,
 						SCHEMA.toRowDataType());
 

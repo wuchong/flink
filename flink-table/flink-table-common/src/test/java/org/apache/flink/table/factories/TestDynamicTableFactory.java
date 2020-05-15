@@ -23,8 +23,8 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.format.ScanFormat;
-import org.apache.flink.table.connector.format.SinkFormat;
+import org.apache.flink.table.connector.format.FormatReaderProvider;
+import org.apache.flink.table.connector.format.FormatWriterProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
@@ -63,10 +63,10 @@ public final class TestDynamicTableFactory implements DynamicTableSourceFactory,
 	public DynamicTableSource createDynamicTableSource(Context context) {
 		final TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
 
-		final Optional<ScanFormat<DeserializationSchema<RowData>>> keyFormat = helper.discoverOptionalScanFormat(
+		final Optional<FormatReaderProvider<DeserializationSchema<RowData>>> keyFormat = helper.discoverOptionalScanFormat(
 			DeserializationFormatFactory.class,
 			KEY_FORMAT);
-		final ScanFormat<DeserializationSchema<RowData>> valueFormat = helper.discoverOptionalScanFormat(
+		final FormatReaderProvider<DeserializationSchema<RowData>> valueFormat = helper.discoverOptionalScanFormat(
 			DeserializationFormatFactory.class,
 			FORMAT).orElseGet(
 				() -> helper.discoverScanFormat(
@@ -84,10 +84,10 @@ public final class TestDynamicTableFactory implements DynamicTableSourceFactory,
 	public DynamicTableSink createDynamicTableSink(Context context) {
 		final TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
 
-		final Optional<SinkFormat<SerializationSchema<RowData>>> keyFormat = helper.discoverOptionalSinkFormat(
+		final Optional<FormatWriterProvider<SerializationSchema<RowData>>> keyFormat = helper.discoverOptionalSinkFormat(
 			SerializationFormatFactory.class,
 			KEY_FORMAT);
-		final SinkFormat<SerializationSchema<RowData>> valueFormat = helper.discoverOptionalSinkFormat(
+		final FormatWriterProvider<SerializationSchema<RowData>> valueFormat = helper.discoverOptionalSinkFormat(
 			SerializationFormatFactory.class,
 			FORMAT).orElseGet(
 				() -> helper.discoverSinkFormat(
@@ -134,13 +134,14 @@ public final class TestDynamicTableFactory implements DynamicTableSourceFactory,
 	public static class DynamicTableSourceMock implements ScanTableSource {
 
 		public final String target;
-		public final @Nullable ScanFormat<DeserializationSchema<RowData>> sourceKeyFormat;
-		public final ScanFormat<DeserializationSchema<RowData>> sourceValueFormat;
+		public final @Nullable
+		FormatReaderProvider<DeserializationSchema<RowData>> sourceKeyFormat;
+		public final FormatReaderProvider<DeserializationSchema<RowData>> sourceValueFormat;
 
 		DynamicTableSourceMock(
 				String target,
-				@Nullable ScanFormat<DeserializationSchema<RowData>> sourceKeyFormat,
-				ScanFormat<DeserializationSchema<RowData>> sourceValueFormat) {
+				@Nullable FormatReaderProvider<DeserializationSchema<RowData>> sourceKeyFormat,
+				FormatReaderProvider<DeserializationSchema<RowData>> sourceValueFormat) {
 			this.target = target;
 			this.sourceKeyFormat = sourceKeyFormat;
 			this.sourceValueFormat = sourceValueFormat;
@@ -197,14 +198,15 @@ public final class TestDynamicTableFactory implements DynamicTableSourceFactory,
 
 		public final String target;
 		public final Long bufferSize;
-		public final @Nullable SinkFormat<SerializationSchema<RowData>> sinkKeyFormat;
-		public final SinkFormat<SerializationSchema<RowData>> sinkValueFormat;
+		public final @Nullable
+		FormatWriterProvider<SerializationSchema<RowData>> sinkKeyFormat;
+		public final FormatWriterProvider<SerializationSchema<RowData>> sinkValueFormat;
 
 		DynamicTableSinkMock(
 				String target,
 				Long bufferSize,
-				@Nullable SinkFormat<SerializationSchema<RowData>> sinkKeyFormat,
-				SinkFormat<SerializationSchema<RowData>> sinkValueFormat) {
+				@Nullable FormatWriterProvider<SerializationSchema<RowData>> sinkKeyFormat,
+				FormatWriterProvider<SerializationSchema<RowData>> sinkValueFormat) {
 			this.target = target;
 			this.bufferSize = bufferSize;
 			this.sinkKeyFormat = sinkKeyFormat;

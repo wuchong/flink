@@ -25,10 +25,10 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.format.ScanFormat;
-import org.apache.flink.table.connector.format.SinkFormat;
+import org.apache.flink.table.connector.format.FormatReaderProvider;
+import org.apache.flink.table.connector.format.FormatWriterProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.source.ScanTableSource;
+import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableFactory;
@@ -64,15 +64,15 @@ public final class CsvFormatFactory implements
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ScanFormat<DeserializationSchema<RowData>> createScanFormat(
+	public FormatReaderProvider<DeserializationSchema<RowData>> createFormatReaderProvider(
 			DynamicTableFactory.Context context, ReadableConfig formatOptions) {
 		FactoryUtil.validateFactoryOptions(this, formatOptions);
 		validateFormatOptions(formatOptions);
 
-		return new ScanFormat<DeserializationSchema<RowData>>() {
+		return new FormatReaderProvider<DeserializationSchema<RowData>>() {
 			@Override
-			public DeserializationSchema<RowData> createScanFormat(
-					ScanTableSource.Context scanContext,
+			public DeserializationSchema<RowData> createFormatReader(
+					DynamicTableSource.Context scanContext,
 					DataType producedDataType) {
 				final RowType rowType = (RowType) producedDataType.getLogicalType();
 				final TypeInformation<RowData> rowDataTypeInfo =
@@ -93,15 +93,15 @@ public final class CsvFormatFactory implements
 	}
 
 	@Override
-	public SinkFormat<SerializationSchema<RowData>> createSinkFormat(
+	public FormatWriterProvider<SerializationSchema<RowData>> createFormatWriterProvider(
 			DynamicTableFactory.Context context,
 			ReadableConfig formatOptions) {
 		FactoryUtil.validateFactoryOptions(this, formatOptions);
 		validateFormatOptions(formatOptions);
 
-		return new SinkFormat<SerializationSchema<RowData>>() {
+		return new FormatWriterProvider<SerializationSchema<RowData>>() {
 			@Override
-			public SerializationSchema<RowData> createSinkFormat(
+			public SerializationSchema<RowData> createFormatWriter(
 					DynamicTableSink.Context context,
 					DataType consumedDataType) {
 				final RowType rowType = (RowType) consumedDataType.getLogicalType();

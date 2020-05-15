@@ -24,10 +24,10 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.format.ScanFormat;
-import org.apache.flink.table.connector.format.SinkFormat;
+import org.apache.flink.table.connector.format.FormatReaderProvider;
+import org.apache.flink.table.connector.format.FormatWriterProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.source.ScanTableSource;
+import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 
@@ -53,19 +53,19 @@ public class TestFormatFactory implements DeserializationFormatFactory, Serializ
 		.defaultValue(false);
 
 	@Override
-	public ScanFormat<DeserializationSchema<RowData>> createScanFormat(
+	public FormatReaderProvider<DeserializationSchema<RowData>> createFormatReaderProvider(
 			DynamicTableFactory.Context context,
 			ReadableConfig formatConfig) {
 		FactoryUtil.validateFactoryOptions(this, formatConfig);
-		return new ScanFormatMock(formatConfig.get(DELIMITER), formatConfig.get(FAIL_ON_MISSING));
+		return new FormatReaderProviderMock(formatConfig.get(DELIMITER), formatConfig.get(FAIL_ON_MISSING));
 	}
 
 	@Override
-	public SinkFormat<SerializationSchema<RowData>> createSinkFormat(
+	public FormatWriterProvider<SerializationSchema<RowData>> createFormatWriterProvider(
 			DynamicTableFactory.Context context,
 			ReadableConfig formatConfig) {
 		FactoryUtil.validateFactoryOptions(this, formatConfig);
-		return new SinkFormatMock(formatConfig.get(DELIMITER));
+		return new FormatWriterProviderMock(formatConfig.get(DELIMITER));
 	}
 
 	@Override
@@ -92,21 +92,21 @@ public class TestFormatFactory implements DeserializationFormatFactory, Serializ
 	// --------------------------------------------------------------------------------------------
 
 	/**
-	 * {@link ScanFormat} for testing.
+	 * {@link FormatReaderProvider} for testing.
 	 */
-	public static class ScanFormatMock implements ScanFormat<DeserializationSchema<RowData>> {
+	public static class FormatReaderProviderMock implements FormatReaderProvider<DeserializationSchema<RowData>> {
 
 		public final String delimiter;
 		public final Boolean failOnMissing;
 
-		ScanFormatMock(String delimiter, Boolean failOnMissing) {
+		FormatReaderProviderMock(String delimiter, Boolean failOnMissing) {
 			this.delimiter = delimiter;
 			this.failOnMissing = failOnMissing;
 		}
 
 		@Override
-		public DeserializationSchema<RowData> createScanFormat(
-				ScanTableSource.Context context,
+		public DeserializationSchema<RowData> createFormatReader(
+				DynamicTableSource.Context context,
 				DataType producedDataType) {
 			return null;
 		}
@@ -124,7 +124,7 @@ public class TestFormatFactory implements DeserializationFormatFactory, Serializ
 			if (o == null || getClass() != o.getClass()) {
 				return false;
 			}
-			ScanFormatMock that = (ScanFormatMock) o;
+			FormatReaderProviderMock that = (FormatReaderProviderMock) o;
 			return delimiter.equals(that.delimiter) && failOnMissing.equals(that.failOnMissing);
 		}
 
@@ -139,18 +139,18 @@ public class TestFormatFactory implements DeserializationFormatFactory, Serializ
 	// --------------------------------------------------------------------------------------------
 
 	/**
-	 * {@link SinkFormat} for testing.
+	 * {@link FormatWriterProvider} for testing.
 	 */
-	public static class SinkFormatMock implements SinkFormat<SerializationSchema<RowData>> {
+	public static class FormatWriterProviderMock implements FormatWriterProvider<SerializationSchema<RowData>> {
 
 		public final String delimiter;
 
-		SinkFormatMock(String delimiter) {
+		FormatWriterProviderMock(String delimiter) {
 			this.delimiter = delimiter;
 		}
 
 		@Override
-		public SerializationSchema<RowData> createSinkFormat(
+		public SerializationSchema<RowData> createFormatWriter(
 				DynamicTableSink.Context context,
 				DataType consumeDataType) {
 			return null;
@@ -169,7 +169,7 @@ public class TestFormatFactory implements DeserializationFormatFactory, Serializ
 			if (o == null || getClass() != o.getClass()) {
 				return false;
 			}
-			SinkFormatMock that = (SinkFormatMock) o;
+			FormatWriterProviderMock that = (FormatWriterProviderMock) o;
 			return delimiter.equals(that.delimiter);
 		}
 
