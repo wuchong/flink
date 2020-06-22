@@ -685,6 +685,15 @@ public interface TableEnvironment {
 	@Deprecated
 	ConnectTableDescriptor connect(ConnectorDescriptor connectorDescriptor);
 
+	org.apache.flink.table.connect.ConnectTableDescriptor connect(org.apache.flink.table.connect.ConnectorDescriptor connectorDescriptor);
+
+	/**
+	 * .
+	 * @param connectorIdentifier
+	 * @return
+	 */
+	org.apache.flink.table.connect.ConnectTableDescriptor connect(String connectorIdentifier);
+
 	/**
 	 * Gets the names of all catalogs registered in this environment.
 	 *

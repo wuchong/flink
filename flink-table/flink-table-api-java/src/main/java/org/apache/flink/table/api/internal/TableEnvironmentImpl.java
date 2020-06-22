@@ -61,6 +61,7 @@ import org.apache.flink.table.catalog.exceptions.FunctionAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.connect.ConnectTableDescriptorImpl;
 import org.apache.flink.table.delegation.Executor;
 import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Parser;
@@ -505,6 +506,16 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
 	@Override
 	public ConnectTableDescriptor connect(ConnectorDescriptor connectorDescriptor) {
 		return new StreamTableDescriptor(registration, connectorDescriptor);
+	}
+
+	@Override
+	public org.apache.flink.table.connect.ConnectTableDescriptor connect(org.apache.flink.table.connect.ConnectorDescriptor connectorDescriptor) {
+		return new ConnectTableDescriptorImpl(parser, registration, connectorDescriptor);
+	}
+
+	@Override
+	public org.apache.flink.table.connect.ConnectTableDescriptor connect(String connectorIdentifier) {
+		return new ConnectTableDescriptorImpl(parser, registration, connectorIdentifier);
 	}
 
 	@Override

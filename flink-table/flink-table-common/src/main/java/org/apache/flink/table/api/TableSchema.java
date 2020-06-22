@@ -648,7 +648,8 @@ public class TableSchema {
 		 * @param columns array of columns that form a unique primary key
 		 */
 		public Builder primaryKey(String... columns) {
-			return primaryKey(UUID.randomUUID().toString(), columns);
+			String pkName = "PK_" + Arrays.asList(columns).hashCode();
+			return primaryKey(pkName, columns);
 		}
 
 		/**

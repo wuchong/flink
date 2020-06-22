@@ -23,14 +23,11 @@ import org.apache.flink.table.catalog.CatalogManager;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.CatalogTableImpl;
 import org.apache.flink.table.catalog.ObjectIdentifier;
-import org.apache.flink.table.descriptors.Schema;
-import org.apache.flink.table.utils.ConnectorDescriptorMock;
-import org.apache.flink.table.utils.FormatDescriptorMock;
 import org.apache.flink.table.utils.TableEnvironmentMock;
-import org.apache.flink.table.utils.TableSourceFactoryMock;
 
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,20 +41,55 @@ import static org.junit.Assert.assertTrue;
  */
 public class TableEnvironmentTest {
 
+//	@Test
+//	public void testConnect() {
+//		final TableEnvironmentMock tableEnv = TableEnvironmentMock.getStreamingInstance();
+//
+//		tableEnv
+//			.connect(new ConnectorDescriptorMock(TableSourceFactoryMock.CONNECTOR_TYPE_VALUE, 1, true))
+//			.withFormat(new FormatDescriptorMock("my_format", 1))
+//			.withSchema(new Schema()
+//				.field("my_field_0", "INT")
+//				.field("my_field_1", "BOOLEAN")
+//				.field("my_part_1", "BIGINT")
+//				.field("my_part_2", "STRING"))
+//			.withPartitionKeys(Arrays.asList("my_part_1", "my_part_2"))
+//			.inAppendMode()
+//			.createTemporaryTable("my_table");
+//
+//		CatalogManager.TableLookupResult lookupResult = tableEnv.catalogManager.getTable(ObjectIdentifier.of(
+//			EnvironmentSettings.DEFAULT_BUILTIN_CATALOG,
+//			EnvironmentSettings.DEFAULT_BUILTIN_DATABASE,
+//			"my_table"))
+//			.orElseThrow(AssertionError::new);
+//
+//		assertThat(lookupResult.isTemporary(), equalTo(true));
+//
+//		CatalogBaseTable catalogBaseTable = lookupResult.getTable();
+//		assertTrue(catalogBaseTable instanceof CatalogTable);
+//		CatalogTable table = (CatalogTable) catalogBaseTable;
+//		assertCatalogTable(table);
+//		assertCatalogTable(CatalogTableImpl.fromProperties(table.toProperties()));
+//	}
+
 	@Test
-	public void testConnect() {
+	public void testConnectIdentifier() {
 		final TableEnvironmentMock tableEnv = TableEnvironmentMock.getStreamingInstance();
 
-		tableEnv
-			.connect(new ConnectorDescriptorMock(TableSourceFactoryMock.CONNECTOR_TYPE_VALUE, 1, true))
-			.withFormat(new FormatDescriptorMock("my_format", 1))
-			.withSchema(new Schema()
-				.field("my_field_0", "INT")
-				.field("my_field_1", "BOOLEAN")
-				.field("my_part_1", "BIGINT")
-				.field("my_part_2", "STRING"))
-			.withPartitionKeys(Arrays.asList("my_part_1", "my_part_2"))
-			.inAppendMode()
+		tableEnv.connect("values")
+			.schema(new org.apache.flink.table.connect.Schema()
+				.column("my_field_0", DataTypes.INT())
+				.column("my_field_1", DataTypes.BOOLEAN())
+				.column("my_field_2", DataTypes.DECIMAL(10, 2))
+				.columnProctime("my_proctime")
+				.column("my_field_3", DataTypes.TIMESTAMP(3))
+				.column("my_part_1", DataTypes.STRING())
+				.column("my_part_2", DataTypes.BIGINT())
+				.watermarkFor("my_field_3").boundedOutOfOrderTimestamps(Duration.ofMillis(2))
+				.primaryKey("my_field_1", "my_field_0"))
+			.partitionedBy("my_part_1", "my_part_2")
+			.option("bounded", "false")
+			.option("async", "true")
 			.createTemporaryTable("my_table");
 
 		CatalogManager.TableLookupResult lookupResult = tableEnv.catalogManager.getTable(ObjectIdentifier.of(
@@ -82,20 +114,22 @@ public class TableEnvironmentTest {
 						TableSchema.builder()
 								.field("my_field_0", DataTypes.INT())
 								.field("my_field_1", DataTypes.BOOLEAN())
-								.field("my_part_1", DataTypes.BIGINT())
-								.field("my_part_2", DataTypes.STRING())
+								.field("my_field_2", DataTypes.DECIMAL(10, 2))
+								.field("my_proctime", DataTypes.TIMESTAMP(3), "PROCTIME()")
+								.field("my_field_3", DataTypes.TIMESTAMP(3))
+								.field("my_part_1", DataTypes.STRING())
+								.field("my_part_2", DataTypes.BIGINT())
+								.watermark("my_field_3", "`my_field_3` - INTERVAL '0.002' SECOND", DataTypes.TIMESTAMP(3))
+								.primaryKey("my_field_1", "my_field_0")
 								.build()));
 		assertThat(
 				table.getPartitionKeys(),
 				equalTo(Arrays.asList("my_part_1", "my_part_2")));
 
-		Map<String, String> properties = new HashMap<>();
-		properties.put("update-mode", "append");
-		properties.put("connector.property-version", "1");
-		properties.put("format.type", "my_format");
-		properties.put("format.property-version", "1");
-		properties.put("connector.type", "table-source-factory-mock");
-		assertThat(table.getProperties(), equalTo(properties));
-
+		Map<String, String> options = new HashMap<>();
+		options.put("connector", "values");
+		options.put("bounded", "false");
+		options.put("async", "true");
+		assertThat(table.getOptions(), equalTo(options));
 	}
 }

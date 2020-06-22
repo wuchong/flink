@@ -56,10 +56,10 @@ import org.apache.flink.table.utils.TableConnectorUtils
 import org.apache.flink.types.Row
 import org.apache.flink.util.ExceptionUtils
 import org.apache.flink.util.Preconditions.checkNotNull
-
 import org.apache.calcite.plan.RelOptUtil
 import org.apache.calcite.rel.RelNode
 import org.apache.calcite.rel.logical.LogicalTableModify
+import org.apache.flink.table.connect
 
 import _root_.java.util.{ArrayList => JArrayList, Collections => JCollections, List => JList}
 
@@ -124,6 +124,15 @@ abstract class BatchTableEnvImpl(
   def connect(connectorDescriptor: ConnectorDescriptor): BatchTableDescriptor = {
     new BatchTableDescriptor(registration, connectorDescriptor)
   }
+
+
+  /**
+   * .
+   *
+   * @param connectorIdentifier
+   * @return
+   */
+  override def connect(connectorIdentifier: String): connect.ConnectTableDescriptor = ???
 
   /**
     * Writes a [[QueryOperation]] to a [[TableSink]],

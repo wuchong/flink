@@ -23,21 +23,23 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.scala.{StreamTableEnvironment, _}
-import org.apache.flink.table.catalog.{GenericInMemoryCatalog, ObjectPath}
+import org.apache.flink.table.catalog.{CatalogBaseTable, CatalogTable, GenericInMemoryCatalog, ObjectPath, UnresolvedIdentifier}
 import org.apache.flink.table.planner.operations.SqlConversionException
 import org.apache.flink.table.planner.runtime.stream.sql.FunctionITCase.TestUDF
 import org.apache.flink.table.planner.runtime.stream.table.FunctionITCase.SimpleScalarFunction
 import org.apache.flink.table.planner.utils.TableTestUtil.replaceStageId
 import org.apache.flink.table.planner.utils.{TableTestUtil, TestTableSourceSinks}
 import org.apache.flink.types.Row
-
 import org.apache.calcite.plan.RelOptUtil
 import org.apache.calcite.sql.SqlExplainLevel
+import org.apache.flink.table.api.bridge.scala.internal.StreamTableEnvironmentImpl
+import org.apache.flink.table.connect.Schema
 import org.junit.Assert.{assertEquals, assertFalse, assertTrue, fail}
 import org.junit.rules.ExpectedException
 import org.junit.{Rule, Test}
 
 import _root_.java.util
+import java.time.Duration
 
 import _root_.scala.collection.JavaConverters._
 
@@ -50,7 +52,8 @@ class TableEnvironmentTest {
   def thrown: ExpectedException = expectedException
 
   val env = new StreamExecutionEnvironment(new LocalStreamEnvironment())
-  val tableEnv = StreamTableEnvironment.create(env, TableTestUtil.STREAM_SETTING)
+  val tableEnv: StreamTableEnvironmentImpl = StreamTableEnvironmentImpl
+    .create(env, TableTestUtil.STREAM_SETTING, new TableConfig)
 
   @Test
   def testScanNonExistTable(): Unit = {
@@ -1101,6 +1104,61 @@ class TableEnvironmentTest {
         Row.of("x", "INT", Boolean.box(false), null, null, null),
         Row.of("y", "STRING", Boolean.box(false), null, null, null)).iterator(),
       tableResult3.collect())
+  }
+
+  @Test
+  def testConnect(): Unit = {
+    tableEnv.connect("values")
+      .schema(new Schema()
+        .column("my_field_0", DataTypes.INT)
+        .column("my_field_1", DataTypes.BOOLEAN)
+        .column("my_field_2", DataTypes.DECIMAL(10, 2))
+        .columnProctime("my_proctime")
+        .column("my_field_3", DataTypes.TIMESTAMP(3))
+        .column("my_part_1", DataTypes.STRING)
+        .column("my_part_2", DataTypes.BIGINT)
+        .watermarkFor("my_field_3").boundedOutOfOrderTimestamps(Duration.ofMillis(2))
+        .primaryKey("my_field_1", "my_field_0"))
+      .partitionedBy("my_part_1", "my_part_2")
+      .option("bounded", "false")
+      .option("async", "true")
+      .createTemporaryTable("my_table_descriptor")
+
+    tableEnv.executeSql(
+      """
+        |CREATE TEMPORARY TABLE my_table_ddl (
+        |  my_field_0 INT,
+        |  my_field_1 BOOLEAN,
+        |  my_field_2 DECIMAL(10, 2),
+        |  my_proctime AS PROCTIME(),
+        |  my_field_3 TIMESTAMP(3),
+        |  my_part_1 STRING,
+        |  my_part_2 BIGINT,
+        |  WATERMARK FOR my_field_3 AS my_field_3 - INTERVAL '0.002' SECOND,
+        |  PRIMARY KEY (my_field_1, my_field_0) NOT ENFORCED
+        |)
+        |PARTITIONED BY (my_part_1, my_part_2)
+        |WITH (
+        |  'connector' = 'values',
+        |  'bounded' = 'false',
+        |  'async' = 'true'
+        |)
+        |""".stripMargin)
+
+    val catalogTable1 = getTemporaryTable("my_table_descriptor")
+    val catalogTable2 = getTemporaryTable("my_table_ddl")
+    // CatalogTableImpl doesn't have proper equals() method, compare members one by one
+    assertEquals(catalogTable1.getSchema, catalogTable2.getSchema)
+    assertEquals(catalogTable1.getPartitionKeys, catalogTable2.getPartitionKeys)
+    assertEquals(catalogTable1.getOptions, catalogTable2.getOptions)
+    assertEquals(catalogTable1.toProperties, catalogTable2.toProperties)
+  }
+
+  private def getTemporaryTable(tableName: String): CatalogTable = {
+    val identifier = tableEnv.getCatalogManager
+      .qualifyIdentifier(UnresolvedIdentifier.of(tableName))
+    tableEnv.getCatalogManager.getTable(identifier).get()
+      .getTable.asInstanceOf[CatalogTable]
   }
 
   private def checkData(expected: util.Iterator[Row], actual: util.Iterator[Row]): Unit = {

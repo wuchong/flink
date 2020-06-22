@@ -861,9 +861,9 @@ public class SqlToOperationConverterTest {
 	public void testCreateTableWithComputedColumn() {
 		final String sql = "CREATE TABLE tbl1 (\n" +
 			"  a int,\n" +
+			"  d as b || '$$', \n" +
 			"  b varchar, \n" +
 			"  c as a - 1, \n" +
-			"  d as b || '$$', \n" +
 			"  e as my_udf1(a)," +
 			"  f as `default`.my_udf2(a) + 1," +
 			"  g as builtin.`default`.my_udf3(a) || '##'\n" +

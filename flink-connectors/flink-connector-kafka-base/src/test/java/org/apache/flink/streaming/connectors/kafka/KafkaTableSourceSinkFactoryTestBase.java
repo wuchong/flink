@@ -35,7 +35,9 @@ import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition
 import org.apache.flink.streaming.connectors.kafka.partitioner.FlinkFixedPartitioner;
 import org.apache.flink.streaming.connectors.kafka.partitioner.FlinkKafkaPartitioner;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.descriptors.Json;
 import org.apache.flink.table.descriptors.Kafka;
 import org.apache.flink.table.descriptors.Rowtime;
 import org.apache.flink.table.descriptors.Schema;
@@ -272,6 +274,26 @@ public abstract class KafkaTableSourceSinkFactoryTestBase extends TestLogger {
 	}
 
 	protected Map<String, String> createKafkaSourceProperties() {
+		TableEnvironment tableEnv = TableEnvironment.create(null);
+		tableEnv.connect(
+				new Kafka()
+					.version("0.11")
+					.topic("myTopic")
+					.properties(KAFKA_PROPERTIES)
+					.sinkPartitionerRoundRobin() // test if accepted although not needed
+					.startFromSpecificOffsets(OFFSETS))
+			.withFormat(
+				new Json()
+					.failOnMissingField(true)
+					.ignoreParseErrors(false))
+			.withSchema(
+				new Schema()
+					.field("fruit-name", DataTypes.STRING()).from("name")
+					.field("count", DataTypes.DECIMAL(38, 18)) // no from so it must match with the input
+					.field("event-time", DataTypes.TIMESTAMP(3))
+						.rowtime(new Rowtime().timestampsFromField("time").watermarksPeriodicAscending())
+					.field("proctime", DataTypes.TIMESTAMP(3)).proctime())
+			.createTemporaryTable("MyTable");
 		return new TestTableDescriptor(
 				new Kafka()
 					.version(getKafkaVersion())
