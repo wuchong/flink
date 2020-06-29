@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connect;
+package org.apache.flink.table.descriptor;
 
 import org.apache.flink.api.common.eventtime.AscendingTimestampsWatermarks;
 import org.apache.flink.api.common.eventtime.BoundedOutOfOrdernessWatermarks;
@@ -41,13 +41,13 @@ public class Schema {
 		return this;
 	}
 
-	public Schema column(String fieldName, String sqlExpression) {
+	public Schema computedColumn(String fieldName, String sqlExpression) {
 		columns.add(new VirtualColumn(fieldName, sqlExpression));
 		return this;
 	}
 
-	public Schema columnProctime(String fieldName) {
-		this.column(fieldName, "PROCTIME()");
+	public Schema proctime(String fieldName) {
+		this.computedColumn(fieldName, "PROCTIME()");
 		return this;
 	}
 

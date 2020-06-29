@@ -23,6 +23,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.table.api.internal.TableEnvironmentImpl;
 import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.descriptor.TableDescriptor;
 import org.apache.flink.table.descriptors.ConnectTableDescriptor;
 import org.apache.flink.table.descriptors.ConnectorDescriptor;
 import org.apache.flink.table.expressions.Expression;
@@ -693,6 +694,12 @@ public interface TableEnvironment {
 	 * @return
 	 */
 	org.apache.flink.table.connect.ConnectTableDescriptor connect(String connectorIdentifier);
+
+	void createTemporaryTable(String tablePath, TableDescriptor tableDescriptor);
+
+	void createTemporaryTable(String tablePath, org.apache.flink.table.descriptor2.TableDescriptor tableDescriptor);
+
+	TableDescriptor connect(org.apache.flink.table.descriptor.ConnectorDescriptor connectorDescriptor);
 
 	/**
 	 * Gets the names of all catalogs registered in this environment.

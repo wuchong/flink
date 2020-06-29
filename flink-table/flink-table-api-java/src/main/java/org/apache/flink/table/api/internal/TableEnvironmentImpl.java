@@ -67,6 +67,7 @@ import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Parser;
 import org.apache.flink.table.delegation.Planner;
 import org.apache.flink.table.delegation.PlannerFactory;
+import org.apache.flink.table.descriptor.TableDescriptor;
 import org.apache.flink.table.descriptors.ConnectTableDescriptor;
 import org.apache.flink.table.descriptors.ConnectorDescriptor;
 import org.apache.flink.table.descriptors.StreamTableDescriptor;
@@ -516,6 +517,21 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
 	@Override
 	public org.apache.flink.table.connect.ConnectTableDescriptor connect(String connectorIdentifier) {
 		return new ConnectTableDescriptorImpl(parser, registration, connectorIdentifier);
+	}
+
+	@Override
+	public void createTemporaryTable(String tablePath, TableDescriptor tableDescriptor) {
+		// nothing
+	}
+
+	@Override
+	public void createTemporaryTable(String tablePath, org.apache.flink.table.descriptor2.TableDescriptor tableDescriptor) {
+		// nothing
+	}
+
+	@Override
+	public TableDescriptor connect(org.apache.flink.table.descriptor.ConnectorDescriptor connectorDescriptor) {
+		return new TableDescriptor().connector(connectorDescriptor);
 	}
 
 	@Override
