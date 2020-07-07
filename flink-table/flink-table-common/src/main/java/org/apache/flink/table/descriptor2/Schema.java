@@ -36,6 +36,9 @@ public class Schema {
 	@Nullable WatermarkInfo watermarkInfo;
 	@Nullable List<String> primaryKey;
 
+	/**
+	 * Adds a column with the column name and the data type.
+	 */
 	public Schema column(String fieldName, DataType fieldType) {
 		columns.add(new PhysicalColumn(fieldName, fieldType));
 		return this;
@@ -77,7 +80,14 @@ public class Schema {
 		}
 
 		/**
-		 * Creates a watermark strategy for situations with monotonously ascending timestamps.
+		 * Specifies a custom watermark strategy using the given SQL expression.
+		 */
+		public Schema as(String watermarkExpression) {
+
+		}
+
+		/**
+		 * Specifies a watermark strategy for situations with monotonously ascending timestamps.
 		 *
 		 * <p>The watermarks are generated periodically and tightly follow the latest
 		 * timestamp in the data. The delay introduced by this strategy is mainly the periodic interval
@@ -91,15 +101,10 @@ public class Schema {
 		}
 
 		/**
-		 * Creates a watermark strategy for situations where records are out of order, but you can place
+		 * Specifies a watermark strategy for situations where records are out of order, but you can place
 		 * an upper bound on how far the events are out of order. An out-of-order bound B means that
 		 * once the an event with timestamp T was encountered, no events older than {@code T - B} will
 		 * follow any more.
-		 *
-		 * <p>The watermarks are generated periodically. The delay introduced by this watermark
-		 * strategy is the periodic interval length, plus the out of orderness bound.
-		 *
-		 * @see BoundedOutOfOrdernessWatermarks
 		 */
 		public Schema boundedOutOfOrderTimestamps(Duration maxOutOfOrderness) {
 			schema.watermarkInfo = new BoundedOutOfOrderTimestamps(rowtimeAttribute, maxOutOfOrderness);

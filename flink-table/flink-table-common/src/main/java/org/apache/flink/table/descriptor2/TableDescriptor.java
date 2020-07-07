@@ -28,7 +28,7 @@ import java.util.Map;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * Describes a connector to an other system.
+ * Describes a table to connect. It is a same representation of SQL CREATE TABLE DDL.
  */
 @PublicEvolving
 public abstract class TableDescriptor {
@@ -45,6 +45,10 @@ public abstract class TableDescriptor {
 	public TableDescriptor partitionedBy(String... fieldNames) {
 		checkArgument(partitionedFields.isEmpty(), "partitionedBy(...) shouldn't be called more than once.");
 		partitionedFields.addAll(Arrays.asList(fieldNames));
+		return this;
+	}
+
+	public TableDescriptor like(String tablePath, LikeOption... likeOptions) {
 		return this;
 	}
 

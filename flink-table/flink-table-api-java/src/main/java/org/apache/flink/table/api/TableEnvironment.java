@@ -617,6 +617,7 @@ public interface TableEnvironment {
 	 * @see TableEnvironment#useDatabase(String)
 	 */
 	Table from(String path);
+	Table from(org.apache.flink.table.descriptor2.TableDescriptor tableDescriptor);
 
 	/**
 	 * Writes the {@link Table} to a {@link TableSink} that was registered under the specified name.
