@@ -20,7 +20,7 @@ package org.apache.flink.table.descriptor3;
 
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.expressions.Expression;
-import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.AbstractDataType;
 
 import javax.annotation.Nullable;
 
@@ -56,7 +56,7 @@ public class Schema {
 		/**
 		 * Adds a column with the column name and the data type.
 		 */
-		public SchemaBuilder column(String fieldName, DataType fieldType) {
+		public SchemaBuilder column(String fieldName, AbstractDataType<?> fieldType) {
 			columns.add(new PhysicalColumn(fieldName, fieldType));
 			return this;
 		}
@@ -106,9 +106,9 @@ public class Schema {
 	static class PhysicalColumn implements Column {
 
 		private final String name;
-		private final DataType type;
+		private final AbstractDataType<?> type;
 
-		PhysicalColumn(String name, DataType type) {
+		PhysicalColumn(String name, AbstractDataType<?> type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -118,7 +118,7 @@ public class Schema {
 			return name;
 		}
 
-		public DataType type() {
+		public AbstractDataType<?> type() {
 			return type;
 		}
 	}

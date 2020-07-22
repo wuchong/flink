@@ -26,7 +26,7 @@ public class Connector extends TableDescriptor {
 		return new ConnectorBuilder(identifier);
 	}
 
-	public static class ConnectorBuilder extends TableDescriptorBuilder {
+	public static class ConnectorBuilder extends TableDescriptorBuilder<Connector, ConnectorBuilder> {
 
 		private ConnectorBuilder(String identifier) {
 			super(Connector.class);
@@ -38,28 +38,12 @@ public class Connector extends TableDescriptor {
 			if (CONNECTOR.key().equals(lowerKey)) {
 				throw new IllegalArgumentException("It's not allowed to override 'connector' option.");
 			}
-			return (ConnectorBuilder) super.option(key, value);
+			return super.option(key, value);
 		}
 
 		@Override
-		public ConnectorBuilder schema(Schema schema) {
-			return (ConnectorBuilder) super.schema(schema);
-		}
-
-		@Override
-		public ConnectorBuilder partitionedBy(String... fieldNames) {
-			return (ConnectorBuilder) super.partitionedBy(fieldNames);
-		}
-
-		@Override
-		public ConnectorBuilder like(String tablePath, LikeOption... likeOptions) {
-			return (ConnectorBuilder) super.like(tablePath, likeOptions);
-		}
-
-		@Override
-		public Connector build() {
-			return (Connector) super.build();
+		protected ConnectorBuilder self() {
+			return this;
 		}
 	}
-
 }

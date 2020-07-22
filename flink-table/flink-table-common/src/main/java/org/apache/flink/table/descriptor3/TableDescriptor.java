@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Describes a table to connect. It is a same representation of SQL CREATE TABLE DDL.
+ * Describes a table to connect. It is a same representation of SQL CREATE TABLE DDL. It only wraps meta information about a catalog table.
+ * Please use a specific {@link TableDescriptorBuilder} to build the {@link TableDescriptor}.
  */
 @PublicEvolving
 public abstract class TableDescriptor {

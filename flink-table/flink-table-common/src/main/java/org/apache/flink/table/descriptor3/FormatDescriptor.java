@@ -24,7 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Describes a connector to an other system.
+ * Describes the format of data.
+ * Please use a specific {@link FormatDescriptorBuilder} to build the {@link FormatDescriptor}.
  */
 @PublicEvolving
 public abstract class FormatDescriptor {

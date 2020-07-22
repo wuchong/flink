@@ -48,7 +48,7 @@ public class TableDescriptor3Test {
 						.column("user_id", DataTypes.BIGINT())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.TIMESTAMP(3))
-						.column("my_ts", $("log_ts"))
+						.column("ts", $("log_ts"))
 						.build())
 				.build()
 		);
@@ -59,7 +59,7 @@ public class TableDescriptor3Test {
 				.option("path", "path/to/whatever")
 				.schema(
 					Schema.newBuilder()
-						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.watermark("ts", $("ts").minus(lit(3).seconds()))
 						.build())
 				.like("OrdersInKafka", LikeOption.EXCLUDING.ALL, LikeOption.INCLUDING.GENERATED)
 				.build()
@@ -74,7 +74,7 @@ public class TableDescriptor3Test {
 						.column("user_id", DataTypes.BIGINT())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.TIMESTAMP(3))
-						.column("my_ts", $("log_ts"))
+						.column("my_ts", $("ts"))
 						.build())
 				.build()
 		);
@@ -103,7 +103,7 @@ public class TableDescriptor3Test {
 						.column("part_field_1", DataTypes.INT())
 						.column("proc", proctime()) // define a processing-time attribute with column name "proc"
 						.column("ts", $("log_ts"))
-						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.watermark("ts", $("ts").minus(lit(3).seconds()))
 						.primaryKey("user_id")
 						.build())
 				.partitionedBy("part_field_0", "part_field_1")  // Kafka doesn't support partitioned table yet, this is just an example for the API
@@ -131,7 +131,7 @@ public class TableDescriptor3Test {
 						.column("part_field_1", DataTypes.INT())
 						.column("proc", proctime()) // define a processing-time attribute with column name "proc"
 						.column("ts", $("log_ts"))
-						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.watermark("ts", $("ts").minus(lit(3).seconds()))
 						.primaryKey("user_id")
 						.build())
 				.partitionedBy("part_field_0", "part_field_1") // Kafka doesn't support partitioned table yet, this is just an example for the API

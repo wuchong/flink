@@ -18,44 +18,65 @@
 
 package org.apache.flink.table.descriptor3;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.util.InstantiationUtil;
 
 import java.util.Arrays;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-public abstract class TableDescriptorBuilder {
+/**
+ * A basic builder implementation to build {@link TableDescriptor}.
+ */
+@PublicEvolving
+public abstract class TableDescriptorBuilder<DESCRIPTOR extends TableDescriptor, BUILDER extends TableDescriptorBuilder<DESCRIPTOR, BUILDER>> {
 
-	private final TableDescriptor descriptor;
+	private final DESCRIPTOR descriptor;
 
-	protected TableDescriptorBuilder(Class<? extends TableDescriptor> descriptorClass) {
+	protected TableDescriptorBuilder(Class<DESCRIPTOR> descriptorClass) {
 		descriptor = InstantiationUtil.instantiate(descriptorClass, TableDescriptor.class);
 	}
 
-	public TableDescriptorBuilder schema(Schema schema) {
+	/**
+	 * Returns the this builder instance in the type of subclass.
+	 */
+	protected abstract BUILDER self();
+
+	/**
+	 * Specifies the table schema.
+	 */
+	public BUILDER schema(Schema schema) {
 		descriptor.schema = schema;
-		return this;
+		return self();
 	}
 
-	public TableDescriptorBuilder partitionedBy(String... fieldNames) {
+	/**
+	 * Specifies the partition keys of this table.
+	 */
+	public BUILDER partitionedBy(String... fieldNames) {
 		checkArgument(descriptor.partitionedFields.isEmpty(), "partitionedBy(...) shouldn't be called more than once.");
 		descriptor.partitionedFields.addAll(Arrays.asList(fieldNames));
-		return this;
+		return self();
 	}
 
-	public TableDescriptorBuilder like(String tablePath, LikeOption... likeOptions) {
+	/**
+	 * Extends some parts from the original registered table path.
+	 */
+	public BUILDER like(String tablePath, LikeOption... likeOptions) {
 		descriptor.likePath = tablePath;
 		descriptor.likeOptions = likeOptions;
-		return this;
+		return self();
 	}
 
-	protected TableDescriptorBuilder option(String key, String value) {
+	protected BUILDER option(String key, String value) {
 		descriptor.options.put(key, value);
-		return this;
+		return self();
 	}
 
-	public TableDescriptor build() {
+	/**
+	 * Returns created table descriptor.
+	 */
+	public DESCRIPTOR build() {
 		return descriptor;
 	}
-
 }

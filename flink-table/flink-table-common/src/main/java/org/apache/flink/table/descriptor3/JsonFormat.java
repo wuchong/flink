@@ -31,7 +31,7 @@ public class JsonFormat extends FormatDescriptor {
 		return new JsonFormatBuilder();
 	}
 
-	public static class JsonFormatBuilder extends FormatDescriptorBuilder {
+	public static class JsonFormatBuilder extends FormatDescriptorBuilder<JsonFormat, JsonFormatBuilder> {
 		protected JsonFormatBuilder() {
 			super(JsonFormat.class);
 		}
@@ -59,8 +59,8 @@ public class JsonFormat extends FormatDescriptor {
 		}
 
 		@Override
-		public JsonFormat build() {
-			return (JsonFormat) super.build();
+		protected JsonFormatBuilder self() {
+			return this;
 		}
 	}
 }

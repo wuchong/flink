@@ -22,23 +22,25 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.util.InstantiationUtil;
 
 /**
- * Describes a connector to an other system.
+ * A basic builder implementation to build {@link FormatDescriptor}.
  */
 @PublicEvolving
-public abstract class FormatDescriptorBuilder {
+public abstract class FormatDescriptorBuilder<FD extends FormatDescriptor, FDB extends FormatDescriptorBuilder<FD, FDB>> {
 
-	private final FormatDescriptor descriptor;
+	private final FD descriptor;
 
-	protected FormatDescriptorBuilder(Class<? extends FormatDescriptor> descriptorClass) {
+	protected FormatDescriptorBuilder(Class<? extends FD> descriptorClass) {
 		descriptor = InstantiationUtil.instantiate(descriptorClass, FormatDescriptor.class);
 	}
 
-	protected FormatDescriptorBuilder option(String key, String value) {
+	protected abstract FDB self();
+
+	protected FDB option(String key, String value) {
 		descriptor.formatOptions.put(key, value);
-		return this;
+		return self();
 	}
 
-	public FormatDescriptor build() {
+	public FD build() {
 		return descriptor;
 	}
 }

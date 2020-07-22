@@ -36,7 +36,7 @@ public class KafkaConnector extends TableDescriptor {
 		return new KafkaConnectorBuilder();
 	}
 
-	public static class KafkaConnectorBuilder extends TableDescriptorBuilder {
+	public static class KafkaConnectorBuilder extends TableDescriptorBuilder<KafkaConnector, KafkaConnectorBuilder> {
 
 		public KafkaConnectorBuilder() {
 			super(KafkaConnector.class);
@@ -200,23 +200,8 @@ public class KafkaConnector extends TableDescriptor {
 		}
 
 		@Override
-		public KafkaConnectorBuilder schema(Schema schema) {
-			return (KafkaConnectorBuilder) super.schema(schema);
-		}
-
-		@Override
-		public KafkaConnectorBuilder partitionedBy(String... fieldNames) {
-			return (KafkaConnectorBuilder) super.partitionedBy(fieldNames);
-		}
-
-		@Override
-		public KafkaConnectorBuilder like(String tablePath, LikeOption... likeOptions) {
-			return (KafkaConnectorBuilder) super.like(tablePath, likeOptions);
-		}
-
-		@Override
-		public KafkaConnector build() {
-			return (KafkaConnector) super.build();
+		protected KafkaConnectorBuilder self() {
+			return this;
 		}
 	}
 }
