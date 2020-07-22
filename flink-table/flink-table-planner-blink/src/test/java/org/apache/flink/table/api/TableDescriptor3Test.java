@@ -18,85 +18,65 @@
 
 package org.apache.flink.table.api;
 
-import org.apache.flink.table.descriptor2.Connector;
-import org.apache.flink.table.descriptor2.Json;
-import org.apache.flink.table.descriptor2.Kafka;
-import org.apache.flink.table.descriptor2.LikeOption;
-import org.apache.flink.table.descriptor2.Schema;
+import org.apache.flink.table.descriptor3.Connector;
+import org.apache.flink.table.descriptor3.JsonFormat;
+import org.apache.flink.table.descriptor3.KafkaConnector;
+import org.apache.flink.table.descriptor3.LikeOption;
+import org.apache.flink.table.descriptor3.Schema;
 
 import org.junit.Test;
 
-import java.time.Duration;
+import static org.apache.flink.table.api.Expressions.$;
+import static org.apache.flink.table.api.Expressions.lit;
+import static org.apache.flink.table.api.Expressions.proctime;
 
-public class TableDescriptor2Test {
+public class TableDescriptor3Test {
 
 	TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
-
-	public void testV4() {
-		Schema schema = new Schema()
-			.column("user_id", DataTypes.BIGINT())
-			.column("score", DataTypes.DECIMAL(10, 2))
-			.column("ts", DataTypes.TIMESTAMP(3));
-		Table myKafka = tEnv.from(
-			new Kafka()
-				.version("0.11")
-				.topic("user_logs")
-				.property("bootstrap.servers", "localhost:9092")
-				.property("group.id", "test-group")
-				.startFromEarliest()
-				.sinkPartitionerRoundRobin()
-				.format(new Json().ignoreParseErrors(false))
-				.schema(schema)
-		);
-		// reading from kafka table and write into filesystem table
-		myKafka.executeInsert(
-			new Connector("filesystem")
-				.option("path", "/path/to/whatever")
-				.option("format", "json")
-				.schema(schema)
-		);
-	}
 
 	@Test
 	public void testLike() {
 		tEnv.createTemporaryTable(
 			"OrdersInKafka",
-			new Kafka()
+			KafkaConnector.newBuilder()
 				.topic("user_logs")
 				.property("bootstrap.servers", "localhost:9092")
 				.property("group.id", "test-group")
-				.format(new Json().ignoreParseErrors(false))
+				.format(JsonFormat.newInstance())
 				.schema(
-					new Schema()
+					Schema.newBuilder()
 						.column("user_id", DataTypes.BIGINT())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.TIMESTAMP(3))
-						.computedColumn("my_ts", "TO_TIMESTAMP(log_ts)")
-				)
+						.column("my_ts", $("log_ts"))
+						.build())
+				.build()
 		);
 
 		tEnv.createTemporaryTable(
 			"OrdersInFilesystem",
-			new Connector("filesystem")
+			Connector.of("filesystem")
 				.option("path", "path/to/whatever")
 				.schema(
-					new Schema()
-						.watermarkFor("ts").boundedOutOfOrderTimestamps(Duration.ofSeconds(5)))
+					Schema.newBuilder()
+						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.build())
 				.like("OrdersInKafka", LikeOption.EXCLUDING.ALL, LikeOption.INCLUDING.GENERATED)
+				.build()
 		);
 
 		tEnv.createTemporaryTable(
 			"OrdersInFilesystem",
-			new Connector("filesystem")
+			Connector.of("filesystem")
 				.option("path", "path/to/whatever")
 				.schema(
-					new Schema()
+					Schema.newBuilder()
 						.column("user_id", DataTypes.BIGINT())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.TIMESTAMP(3))
-						.computedColumn("my_ts", "TO_TIMESTAMP(log_ts)")
-						.watermarkFor("ts").boundedOutOfOrderTimestamps(Duration.ofSeconds(5))
-				)
+						.column("my_ts", $("log_ts"))
+						.build())
+				.build()
 		);
 	}
 
@@ -105,33 +85,35 @@ public class TableDescriptor2Test {
 		// register a table using specific descriptor
 		tEnv.createTemporaryTable(
 			"MyTable",
-			new Kafka()
+			KafkaConnector.newBuilder()
 				.version("0.11")
 				.topic("user_logs")
 				.property("bootstrap.servers", "localhost:9092")
 				.property("group.id", "test-group")
 				.startFromEarliest()
 				.sinkPartitionerRoundRobin()
-				.format(new Json().ignoreParseErrors(false))
+				.format(JsonFormat.newBuilder().ignoreParseErrors(false).build())
 				.schema(
-					new Schema()
+					Schema.newBuilder()
 						.column("user_id", DataTypes.BIGINT())
 						.column("user_name", DataTypes.STRING())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.STRING())
 						.column("part_field_0", DataTypes.STRING())
 						.column("part_field_1", DataTypes.INT())
-						.proctime("proc") // define a processing-time attribute with column name "proc"
-						.computedColumn("my_ts", "TO_TIMESTAMP(log_ts)")  // computed column
-						.watermarkFor("my_ts").boundedOutOfOrderTimestamps(Duration.ofSeconds(5))  // defines watermark and rowtime attribute
-						.primaryKey("user_id"))
+						.column("proc", proctime()) // define a processing-time attribute with column name "proc"
+						.column("ts", $("log_ts"))
+						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.primaryKey("user_id")
+						.build())
 				.partitionedBy("part_field_0", "part_field_1")  // Kafka doesn't support partitioned table yet, this is just an example for the API
+				.build()
 		);
 
 		// register a table using general purpose Connector descriptor, this would be helpful for custom source/sinks
 		tEnv.createTemporaryTable(
 			"MyTable",
-			new Connector("kafka-0.11")
+			Connector.of("kafka-0.11")
 				.option("topic", "user_logs")
 				.option("properties.bootstrap.servers", "localhost:9092")
 				.option("properties.group.id", "test-group")
@@ -140,18 +122,20 @@ public class TableDescriptor2Test {
 				.option("json.ignore-parse-errors", "true")
 				.option("sink.partitioner", "round-robin")
 				.schema(
-					new Schema()
+					Schema.newBuilder()
 						.column("user_id", DataTypes.BIGINT())
 						.column("user_name", DataTypes.STRING())
 						.column("score", DataTypes.DECIMAL(10, 2))
 						.column("log_ts", DataTypes.STRING())
 						.column("part_field_0", DataTypes.STRING())
 						.column("part_field_1", DataTypes.INT())
-						.proctime("proc") // define a processing-time attribute with column name "proc"
-						.computedColumn("my_ts", "TO_TIMESTAMP(log_ts)")  // computed column
-						.watermarkFor("my_ts").boundedOutOfOrderTimestamps(Duration.ofSeconds(5)) // defines watermark and rowtime attribute
-						.primaryKey("user_id"))
+						.column("proc", proctime()) // define a processing-time attribute with column name "proc"
+						.column("ts", $("log_ts"))
+						.watermark("ts", $("log_ts").minus(lit(3).seconds()))
+						.primaryKey("user_id")
+						.build())
 				.partitionedBy("part_field_0", "part_field_1") // Kafka doesn't support partitioned table yet, this is just an example for the API
+				.build()
 		);
 	}
 }

@@ -193,6 +193,10 @@ public final class Expressions {
 		return apiCall(BuiltInFunctionDefinitions.CURRENT_TIME);
 	}
 
+	public static ApiExpression proctime() {
+		return apiCall(BuiltInFunctionDefinitions.PROCTIME);
+	}
+
 	/**
 	 * Returns the current SQL timestamp in UTC time zone.
 	 */

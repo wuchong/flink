@@ -618,6 +618,7 @@ public interface TableEnvironment {
 	 */
 	Table from(String path);
 	Table from(org.apache.flink.table.descriptor2.TableDescriptor tableDescriptor);
+	Table from(org.apache.flink.table.descriptor3.TableDescriptor tableDescriptor);
 
 	/**
 	 * Writes the {@link Table} to a {@link TableSink} that was registered under the specified name.
@@ -699,6 +700,8 @@ public interface TableEnvironment {
 	void createTemporaryTable(String tablePath, TableDescriptor tableDescriptor);
 
 	void createTemporaryTable(String tablePath, org.apache.flink.table.descriptor2.TableDescriptor tableDescriptor);
+
+	void createTemporaryTable(String tablePath, org.apache.flink.table.descriptor3.TableDescriptor tableDescriptor);
 
 	TableDescriptor connect(org.apache.flink.table.descriptor.ConnectorDescriptor connectorDescriptor);
 
