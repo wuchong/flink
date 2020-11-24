@@ -68,6 +68,15 @@ stages:
           run_end_to_end: false
           container: flink-build-container
           jdk: jdk8
+      - job: docs_404_check # run on a MSFT provided machine
+        pool:
+          vmImage: 'ubuntu-16.04'
+        steps:
+          - task: UseRubyVersion@0
+            inputs:
+              versionSpec: '= 2.4'
+              addToPath: true
+          - script: ./tools/ci/docs.sh
   # Special stage for nightly builds:
   - stage: cron_build
     displayName: "Cron build"
@@ -134,15 +143,6 @@ stages:
           run_end_to_end: true
           container: flink-build-container
           jdk: jdk11
-      - job: docs_404_check # run on a MSFT provided machine
-        pool: 
-          vmImage: 'ubuntu-16.04'
-        steps:
-        - task: UseRubyVersion@0
-          inputs:
-            versionSpec: '= 2.4'
-            addToPath: true
-        - script: ./tools/ci/docs.sh
       - template: build-python-wheels.yml
         parameters:
           stage_name: cron_python_wheels
