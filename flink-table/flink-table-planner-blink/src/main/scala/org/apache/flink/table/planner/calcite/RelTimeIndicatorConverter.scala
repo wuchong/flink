@@ -647,7 +647,8 @@ class RexTimeIndicatorMaterializer(
     call match {
       case operand: RexCall if
       operand.getOperator == FlinkSqlOperatorTable.MATCH_PROCTIME ||
-        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME =>
+        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME ||
+        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME_LTZ =>
         true
       case _ =>
         false
@@ -704,6 +705,7 @@ class RexTimeIndicatorMaterializer(
            FlinkSqlOperatorTable.SESSION_ROWTIME |
            FlinkSqlOperatorTable.SESSION_PROCTIME |
            FlinkSqlOperatorTable.MATCH_ROWTIME |
+           FlinkSqlOperatorTable.MATCH_ROWTIME_LTZ |
            FlinkSqlOperatorTable.MATCH_PROCTIME
         // since we materialize groupings on time indicators,
         // we cannot check the operands anymore but the return type at least

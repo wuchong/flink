@@ -138,6 +138,7 @@ public class CatalogSchemaTable extends AbstractTable implements TemporalTable {
             // Remove the patched time attributes type to let the TableSourceTable handle it.
             // We should remove this logic if the isBatch flag in ConnectorCatalogTable is fixed.
             // TODO: Fix FLINK-14844.
+            // TODO FIX ME
             for (int i = 0; i < fieldDataTypes.length; i++) {
                 LogicalType lt = fieldDataTypes[i].getLogicalType();
                 if (lt instanceof TimestampType

@@ -402,7 +402,9 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
         }
 
         if (windowAssigner.isEventTime()) {
-            windowFunction.cleanWindowIfNeeded(triggerContext.window, timer.getTimestamp());
+            windowFunction.cleanWindowIfNeeded(
+                    triggerContext.window,
+                    TimeWindowUtil.toUtcTimestampMills(timer.getTimestamp(), timeZone));
         }
     }
 
@@ -421,7 +423,9 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
         }
 
         if (!windowAssigner.isEventTime()) {
-            windowFunction.cleanWindowIfNeeded(triggerContext.window, timer.getTimestamp());
+            windowFunction.cleanWindowIfNeeded(
+                    triggerContext.window,
+                    TimeWindowUtil.toUtcTimestampMills(timer.getTimestamp(), timeZone));
         }
     }
 
@@ -574,7 +578,7 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
         }
 
         boolean onEventTime(long time) throws Exception {
-            return trigger.onEventTime(time, window);
+            return trigger.onEventTime(TimeWindowUtil.toUtcTimestampMills(time, timeZone), window);
         }
 
         void onMerge() throws Exception {
@@ -604,7 +608,8 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
 
         @Override
         public void registerEventTimeTimer(long time) {
-            internalTimerService.registerEventTimeTimer(window, time);
+            internalTimerService.registerEventTimeTimer(
+                    window, TimeWindowUtil.toEpochMillsForTimer(time, timeZone));
         }
 
         @Override
@@ -615,7 +620,8 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
 
         @Override
         public void deleteEventTimeTimer(long time) {
-            internalTimerService.deleteEventTimeTimer(window, time);
+            internalTimerService.deleteEventTimeTimer(
+                    window, TimeWindowUtil.toEpochMillsForTimer(time, timeZone));
         }
 
         public void clear() throws Exception {

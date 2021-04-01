@@ -73,15 +73,19 @@ public class FlinkSqlOperatorTable extends ReflectiveSqlOperatorTable {
     }
 
     private static final SqlReturnTypeInference ROWTIME_TYPE_INFERENCE =
-            createTimeIndicatorReturnType(true);
+            createTimeIndicatorReturnType(true, false);
     private static final SqlReturnTypeInference PROCTIME_TYPE_INFERENCE =
-            createTimeIndicatorReturnType(false);
+            createTimeIndicatorReturnType(false, true);
+    private static final SqlReturnTypeInference ROWTIME_LTZ_TYPE_INFERENCE =
+            createTimeIndicatorReturnType(true, true);
 
-    private static SqlReturnTypeInference createTimeIndicatorReturnType(boolean isRowTime) {
+    private static SqlReturnTypeInference createTimeIndicatorReturnType(
+            boolean isRowTime, boolean isTimestampLtz) {
         return ReturnTypes.explicit(
                 factory -> {
                     if (isRowTime) {
-                        return ((FlinkTypeFactory) factory).createRowtimeIndicatorType(false);
+                        return ((FlinkTypeFactory) factory)
+                                .createRowtimeIndicatorType(false, isTimestampLtz);
                     } else {
                         return ((FlinkTypeFactory) factory).createProctimeIndicatorType(false);
                     }
@@ -117,12 +121,25 @@ public class FlinkSqlOperatorTable extends ReflectiveSqlOperatorTable {
                     SqlFunctionCategory.TIMEDATE,
                     false);
 
-    /** Function used to access a event time attribute from MATCH_RECOGNIZE. */
+    /** Function used to access a event time attribute with TIMESTAMP TYPE from MATCH_RECOGNIZE. */
     public static final SqlFunction MATCH_ROWTIME =
             new CalciteSqlFunction(
                     "MATCH_ROWTIME",
                     SqlKind.OTHER_FUNCTION,
                     ROWTIME_TYPE_INFERENCE,
+                    null,
+                    OperandTypes.NILADIC,
+                    SqlFunctionCategory.MATCH_RECOGNIZE,
+                    true);
+
+    /**
+     * Function used to access a event time attribute with TIMESTAMP_LTZ type from MATCH_RECOGNIZE.
+     */
+    public static final SqlFunction MATCH_ROWTIME_LTZ =
+            new CalciteSqlFunction(
+                    "MATCH_ROWTIME_LTZ",
+                    SqlKind.OTHER_FUNCTION,
+                    ROWTIME_LTZ_TYPE_INFERENCE,
                     null,
                     OperandTypes.NILADIC,
                     SqlFunctionCategory.MATCH_RECOGNIZE,
