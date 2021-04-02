@@ -19,7 +19,7 @@
 package org.apache.flink.table.planner.calcite
 
 import org.apache.flink.table.api.{TableException, ValidationException}
-import org.apache.flink.table.planner.calcite.FlinkTypeFactory._
+import org.apache.flink.table.planner.calcite.FlinkTypeFactory.{isTimeIndicatorType, _}
 import org.apache.flink.table.planner.functions.sql.FlinkSqlOperatorTable
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 import org.apache.flink.table.planner.plan.nodes.calcite._
@@ -39,6 +39,7 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable.FINAL
 import org.apache.flink.table.planner.plan.nodes.hive.LogicalDistribution
 
 import java.util.{Collections => JCollections}
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -624,6 +625,11 @@ class RexTimeIndicatorMaterializer(
         })
   }
 
+  private def rowtime(isNullable: Boolean, isTimestampLtz: Boolean = false): RelDataType = {
+    rexBuilder.getTypeFactory.asInstanceOf[FlinkTypeFactory]
+      .createRowtimeIndicatorType(isNullable, isTimestampLtz)
+  }
+
   override def visitInputRef(inputRef: RexInputRef): RexNode = {
     // reference is interesting
     if (isTimeIndicatorType(inputRef.getType)) {
@@ -647,8 +653,7 @@ class RexTimeIndicatorMaterializer(
     call match {
       case operand: RexCall if
       operand.getOperator == FlinkSqlOperatorTable.MATCH_PROCTIME ||
-        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME ||
-        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME_LTZ =>
+        operand.getOperator == FlinkSqlOperatorTable.MATCH_ROWTIME =>
         true
       case _ =>
         false
@@ -697,6 +702,15 @@ class RexTimeIndicatorMaterializer(
         && isMatchTimeIndicator(updatedCall.getOperands.get(0)) =>
         updatedCall
 
+      case FlinkSqlOperatorTable.MATCH_ROWTIME if isTimeIndicatorType(updatedCall.getType) =>
+        val rowtimeType = input.filter(isTimeIndicatorType).head
+
+        updatedCall.clone(
+          rowtime(
+            updatedCall.getType.isNullable,
+            isTimestampLtzIndicatorType(rowtimeType)),
+          materializedOperands)
+
       // do not modify window time attributes
       case FlinkSqlOperatorTable.TUMBLE_ROWTIME |
            FlinkSqlOperatorTable.TUMBLE_PROCTIME |
@@ -704,8 +718,6 @@ class RexTimeIndicatorMaterializer(
            FlinkSqlOperatorTable.HOP_PROCTIME |
            FlinkSqlOperatorTable.SESSION_ROWTIME |
            FlinkSqlOperatorTable.SESSION_PROCTIME |
-           FlinkSqlOperatorTable.MATCH_ROWTIME |
-           FlinkSqlOperatorTable.MATCH_ROWTIME_LTZ |
            FlinkSqlOperatorTable.MATCH_PROCTIME
         // since we materialize groupings on time indicators,
         // we cannot check the operands anymore but the return type at least
