@@ -23,15 +23,24 @@ import org.apache.flink.formats.avro.generated.Address;
 import org.apache.flink.formats.avro.generated.UnionLogicalType;
 import org.apache.flink.formats.avro.utils.TestDataGenerator;
 
+import org.apache.avro.AvroTypeException;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Random;
 
+import static org.apache.flink.formats.avro.utils.AvroTestUtils.readRecord;
+import static org.apache.flink.formats.avro.utils.AvroTestUtils.readRecordFromAvroFile;
 import static org.apache.flink.formats.avro.utils.AvroTestUtils.writeRecord;
+import static org.apache.flink.formats.avro.utils.AvroTestUtils.writeRecordToAvroFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /** Tests for {@link AvroDeserializationSchema}. */
 public class AvroDeserializationSchemaTest {
@@ -45,6 +54,136 @@ public class AvroDeserializationSchemaTest {
 
         Address deserializedAddress = deserializer.deserialize(null);
         assertNull(deserializedAddress);
+    }
+
+    @Test
+    public void testEvolution() throws Exception {
+        Schema schema1 =
+                Schema.parse(
+                        "{\"namespace\": \"org.apache.flink.formats.avro.generated\",\n"
+                                + " \"type\": \"record\",\n"
+                                + " \"name\": \"Address\",\n"
+                                + " \"fields\": [\n"
+                                + "     {\"name\": \"id\", \"type\": \"int\"},\n"
+                                + "     {\"name\": \"city\", \"type\": \"string\"}\n"
+                                + "  ]\n"
+                                + "}");
+
+        GenericRecord record = new GenericData.Record(schema1);
+        record.put("id", 1);
+        record.put("city", "Shanghai");
+        byte[] bytes = writeRecord(record, schema1);
+
+        Schema schema2 =
+                Schema.parse(
+                        "{\"namespace\": \"org.apache.flink.formats.avro.generated\",\n"
+                                + " \"type\": \"record\",\n"
+                                + " \"name\": \"Address\",\n"
+                                + " \"fields\": [\n"
+                                + "     {\"name\": \"id\", \"type\": \"int\"},\n"
+                                + "     {\"name\": \"city\", \"type\": \"string\"},\n"
+                                + "     {\"name\": \"state\", \"type\": [\"null\", \"string\"], \"default\": null}\n"
+                                + "  ]\n"
+                                + "}");
+        GenericRecord record1 = readRecord(bytes, schema1, schema2);
+        System.out.println(record1);
+    }
+
+    @Test
+    public void testAvroFileEvolution() throws Exception {
+        Schema schema1 =
+                Schema.parse(
+                        "{\"namespace\": \"org.apache.flink.formats.avro.generated\",\n"
+                                + " \"type\": \"record\",\n"
+                                + " \"name\": \"Address\",\n"
+                                + " \"fields\": [\n"
+                                + "     {\"name\": \"id\", \"type\": \"int\"},\n"
+                                + "     {\"name\": \"city\", \"type\": \"string\"}\n"
+                                + "  ]\n"
+                                + "}");
+
+        // add nullable column
+        Schema schema2 =
+                Schema.parse(
+                        "{\"namespace\": \"org.apache.flink.formats.avro.generated\",\n"
+                                + " \"type\": \"record\",\n"
+                                + " \"name\": \"Address\",\n"
+                                + " \"fields\": [\n"
+                                + "     {\"name\": \"id\", \"type\": \"int\"},\n"
+                                + "     {\"name\": \"state\", \"type\": [\"null\", \"string\"], \"default\": null},\n"
+                                + "     {\"name\": \"city\", \"type\": \"string\"}\n"
+                                + "  ]\n"
+                                + "}");
+
+        // add not-null column
+        Schema schema3 =
+                Schema.parse(
+                        "{\"namespace\": \"org.apache.flink.formats.avro.generated\",\n"
+                                + " \"type\": \"record\",\n"
+                                + " \"name\": \"Address\",\n"
+                                + " \"fields\": [\n"
+                                + "     {\"name\": \"id\", \"type\": \"int\"},\n"
+                                + "     {\"name\": \"state\", \"type\": \"string\"},\n"
+                                + "     {\"name\": \"city\", \"type\": \"string\"}\n"
+                                + "  ]\n"
+                                + "}");
+
+        final GenericRecord record1 = new GenericData.Record(schema1);
+        record1.put("id", 1);
+        record1.put("city", "Shanghai");
+
+        final GenericRecord record2 = new GenericData.Record(schema2);
+        record2.put("id", 1);
+        record2.put("state", "Zhejiang");
+        record2.put("city", "Shanghai");
+
+        final GenericRecord record3 = new GenericData.Record(schema2);
+        record3.put("id", 1);
+        record3.put("state", "Zhejiang");
+        record3.put("city", "Shanghai");
+
+        // ===== add nullable column (schema1 -> schema2) ========
+        System.out.println("old schema writer, new schema reader, should pass");
+        verifyAvroFile(schema1, schema2, record1);
+        System.out.println("new schema writer, old schema reader, should pass");
+        verifyAvroFile(schema2, schema1, record2);
+
+        // ====== add not null column (schema1 -> schema3) ========
+        System.out.println("old schema writer, new schema reader, should fail");
+        try {
+            verifyAvroFile(schema1, schema3, record1);
+            fail("can't pass");
+        } catch (AvroTypeException e) {
+            // ignore
+            System.out.println("failed to deserialize");
+        }
+        System.out.println("new schema writer, old schema reader, should pass");
+        verifyAvroFile(schema3, schema1, record3);
+
+        // ====== remove nullable column (schema2 -> schema1) ======
+        System.out.println("old schema writer, new schema reader, should pass");
+        verifyAvroFile(schema2, schema1, record2);
+        System.out.println("new schema writer, old schema reader, should pass");
+        verifyAvroFile(schema1, schema2, record1);
+
+        // ====== remove not-null column (schema3 -> schema1) ======
+        System.out.println("old schema writer, new schema reader, should pass");
+        verifyAvroFile(schema3, schema1, record3);
+        System.out.println("new schema writer, old schema reader, should fail");
+        try {
+            verifyAvroFile(schema1, schema3, record1);
+            fail("can't pass");
+        } catch (AvroTypeException e) {
+            // ignore
+            System.out.println("failed to deserialize");
+        }
+    }
+
+    private void verifyAvroFile(Schema writeSchema, Schema readSchema, GenericRecord... records)
+            throws IOException {
+        String path = writeRecordToAvroFile(writeSchema, records);
+        List<GenericRecord> readRecords = readRecordFromAvroFile(path, readSchema);
+        System.out.println(readRecords);
     }
 
     @Test

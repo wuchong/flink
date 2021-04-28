@@ -27,15 +27,21 @@ import org.apache.flink.formats.avro.generated.User;
 import org.apache.flink.types.Row;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -46,8 +52,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /** Utilities for creating Avro Schemas. */
 public final class AvroTestUtils {
@@ -273,6 +281,39 @@ public final class AvroTestUtils {
         new GenericDatumWriter<>(schema).write(record, encoder);
         encoder.flush();
         return stream.toByteArray();
+    }
+
+    public static GenericRecord readRecord(byte[] bytes, Schema writeSchema, Schema readSchema)
+            throws IOException {
+        GenericDatumReader datumReader = new GenericDatumReader<>(writeSchema, readSchema);
+        Decoder decoder = DecoderFactory.get().binaryDecoder(bytes, null);
+        return (GenericRecord) datumReader.read(null, decoder);
+    }
+
+    public static String writeRecordToAvroFile(Schema writeSchema, GenericRecord... records)
+            throws IOException {
+        File path = File.createTempFile("testdata", ".avro");
+        DataFileWriter<GenericRecord> writer =
+                new DataFileWriter<>(new GenericDatumWriter<>(writeSchema));
+        writer.create(writeSchema, path);
+        for (GenericRecord record : records) {
+            writer.append(record);
+        }
+        writer.flush();
+        writer.close();
+        return path.toString();
+    }
+
+    public static List<GenericRecord> readRecordFromAvroFile(String path, Schema readSchema)
+            throws IOException {
+        File file = new File(path);
+        DataFileReader<GenericRecord> reader =
+                new DataFileReader<>(file, new GenericDatumReader<>(null, readSchema));
+        List<GenericRecord> lists = new ArrayList<>();
+        while (reader.hasNext()) {
+            lists.add(reader.next());
+        }
+        return lists;
     }
 
     /**
